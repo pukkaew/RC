@@ -1,4 +1,4 @@
-// Model for managing product images
+// Image model for managing product images
 const sql = require('mssql');
 const dbService = require('../services/DatabaseService');
 const logger = require('../utils/Logger');
@@ -48,10 +48,6 @@ class ImageModel {
       ];
       
       const result = await dbService.executeQuery(query, params);
-      
-      // Log success
-      logger.info(`Created image record: ${imageData.fileName} for lot ${imageData.lotId}`);
-      
       return result.recordset[0].image_id;
     } catch (error) {
       logger.error('Error creating image record:', error);
@@ -110,9 +106,6 @@ class ImageModel {
           imageIds.push(result.recordset[0].image_id);
         }
         
-        // Log success
-        logger.info(`Created ${imageIds.length} image records in batch`);
-        
         return imageIds;
       });
     } catch (error) {
@@ -140,10 +133,6 @@ class ImageModel {
       ];
       
       const result = await dbService.executeQuery(query, params);
-      
-      // Log query result
-      logger.info(`Found ${result.recordset.length} images for lot ID ${lotId} on date ${imageDate}`);
-      
       return result.recordset;
     } catch (error) {
       logger.error('Error getting images by lot and date:', error);
@@ -170,36 +159,9 @@ class ImageModel {
       ];
       
       const result = await dbService.executeQuery(query, params);
-      
-      // Log query result
-      logger.info(`Found ${result.recordset.length} images for lot ${lotNumber} on date ${imageDate}`);
-      
       return result.recordset;
     } catch (error) {
       logger.error('Error getting images by lot number and date:', error);
-      throw error;
-    }
-  }
-
-  // Get an image by ID
-  async getById(imageId) {
-    try {
-      const query = `
-        SELECT i.*, l.lot_number
-        FROM Images i
-        JOIN Lots l ON i.lot_id = l.lot_id
-        WHERE i.image_id = @imageId
-          AND i.status = 'active'
-      `;
-      
-      const params = [
-        { name: 'imageId', type: sql.Int, value: imageId }
-      ];
-      
-      const result = await dbService.executeQuery(query, params);
-      return result.recordset;
-    } catch (error) {
-      logger.error('Error getting image by ID:', error);
       throw error;
     }
   }
@@ -219,10 +181,6 @@ class ImageModel {
       ];
       
       await dbService.executeQuery(query, params);
-      
-      // Log update
-      logger.info(`Updated image ${imageId} status to ${status}`);
-      
       return true;
     } catch (error) {
       logger.error('Error updating image status:', error);

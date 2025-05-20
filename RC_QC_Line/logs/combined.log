@@ -548,3 +548,237 @@
 {"level":"info","message":"Successfully processed file 3/3: 1747713300143-f3a8d08e.jpg","service":"rc-qc-line","timestamp":"2025-05-20 10:55:00"}
 {"level":"info","message":"Processed 3 of 3 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 10:55:00"}
 {"level":"info","message":"Successfully uploaded 3 images for Lot 11111","service":"rc-qc-line","timestamp":"2025-05-20 10:55:00"}
+{"level":"info","message":"Server running on port 3000","service":"rc-qc-line","timestamp":"2025-05-20 11:14:41"}
+{"level":"info","message":"Webhook URL: http://localhost:3000/webhook","service":"rc-qc-line","timestamp":"2025-05-20 11:14:41"}
+{"level":"info","message":"Note: For production, use HTTPS for webhook URL","service":"rc-qc-line","timestamp":"2025-05-20 11:14:41"}
+{"level":"info","message":"Database connection pool initialized","service":"rc-qc-line","timestamp":"2025-05-20 11:14:41"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:14:58"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:05"}
+{"level":"info","message":"Processing image: 561840778419372053, isImageGroup: yes, index: 1, total: 3","service":"rc-qc-line","timestamp":"2025-05-20 11:15:05"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:06"}
+{"level":"info","message":"Processing image: 561840778922689081, isImageGroup: yes, index: 2, total: 3","service":"rc-qc-line","timestamp":"2025-05-20 11:15:06"}
+{"level":"info","message":"Processing 2 images for Lot 11111","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"Processing file 1/2: image_1747714507016_0.jpg, size: 143150 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"compressedSize":89279,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747714507016_0.jpg -> 1747714507022-74f908bc.jpg","originalSize":143150,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"Successfully processed file 1/2: 1747714507022-74f908bc.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"Processing file 2/2: image_1747714507016_1.jpg, size: 645512 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"compressedSize":401517,"compressionRatio":"1.61","level":"info","message":"Image compressed: image_1747714507016_1.jpg -> 1747714507051-59158a21.jpg","originalSize":645512,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"Successfully processed file 2/2: 1747714507051-59158a21.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"Processed 2 of 2 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:07"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:21"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:27"}
+{"level":"info","message":"Processing image: 561840815866118162, isImageGroup: yes, index: 1, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:15:27"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:29"}
+{"level":"info","message":"Processing image: 561840816486875890, isImageGroup: yes, index: 2, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:15:29"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:30"}
+{"level":"info","message":"Processing image: 561840817107632305, isImageGroup: yes, index: 3, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:15:30"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:31"}
+{"level":"info","message":"Processing image: 561840818165121232, isImageGroup: yes, index: 5, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:15:31"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:31"}
+{"level":"info","message":"Processing image: 561840817343037902, isImageGroup: yes, index: 4, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:15:31"}
+{"level":"info","message":"Processing 4 images for Lot 1233","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Processing file 1/4: image_1747714532002_0.jpg, size: 907581 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"compressedSize":507017,"compressionRatio":"1.79","level":"info","message":"Image compressed: image_1747714532002_0.jpg -> 1747714532011-1045457f.jpg","originalSize":907581,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Successfully processed file 1/4: 1747714532011-1045457f.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Processing file 2/4: image_1747714532002_1.jpg, size: 946690 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"compressedSize":532412,"compressionRatio":"1.78","level":"info","message":"Image compressed: image_1747714532002_1.jpg -> 1747714532102-365c88c4.jpg","originalSize":946690,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Successfully processed file 2/4: 1747714532102-365c88c4.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Processing file 3/4: image_1747714532002_2.jpg, size: 735493 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"compressedSize":450000,"compressionRatio":"1.63","level":"info","message":"Image compressed: image_1747714532002_2.jpg -> 1747714532196-d62c68a4.jpg","originalSize":735493,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Successfully processed file 3/4: 1747714532196-d62c68a4.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Processing file 4/4: image_1747714532002_3.jpg, size: 1118299 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"compressedSize":635217,"compressionRatio":"1.76","level":"info","message":"Image compressed: image_1747714532002_3.jpg -> 1747714532269-0a11ca53.jpg","originalSize":1118299,"service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Successfully processed file 4/4: 1747714532269-0a11ca53.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"Processed 4 of 4 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:32"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:43"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:15:45"}
+{"level":"info","message":"Server running on port 3000","service":"rc-qc-line","timestamp":"2025-05-20 11:18:25"}
+{"level":"info","message":"Webhook URL: http://localhost:3000/webhook","service":"rc-qc-line","timestamp":"2025-05-20 11:18:25"}
+{"level":"info","message":"Note: For production, use HTTPS for webhook URL","service":"rc-qc-line","timestamp":"2025-05-20 11:18:25"}
+{"level":"info","message":"Database connection pool initialized","service":"rc-qc-line","timestamp":"2025-05-20 11:18:25"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:37"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:44"}
+{"level":"info","message":"Processing image: 561841145538412992, isImageGroup: yes, index: 1, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:44"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:46"}
+{"level":"info","message":"Processing image: 561841146377536103, isImageGroup: yes, index: 2, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:46"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:47"}
+{"level":"info","message":"Processing image: 561841147400945788, isImageGroup: yes, index: 3, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:47"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:47"}
+{"level":"info","message":"Processing image: 561841147819852441, isImageGroup: yes, index: 4, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:47"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:48"}
+{"level":"info","message":"Processing image: 561841148843786551, isImageGroup: yes, index: 5, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:48"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:49"}
+{"level":"info","message":"Processing image: 561841150219256495, isImageGroup: yes, index: 6, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:49"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:50"}
+{"level":"info","message":"Processing image: 561841152400294603, isImageGroup: yes, index: 8, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:50"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:50"}
+{"level":"info","message":"Processing image: 561841151343329419, isImageGroup: yes, index: 7, total: 9","service":"rc-qc-line","timestamp":"2025-05-20 11:18:50"}
+{"level":"info","message":"Processing 8 images for Lot 12333","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 1/8: image_1747714736165_0.jpg, size: 952834 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":606046,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747714736165_0.jpg -> 1747714736173-8decf4d1.jpg","originalSize":952834,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 1/8: 1747714736173-8decf4d1.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 2/8: image_1747714736165_1.jpg, size: 645512 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":401517,"compressionRatio":"1.61","level":"info","message":"Image compressed: image_1747714736165_1.jpg -> 1747714736257-e88c3ef6.jpg","originalSize":645512,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 2/8: 1747714736257-e88c3ef6.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 3/8: image_1747714736165_2.jpg, size: 143150 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":89279,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747714736165_2.jpg -> 1747714736326-73254b8d.jpg","originalSize":143150,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 3/8: 1747714736326-73254b8d.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 4/8: image_1747714736165_3.jpg, size: 829829 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":505110,"compressionRatio":"1.64","level":"info","message":"Image compressed: image_1747714736165_3.jpg -> 1747714736355-b549a0ba.jpg","originalSize":829829,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 4/8: 1747714736355-b549a0ba.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 5/8: image_1747714736165_4.jpg, size: 1093311 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":698140,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747714736165_4.jpg -> 1747714736431-cc62e391.jpg","originalSize":1093311,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 5/8: 1747714736431-cc62e391.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 6/8: image_1747714736165_5.jpg, size: 823599 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":515217,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747714736165_5.jpg -> 1747714736516-374704c3.jpg","originalSize":823599,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 6/8: 1747714736516-374704c3.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 7/8: image_1747714736165_6.jpg, size: 1118299 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":635217,"compressionRatio":"1.76","level":"info","message":"Image compressed: image_1747714736165_6.jpg -> 1747714736593-7f319aa3.jpg","originalSize":1118299,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 7/8: 1747714736593-7f319aa3.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processing file 8/8: image_1747714736165_7.jpg, size: 905350 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"compressedSize":572090,"compressionRatio":"1.58","level":"info","message":"Image compressed: image_1747714736165_7.jpg -> 1747714736669-24ac99a2.jpg","originalSize":905350,"service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Successfully processed file 8/8: 1747714736669-24ac99a2.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"Processed 8 of 8 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 11:18:56"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:18:57"}
+{"level":"info","message":"Server running on port 3000","service":"rc-qc-line","timestamp":"2025-05-20 11:23:22"}
+{"level":"info","message":"Webhook URL: http://localhost:3000/webhook","service":"rc-qc-line","timestamp":"2025-05-20 11:23:22"}
+{"level":"info","message":"Note: For production, use HTTPS for webhook URL","service":"rc-qc-line","timestamp":"2025-05-20 11:23:22"}
+{"level":"info","message":"Database connection pool initialized","service":"rc-qc-line","timestamp":"2025-05-20 11:23:22"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:23:33"}
+{"level":"error","message":"Error handling text message: uploadController.setupUploadWithLot is not a function","service":"rc-qc-line","stack":"TypeError: uploadController.setupUploadWithLot is not a function\n    at WebhookController.handleTextMessage (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:292:38)\n    at WebhookController.handleMessageEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:188:22)\n    at WebhookController.processEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:152:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:106:9","timestamp":"2025-05-20 11:23:33"}
+{"level":"error","message":"Error handling message event: uploadController.setupUploadWithLot is not a function","service":"rc-qc-line","stack":"TypeError: uploadController.setupUploadWithLot is not a function\n    at WebhookController.handleTextMessage (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:292:38)\n    at WebhookController.handleMessageEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:188:22)\n    at WebhookController.processEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:152:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:106:9","timestamp":"2025-05-20 11:23:33"}
+{"level":"error","message":"Error processing event: uploadController.setupUploadWithLot is not a function","service":"rc-qc-line","stack":"TypeError: uploadController.setupUploadWithLot is not a function\n    at WebhookController.handleTextMessage (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:292:38)\n    at WebhookController.handleMessageEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:188:22)\n    at WebhookController.processEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:152:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:106:9","timestamp":"2025-05-20 11:23:33"}
+{"level":"error","message":"Error handling webhook: uploadController.setupUploadWithLot is not a function","service":"rc-qc-line","stack":"TypeError: uploadController.setupUploadWithLot is not a function\n    at WebhookController.handleTextMessage (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:292:38)\n    at WebhookController.handleMessageEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:188:22)\n    at WebhookController.processEvent (D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:152:22)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async D:\\Apps\\RC_QC_Line\\controllers\\WebhookController.js:106:9","timestamp":"2025-05-20 11:23:33"}
+{"level":"info","message":"Server running on port 3000","service":"rc-qc-line","timestamp":"2025-05-20 11:26:07"}
+{"level":"info","message":"Webhook URL: http://localhost:3000/webhook","service":"rc-qc-line","timestamp":"2025-05-20 11:26:07"}
+{"level":"info","message":"Note: For production, use HTTPS for webhook URL","service":"rc-qc-line","timestamp":"2025-05-20 11:26:07"}
+{"level":"info","message":"Database connection pool initialized","service":"rc-qc-line","timestamp":"2025-05-20 11:26:07"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:21"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:28"}
+{"level":"info","message":"Processing image: 561841924169007791, isImageGroup: yes, index: 1, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:28"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:29"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:30"}
+{"level":"info","message":"Processing image: 561841925091754176, isImageGroup: yes, index: 2, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:30"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, 2, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:30"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:31"}
+{"level":"info","message":"Processing image: 561841925930614787, isImageGroup: yes, index: 4, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:31"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, 2, 4, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:31"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"Processing image: 561841925410783320, isImageGroup: yes, index: 3, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"Processing image: 561841927357202639, isImageGroup: yes, index: 6, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, 2, 4, 3, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"Processing image: 561841926299976009, isImageGroup: yes, index: 5, total: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:32"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, 2, 4, 3, 6, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:33"}
+{"level":"info","message":"Updated image set 218FDDB3E2B87500CE4036875D27C8401930796B31248A7AC5838B8BF6AC7183, indices received: 1, 2, 4, 3, 6, 5, total needed: 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:33"}
+{"level":"warn","message":"Missing image at index 0 for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:26:33"}
+{"level":"info","message":"Some indices are missing, waiting a bit more for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:26:33"}
+{"level":"info","message":"Processing 6 images after timeout for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"level":"info","message":"Processing 6 images for Lot 112233","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"level":"info","message":"Processing images with indices: 1, 2, 3, 4, 5, 6","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"level":"info","message":"Processing file 1/6: image_1747715198877_1.jpg, size: 952834 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"compressedSize":606046,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747715198877_1.jpg -> 1747715198888-19acff40.jpg","originalSize":952834,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"level":"info","message":"Successfully processed file 1/6: 1747715198888-19acff40.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"level":"info","message":"Processing file 2/6: image_1747715198877_2.jpg, size: 645512 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:38"}
+{"compressedSize":401517,"compressionRatio":"1.61","level":"info","message":"Image compressed: image_1747715198877_2.jpg -> 1747715198965-7cd3fdef.jpg","originalSize":645512,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Successfully processed file 2/6: 1747715198965-7cd3fdef.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Processing file 3/6: image_1747715198877_3.jpg, size: 143150 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"compressedSize":89279,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747715198877_3.jpg -> 1747715199028-8622fc08.jpg","originalSize":143150,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Successfully processed file 3/6: 1747715199028-8622fc08.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Processing file 4/6: image_1747715198877_4.jpg, size: 829829 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"compressedSize":505110,"compressionRatio":"1.64","level":"info","message":"Image compressed: image_1747715198877_4.jpg -> 1747715199050-72fee513.jpg","originalSize":829829,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Successfully processed file 4/6: 1747715199050-72fee513.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Processing file 5/6: image_1747715198877_5.jpg, size: 1093311 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"compressedSize":698140,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747715198877_5.jpg -> 1747715199121-472594dc.jpg","originalSize":1093311,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Successfully processed file 5/6: 1747715199121-472594dc.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Processing file 6/6: image_1747715198877_6.jpg, size: 823599 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"compressedSize":515217,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747715198877_6.jpg -> 1747715199202-2e297d9d.jpg","originalSize":823599,"service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Successfully processed file 6/6: 1747715199202-2e297d9d.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"Processed 6 of 6 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 11:26:39"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:01"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:09"}
+{"level":"info","message":"Processing image: 561841993341468742, isImageGroup: yes, index: 1, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:09"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:10"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:11"}
+{"level":"info","message":"Processing image: 561841994448765184, isImageGroup: yes, index: 2, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:11"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:11"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:11"}
+{"level":"info","message":"Processing image: 561841995270849075, isImageGroup: yes, index: 3, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:11"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:12"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:12"}
+{"level":"info","message":"Processing image: 561841995405066383, isImageGroup: yes, index: 4, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:12"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:13"}
+{"level":"info","message":"Processing image: 561841996512625373, isImageGroup: yes, index: 5, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:13"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:13"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:13"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:14"}
+{"level":"info","message":"Processing image: 561841997720322083, isImageGroup: yes, index: 6, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:14"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, 6, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:14"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"Processing image: 561841999951954228, isImageGroup: yes, index: 9, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"Processing image: 561841998089683014, isImageGroup: yes, index: 7, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, 6, 9, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"Received last image (index 9) but only have 7/10 images for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:15"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, 6, 9, 7, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"Processing image: 561842001126096933, isImageGroup: yes, index: 10, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"Processing image: 561841998978351242, isImageGroup: yes, index: 8, total: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, 6, 9, 7, 10, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:16"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"info","message":"Processing image: 561842001864556736, isImageGroup: yes, index: 1, total: 2","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"info","message":"Updated image set 1FA1CBDB440836EF56F0EF421F4DE7CD578BBA7E9930113C5C07EE272AC2BAC2, indices received: 1, 2, 3, 4, 5, 6, 9, 7, 10, 8, total needed: 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"warn","message":"Missing image at index 0 for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"info","message":"Some indices are missing, waiting a bit more for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"info","message":"Updated image set E33E3F97621637DC42CA124AAA8577798AB4A424B04FECAAB86C5136FFEF0F72, indices received: 1, total needed: 2","service":"rc-qc-line","timestamp":"2025-05-20 11:27:17"}
+{"level":"warn","message":"Missing image at index 0 for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:18"}
+{"level":"info","message":"Some indices are missing, waiting a bit more for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:18"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-05-20 11:27:18"}
+{"level":"info","message":"Processing image: 561842002871189829, isImageGroup: yes, index: 2, total: 2","service":"rc-qc-line","timestamp":"2025-05-20 11:27:18"}
+{"level":"info","message":"Updated image set E33E3F97621637DC42CA124AAA8577798AB4A424B04FECAAB86C5136FFEF0F72, indices received: 1, 2, total needed: 2","service":"rc-qc-line","timestamp":"2025-05-20 11:27:19"}
+{"level":"warn","message":"Missing image at index 0 for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:19"}
+{"level":"info","message":"Some indices are missing, waiting a bit more for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:19"}
+{"level":"info","message":"Processing 12 images after receiving last index for user U944dd605dd72df5a658e775bc0eaef6e","service":"rc-qc-line","timestamp":"2025-05-20 11:27:20"}
+{"level":"info","message":"Processing 12 images for Lot 11223344","service":"rc-qc-line","timestamp":"2025-05-20 11:27:20"}
+{"level":"info","message":"Processing images with indices: 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10","service":"rc-qc-line","timestamp":"2025-05-20 11:27:20"}
+{"level":"info","message":"Processing file 1/12: image_1747715240925_1.jpg, size: 952834 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:20"}
+{"compressedSize":606046,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747715240925_1.jpg -> 1747715240934-9af452b1.jpg","originalSize":952834,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 1/12: 1747715240934-9af452b1.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 2/12: image_1747715240925_1.jpg, size: 946690 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":532412,"compressionRatio":"1.78","level":"info","message":"Image compressed: image_1747715240925_1.jpg -> 1747715241011-754d4927.jpg","originalSize":946690,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 2/12: 1747715241011-754d4927.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 3/12: image_1747715240925_2.jpg, size: 645512 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":401517,"compressionRatio":"1.61","level":"info","message":"Image compressed: image_1747715240925_2.jpg -> 1747715241086-7990f66f.jpg","originalSize":645512,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 3/12: 1747715241086-7990f66f.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 4/12: image_1747715240925_2.jpg, size: 735493 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":450000,"compressionRatio":"1.63","level":"info","message":"Image compressed: image_1747715240925_2.jpg -> 1747715241156-c325844a.jpg","originalSize":735493,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 4/12: 1747715241156-c325844a.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 5/12: image_1747715240925_3.jpg, size: 143150 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":89279,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747715240925_3.jpg -> 1747715241231-e5a8a226.jpg","originalSize":143150,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 5/12: 1747715241231-e5a8a226.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 6/12: image_1747715240925_4.jpg, size: 829829 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":505110,"compressionRatio":"1.64","level":"info","message":"Image compressed: image_1747715240925_4.jpg -> 1747715241255-5d9989bb.jpg","originalSize":829829,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 6/12: 1747715241255-5d9989bb.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 7/12: image_1747715240925_5.jpg, size: 1093311 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":698140,"compressionRatio":"1.57","level":"info","message":"Image compressed: image_1747715240925_5.jpg -> 1747715241327-bec39443.jpg","originalSize":1093311,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 7/12: 1747715241327-bec39443.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 8/12: image_1747715240925_6.jpg, size: 823599 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":515217,"compressionRatio":"1.60","level":"info","message":"Image compressed: image_1747715240925_6.jpg -> 1747715241400-fe204402.jpg","originalSize":823599,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 8/12: 1747715241400-fe204402.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 9/12: image_1747715240925_7.jpg, size: 905350 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":572090,"compressionRatio":"1.58","level":"info","message":"Image compressed: image_1747715240925_7.jpg -> 1747715241466-65ac3eb8.jpg","originalSize":905350,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 9/12: 1747715241466-65ac3eb8.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 10/12: image_1747715240925_8.jpg, size: 1118299 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":635217,"compressionRatio":"1.76","level":"info","message":"Image compressed: image_1747715240925_8.jpg -> 1747715241539-9bafcd77.jpg","originalSize":1118299,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 10/12: 1747715241539-9bafcd77.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 11/12: image_1747715240925_9.jpg, size: 785442 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":509777,"compressionRatio":"1.54","level":"info","message":"Image compressed: image_1747715240925_9.jpg -> 1747715241613-93e85a34.jpg","originalSize":785442,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 11/12: 1747715241613-93e85a34.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processing file 12/12: image_1747715240925_10.jpg, size: 907581 bytes","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"compressedSize":507017,"compressionRatio":"1.79","level":"info","message":"Image compressed: image_1747715240925_10.jpg -> 1747715241686-bde6f132.jpg","originalSize":907581,"service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Successfully processed file 12/12: 1747715241686-bde6f132.jpg","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}
+{"level":"info","message":"Processed 12 of 12 images successfully","service":"rc-qc-line","timestamp":"2025-05-20 11:27:21"}

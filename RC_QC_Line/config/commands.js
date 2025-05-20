@@ -1,4 +1,4 @@
-// Command prefixes configuration with added "done" command
+// Command prefixes configuration
 module.exports = {
   // Command prefixes (can be easily changed)
   prefixes: {
@@ -13,8 +13,7 @@ module.exports = {
     delete: '#del',       // ลบรูปภาพ
     deleteShort: '#d',    // ลบรูปภาพ (แบบสั้น)
     correct: '#correct',  // แก้ไขเลข Lot ที่ผิด
-    correctShort: '#cor', // แก้ไขเลข Lot ที่ผิด (แบบสั้น)
-    done: '#done'         // เสร็จสิ้นการอัปโหลด
+    correctShort: '#cor'  // แก้ไขเลข Lot ที่ผิด (แบบสั้น)
   },
   
   // English command aliases
@@ -24,8 +23,7 @@ module.exports = {
     '#help': ['#h', '#?'],
     '#cancel': ['#c', '#quit', '#exit'],
     '#del': ['#delete', '#d', '#remove'],
-    '#correct': ['#cor', '#fix', '#edit'],
-    '#done': ['#finish', '#complete', '#end']
+    '#correct': ['#cor', '#fix', '#edit']
   },
   
   // Thai command aliases
@@ -35,8 +33,7 @@ module.exports = {
     '#help': ['#ช่วย', '#วิธีใช้', '#คำสั่ง'],
     '#cancel': ['#ยกเลิก', '#เลิก', '#ออก'],
     '#del': ['#ลบ', '#ลบรูป', '#ลบรูปภาพ'],
-    '#correct': ['#แก้ไข', '#แก้', '#ปรับปรุง'],
-    '#done': ['#เสร็จ', '#เสร็จสิ้น', '#จบ']
+    '#correct': ['#แก้ไข', '#แก้', '#ปรับปรุง']
   },
   
   // Whether to require prefixes for actions
@@ -52,22 +49,17 @@ module.exports = {
              '#view [LOT] - ดูรูปภาพตาม Lot\n' +
              '#del [LOT] - ลบรูปภาพ\n' +
              '#correct [OLD_LOT] [NEW_LOT] - แก้ไขเลข Lot ที่ผิด\n' +
-             '#done - เสร็จสิ้นการอัปโหลดรูปภาพ\n' +
              '#cancel - ยกเลิกการทำงานปัจจุบัน\n' +
              '#help - แสดงวิธีใช้งาน\n\n' +
              'หมายเหตุ: สามารถใช้คำสั่งแบบสั้น (#u, #v, #d, #cor, #c, #h) หรือภาษาไทยได้',
     
     upload: 'วิธีอัปโหลดรูปภาพ:\n' +
             '1. พิมพ์ #up [LOT] เช่น #up ABC123\n' +
-            '2. ส่งรูปภาพที่ต้องการอัปโหลด\n' +
-            '3. ส่งรูปเพิ่มได้หลายรูป\n' +
-            '4. พิมพ์ #done เมื่อส่งรูปเสร็จแล้ว\n\n' +
+            '2. ส่งรูปภาพที่ต้องการอัปโหลด\n\n' +
             'หรือ\n' +
             '1. พิมพ์ #up\n' +
             '2. ส่งรูปภาพ\n' +
-            '3. ระบุเลข Lot\n' +
-            '4. ส่งรูปเพิ่มได้หลายรูป\n' +
-            '5. พิมพ์ #done เมื่อส่งรูปเสร็จแล้ว',
+            '3. ระบุเลข Lot',
     
     view: 'วิธีดูรูปภาพ:\n' +
           '1. พิมพ์ #view [LOT] เช่น #view ABC123\n\n' +

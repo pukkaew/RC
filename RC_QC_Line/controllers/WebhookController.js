@@ -149,7 +149,7 @@ class WebhookController {
       // Handle different event types
       switch (type) {
         case 'message':
-          await this.handleMessageEvent(userId, message, replyToken, source);
+          await this.handleMessageEvent(userId, message, replyToken);
           break;
           
         case 'postback':
@@ -175,7 +175,7 @@ class WebhookController {
   }
 
   // Handle message events
-  async handleMessageEvent(userId, message, replyToken, source) {
+  async handleMessageEvent(userId, message, replyToken) {
     try {
       const { type, id } = message;
       
@@ -185,7 +185,7 @@ class WebhookController {
       // Handle message based on type
       switch (type) {
         case 'text':
-          await this.handleTextMessage(userId, message, replyToken, userState, source);
+          await this.handleTextMessage(userId, message, replyToken, userState);
           break;
           
         case 'image':
@@ -193,21 +193,13 @@ class WebhookController {
           const userUploadInfo = lineService.getUploadInfo(userId);
           if (userUploadInfo && userUploadInfo.isActive) {
             await this.handleImageMessage(userId, message, replyToken, userState, userUploadInfo);
-          } else {
-            // If in a private chat, inform user about upload mode
-            if (source.type === 'user') {
-              await lineService.replyMessage(
-                replyToken,
-                lineService.createTextMessage(`ต้องพิมพ์ #up [Lot] ก่อนส่งรูปภาพ\nตัวอย่าง: #up ABC123`)
-              );
-            }
           }
           break;
           
         default:
           // Don't reply with unsupported message type to avoid spam
           // Only reply if it's a direct message to the bot
-          if (source.type === 'user') {
+          if (message.source && message.source.type === 'user') {
             const unsupportedMessage = `ขออภัย ไม่รองรับข้อความประเภท "${type}"`;
             await lineService.replyMessage(replyToken, lineService.createTextMessage(unsupportedMessage));
           }
@@ -220,23 +212,13 @@ class WebhookController {
   }
 
   // Handle text messages
-  async handleTextMessage(userId, message, replyToken, userState, source) {
+  async handleTextMessage(userId, message, replyToken, userState) {
     try {
       const { text } = message;
       const { state, data } = userState;
       
       // ตรวจสอบว่าเป็นคำสั่งหรือไม่
       const commandInfo = this.identifyCommand(text);
-      
-      // Special command: #done to finalize upload
-      if (commandInfo.isCommand && 
-          (commandInfo.commandKey === 'done' || 
-           commandInfo.commandPrefix.toLowerCase() === '#done' ||
-           commandInfo.commandPrefix.toLowerCase() === '#เสร็จ')) {
-        // Finalize upload
-        await uploadController.finalizeUpload(userId, replyToken);
-        return;
-      }
       
       // ถ้าอยู่ในสถานะรอข้อมูล (ไม่ใช่ idle) และไม่ใช่คำสั่ง #cancel
       if (state !== lineConfig.userStates.idle && 
@@ -399,24 +381,7 @@ class WebhookController {
             
           default:
             logger.warn(`Unknown command: ${commandInfo.commandPrefix}`);
-            // Only reply in private chat
-            if (source && source.type === 'user') {
-              await lineService.replyMessage(
-                replyToken,
-                lineService.createTextMessage(`คำสั่งไม่ถูกต้อง พิมพ์ #help เพื่อดูคำสั่งที่ใช้ได้`)
-              );
-            }
             break;
-        }
-      }
-      // If not a command, don't respond in groups to avoid spamming
-      else if (source && source.type === 'user') {
-        // In private chat, respond to non-command text if they seem to be trying to use commands
-        if (text.startsWith('#') || text.includes('lot') || text.includes('Lot')) {
-          await lineService.replyMessage(
-            replyToken,
-            lineService.createTextMessage(`คำสั่งไม่ถูกต้อง พิมพ์ #help เพื่อดูคำสั่งที่ใช้ได้`)
-          );
         }
       }
     } catch (error) {

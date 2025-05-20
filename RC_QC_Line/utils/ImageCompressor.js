@@ -1,4 +1,4 @@
-// Utils for image compression
+// Image compression utility using Sharp
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
@@ -10,10 +10,6 @@ class ImageCompressor {
   constructor() {
     this.uploadPath = appConfig.upload.path;
     this.ensureUploadDirectory();
-    
-    // Configure Sharp for better performance
-    sharp.cache(false);
-    sharp.concurrency(1);
   }
 
   // Ensure the upload directory exists
@@ -26,7 +22,7 @@ class ImageCompressor {
 
   // Generate a unique filename
   generateFilename(originalFilename) {
-    const extension = path.extname(originalFilename) || '.jpg'; // Default to .jpg if no extension
+    const extension = path.extname(originalFilename);
     const timestamp = Date.now();
     const uuid = uuidv4().slice(0, 8);
     return `${timestamp}-${uuid}${extension}`;
@@ -35,23 +31,11 @@ class ImageCompressor {
   // Compress an image and save it to disk
   async compressImage(imageBuffer, originalFilename, options = {}) {
     try {
-      // Check if buffer is valid
-      if (!imageBuffer || imageBuffer.length === 0) {
-        throw new Error('Invalid or empty image buffer');
-      }
-      
       const filename = this.generateFilename(originalFilename);
       const outputPath = path.join(this.uploadPath, filename);
       
       // Get original image info
-      let imageInfo;
-      try {
-        imageInfo = await sharp(imageBuffer).metadata();
-      } catch (metadataError) {
-        logger.error('Error getting image metadata:', metadataError);
-        throw new Error(`Invalid image format: ${metadataError.message}`);
-      }
-      
+      const imageInfo = await sharp(imageBuffer).metadata();
       const originalSize = imageBuffer.length;
       
       // Determine compression options
@@ -59,45 +43,17 @@ class ImageCompressor {
         quality: options.quality || 80,
         width: options.width || null,
         height: options.height || null,
-        fit: options.fit || 'inside',
-        // Add a maximum dimension to prevent extremely large images
-        maxDimension: 2048
+        fit: options.fit || 'inside'
       };
       
-      // Create sharp instance with better error handling
-      let sharpInstance = sharp(imageBuffer, {
-        failOnError: false,
-        limitInputPixels: 50000000 // Increase pixel limit for larger images
-      });
+      // Create sharp instance
+      let sharpInstance = sharp(imageBuffer);
       
-      // Add image rotation based on EXIF data
-      sharpInstance = sharpInstance.rotate();
-      
-      // Resize if width or height is provided or if image is too large
-      const needsResize = compressionOptions.width || 
-                          compressionOptions.height || 
-                          (imageInfo.width > compressionOptions.maxDimension) ||
-                          (imageInfo.height > compressionOptions.maxDimension);
-      
-      if (needsResize) {
-        let resizeWidth = compressionOptions.width;
-        let resizeHeight = compressionOptions.height;
-        
-        // If image is too large, resize it proportionally
-        if ((imageInfo.width > compressionOptions.maxDimension) ||
-            (imageInfo.height > compressionOptions.maxDimension)) {
-          if (imageInfo.width > imageInfo.height) {
-            resizeWidth = Math.min(compressionOptions.maxDimension, imageInfo.width);
-            resizeHeight = Math.round((resizeWidth / imageInfo.width) * imageInfo.height);
-          } else {
-            resizeHeight = Math.min(compressionOptions.maxDimension, imageInfo.height);
-            resizeWidth = Math.round((resizeHeight / imageInfo.height) * imageInfo.width);
-          }
-        }
-        
+      // Resize if width or height is provided
+      if (compressionOptions.width || compressionOptions.height) {
         sharpInstance = sharpInstance.resize(
-          resizeWidth,
-          resizeHeight,
+          compressionOptions.width,
+          compressionOptions.height,
           { fit: compressionOptions.fit }
         );
       }
@@ -106,35 +62,22 @@ class ImageCompressor {
       let outputBuffer;
       const format = path.extname(originalFilename).toLowerCase();
       
-      try {
-        if (format === '.png') {
-          outputBuffer = await sharpInstance
-            .png({ quality: compressionOptions.quality })
-            .toBuffer();
-        } else {
-          // Default to JPEG for other formats (better compression)
-          outputBuffer = await sharpInstance
-            .jpeg({ quality: compressionOptions.quality, mozjpeg: true })
-            .toBuffer();
-        }
-      } catch (compressionError) {
-        logger.error('Error during image compression:', compressionError);
-        throw new Error(`Failed to compress image: ${compressionError.message}`);
+      if (format === '.png') {
+        outputBuffer = await sharpInstance
+          .png({ quality: compressionOptions.quality })
+          .toBuffer();
+      } else {
+        // Default to JPEG for other formats
+        outputBuffer = await sharpInstance
+          .jpeg({ quality: compressionOptions.quality })
+          .toBuffer();
       }
       
       // Save the compressed image
-      try {
-        await fs.promises.writeFile(outputPath, outputBuffer);
-      } catch (writeError) {
-        logger.error('Error writing image to disk:', writeError);
-        throw new Error(`Failed to save image: ${writeError.message}`);
-      }
+      await fs.promises.writeFile(outputPath, outputBuffer);
       
       // Get compressed size
       const compressedSize = outputBuffer.length;
-      
-      // Get final image info
-      const finalImageInfo = await sharp(outputBuffer).metadata();
       
       // Prepare result
       const result = {
@@ -144,9 +87,9 @@ class ImageCompressor {
         originalSize: originalSize,
         compressedSize: compressedSize,
         compressionRatio: (originalSize / compressedSize).toFixed(2),
-        width: finalImageInfo.width,
-        height: finalImageInfo.height,
-        format: finalImageInfo.format,
+        width: imageInfo.width,
+        height: imageInfo.height,
+        format: imageInfo.format,
         url: `/uploads/${filename}`
       };
       
