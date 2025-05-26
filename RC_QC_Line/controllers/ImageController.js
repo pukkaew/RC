@@ -56,7 +56,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show images as Album
+  // Process date selection and show images as Native Batches (Optimized)
   async processDateSelection(userId, lotNumber, date, replyToken) {
     try {
       // Get images for the specified lot and date
@@ -74,10 +74,10 @@ class ImageController {
         return;
       }
       
-      // Build Album Style messages (Header + All Native Images + Footer)
+      // Build Native Image Batch messages (Header + All Native Images)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages with album-optimized spacing
+      // Send messages with optimized batch delivery
       if (messages.length === 0) {
         // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
@@ -88,32 +88,11 @@ class ImageController {
         // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-        // Send album header first
+        // Send header first
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Send images with optimized spacing for album viewing
-        for (let i = 1; i < messages.length; i++) {
-          let delay = 250; // Fast delivery for album experience
-          
-          // Check message type for appropriate delay
-          const message = messages[i];
-          
-          if (message.type === 'image') {
-            // Native images - fast delivery for album experience
-            delay = 250;
-          } else if (message.type === 'text') {
-            // Text messages (footer) - slightly longer delay
-            delay = 500;
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          await lineService.pushMessage(userId, messages[i]);
-          
-          // Add brief pause every 8 images to prevent overwhelming
-          if (message.type === 'image' && i % 8 === 0 && i < messages.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-          }
-        }
+        // Send native images with optimized batching
+        await this.sendNativeImageBatches(userId, messages.slice(1), result.images.length);
       }
       
     } catch (error) {
@@ -123,6 +102,58 @@ class ImageController {
       const errorMessage = 'เกิดข้อผิดพลาดในการดึงรูปภาพ โปรดลองใหม่อีกครั้ง';
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
       
+      throw error;
+    }
+  }
+
+  // Send Native Images in Optimized Batches (เลือกหลายรูปแชร์พร้อมกันได้)
+  async sendNativeImageBatches(userId, imageMessages, totalImages) {
+    try {
+      const batchSize = 5; // LINE API limit per message batch
+      const maxBatches = Math.ceil(Math.min(imageMessages.length, 100) / batchSize); // Limit to 100 images max
+      
+      logger.info(`Sending ${imageMessages.length} images in ${maxBatches} batches for user ${userId}`);
+      
+      // Send images in batches of 5 (LINE API recommendation)
+      for (let batchIndex = 0; batchIndex < maxBatches; batchIndex++) {
+        const startIndex = batchIndex * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, imageMessages.length);
+        const batch = imageMessages.slice(startIndex, endIndex);
+        
+        // Send batch with minimal delay between images
+        for (let i = 0; i < batch.length; i++) {
+          const message = batch[i];
+          
+          // Very fast delivery for smooth experience
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 150)); // 150ms between images
+          }
+          
+          await lineService.pushMessage(userId, message);
+        }
+        
+        // Slightly longer pause between batches to prevent overwhelming
+        if (batchIndex < maxBatches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 800)); // 800ms between batches
+          
+          // Progress indicator for large sets
+          if (totalImages > 20 && batchIndex % 3 === 2) {
+            const sentCount = (batchIndex + 1) * batchSize;
+            const progressText = `📤 ส่งแล้ว ${Math.min(sentCount, totalImages)}/${totalImages} รูป...`;
+            await lineService.pushMessage(userId, lineMessageBuilder.buildTextMessage(progressText));
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+      }
+      
+      // Send completion message for large sets
+      if (totalImages > 10) {
+        const completionText = `✅ ส่งครบทั้งหมด ${totalImages} รูปแล้ว\n📱 เลือกหลายรูปแชร์พร้อมกันได้`;
+        await lineService.pushMessage(userId, lineMessageBuilder.buildTextMessage(completionText));
+      }
+      
+    } catch (error) {
+      logger.error('Error sending native image batches:', error);
       throw error;
     }
   }
