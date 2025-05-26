@@ -269,7 +269,7 @@ class LineMessageBuilder {
     }
   }
 
-  // Build messages for showing images (Flex Message + Native Images)
+  // Build messages for showing images (LINE native images with grouping)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -281,160 +281,23 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // 1. First send a summary Flex Message (preview only, no clickable images)
-    const summaryMessage = this.buildImageSummaryFlexMessage(lotNumber, imageDate, images);
-    messages.push(summaryMessage);
+    // Add info message first
+    let infoText = `📸 Lot: ${lotNumber}\n`;
+    infoText += `📅 วันที่: ${formattedDate}\n`;
+    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป`;
     
-    // 2. Then send native LINE image messages that can be viewed properly
-    const maxImagesPerGroup = 5;
+    messages.push(this.buildTextMessage(infoText));
     
-    for (let i = 0; i < images.length; i += maxImagesPerGroup) {
-      const imageGroup = images.slice(i, i + maxImagesPerGroup);
+    // Send all images as native LINE image messages (can be clicked and viewed)
+    images.forEach((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
       
-      // Add group header for large sets
-      if (images.length > 10) {
-        const groupStart = i + 1;
-        const groupEnd = Math.min(i + maxImagesPerGroup, images.length);
-        messages.push(this.buildTextMessage(`📷 รูปที่ ${groupStart}-${groupEnd}:`));
-      }
-      
-      // Add native image messages for this group
-      const groupMessages = imageGroup.map(image => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return this.buildImageMessage(imageUrl);
-      });
-      
-      messages.push(...groupMessages);
-    }
+      messages.push(this.buildImageMessage(imageUrl));
+    });
     
     return messages;
-  }
-
-  // Build summary Flex Message (for overview, not clickable)
-  buildImageSummaryFlexMessage(lotNumber, imageDate, images) {
-    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    // Create thumbnail grid (show first 12 images as preview)
-    const previewImages = images.slice(0, 12);
-    const imageContents = [];
-    
-    // Create rows of images (3 images per row for better thumbnail view)
-    for (let j = 0; j < previewImages.length; j += 3) {
-      const rowImages = previewImages.slice(j, j + 3);
-      
-      const imageRow = {
-        type: "box",
-        layout: "horizontal",
-        contents: rowImages.map((image, index) => {
-          const imageUrl = image.url.startsWith('http') 
-            ? image.url 
-            : `${baseUrl}${image.url}`;
-          
-          const imageNumber = j + index + 1;
-          
-          return {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "image",
-                url: imageUrl,
-                aspectRatio: "1:1",
-                aspectMode: "cover",
-                size: "full"
-              },
-              {
-                type: "text",
-                text: `${imageNumber}`,
-                size: "xxs",
-                align: "center",
-                margin: "xs",
-                color: "#999999"
-              }
-            ],
-            flex: 1,
-            margin: index > 0 ? "xs" : "none"
-          };
-        }),
-        margin: j > 0 ? "sm" : "none"
-      };
-      
-      // Fill empty slots if needed
-      while (rowImages.length < 3) {
-        imageRow.contents.push({
-          type: "spacer",
-          size: "full"
-        });
-      }
-      
-      imageContents.push(imageRow);
-    }
-    
-    // Add "more images" indicator if there are more than 12
-    if (images.length > 12) {
-      imageContents.push({
-        type: "text",
-        text: `... และอีก ${images.length - 12} รูป`,
-        size: "xs",
-        align: "center",
-        margin: "md",
-        color: "#666666"
-      });
-    }
-    
-    return {
-      type: "flex",
-      altText: `📸 Lot: ${lotNumber} (${images.length} รูป)`,
-      contents: {
-        type: "bubble",
-        size: "mega",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `📸 Lot: ${lotNumber}`,
-              weight: "bold",
-              size: "lg",
-              color: "#1DB446"
-            },
-            {
-              type: "text",
-              text: `📅 วันที่: ${formattedDate}`,
-              size: "md",
-              color: "#333333",
-              margin: "xs"
-            },
-            {
-              type: "text",
-              text: `📊 จำนวน: ${images.length} รูป`,
-              size: "sm",
-              color: "#666666",
-              margin: "xs"
-            },
-            {
-              type: "text",
-              text: "👆 ตัวอย่างรูปภาพ (รูปจริงด้านล่าง)",
-              size: "xs",
-              color: "#999999",
-              margin: "sm"
-            }
-          ],
-          paddingBottom: "sm"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: imageContents,
-          spacing: "sm"
-        }
-      }
-    };
   }
 
   // Build a message for no images found

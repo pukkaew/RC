@@ -74,10 +74,10 @@ class ImageController {
         return;
       }
       
-      // Build Image Carousel messages (swipeable like LINE gallery)
+      // Build LINE native image messages (clickable and viewable)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages
+      // Send messages with appropriate spacing
       if (messages.length === 0) {
         await lineService.replyMessage(
           replyToken,
@@ -86,12 +86,20 @@ class ImageController {
       } else if (messages.length === 1) {
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-        // Send info message first, then carousel
+        // Send info message first
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Small delay before sending carousel
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await lineService.pushMessage(userId, messages[1]);
+        // Send remaining images with appropriate delays to prevent flood
+        for (let i = 1; i < messages.length; i++) {
+          // Delay between images (600ms to prevent LINE flood protection)
+          await new Promise(resolve => setTimeout(resolve, 600));
+          await lineService.pushMessage(userId, messages[i]);
+          
+          // Add a longer pause every 10 images for better user experience
+          if (i % 10 === 0 && i < messages.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
       }
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
