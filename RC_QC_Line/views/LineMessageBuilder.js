@@ -91,7 +91,7 @@ class LineMessageBuilder {
     return this.buildTextMessage(text);
   }
 
-  // Build messages for showing images (Album Style)
+  // Build messages for showing images (Album Style - All Native Images)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -102,115 +102,42 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Add info message first
-    let infoText = `📸 อัลบัม Lot: ${lotNumber}\n`;
-    infoText += `📅 วันที่: ${formattedDate}\n`;
-    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
-    infoText += `👆 เลื่อนซ้าย-ขวาดูรูป | คลิกเพื่อดูขนาดใหญ่ | แชร์อัลบัมได้`;
+    // Add album header with info
+    let headerText = `📸 อัลบัม Lot: ${lotNumber}\n`;
+    headerText += `📅 วันที่: ${formattedDate}\n`;
+    headerText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
+    headerText += `📱 แชร์เป็นอัลบัมได้เลย`;
     
-    messages.push(this.buildTextMessage(infoText));
+    messages.push(this.buildTextMessage(headerText));
     
-    // Build Image Carousel (Album Style)
-    const albumMessages = this.buildImageAlbumCarousels(images, lotNumber, formattedDate);
-    messages.push(...albumMessages);
+    // Build all native images (Album style)
+    const albumImages = this.buildAlbumStyleImages(images, lotNumber);
+    messages.push(...albumImages);
+    
+    // Add album footer
+    const footerText = `✅ อัลบัม Lot: ${lotNumber} ครบ ${images.length} รูป\n📤 แชร์ได้เลย | 💾 บันทึกได้ทั้งชุด`;
+    messages.push(this.buildTextMessage(footerText));
     
     return messages;
   }
 
-  // Build Image Album Carousels (เหมือนอัลบัมรูป)
-  buildImageAlbumCarousels(images, lotNumber, formattedDate) {
+  // Build Album Style Images (ส่งรูปทั้งหมดเป็น Native Images - แชร์เป็นอัลบัมได้)
+  buildAlbumStyleImages(images, lotNumber) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const messages = [];
-    const maxCarouselItems = 10; // LINE limit per Image Carousel
-    const maxCarousels = 5; // Maximum number of carousels
     
-    // Calculate how many carousels we need
-    const totalCarousels = Math.min(
-      Math.ceil(images.length / maxCarouselItems),
-      maxCarousels
-    );
-    
-    // Build Image Carousel messages
-    for (let carouselIndex = 0; carouselIndex < totalCarousels; carouselIndex++) {
-      const startIndex = carouselIndex * maxCarouselItems;
-      const endIndex = Math.min(startIndex + maxCarouselItems, images.length);
-      const carouselImages = images.slice(startIndex, endIndex);
-      
-      // Create Image Carousel Template
-      const imageCarousel = this.buildImageCarouselTemplate(
-        carouselImages, 
-        lotNumber, 
-        formattedDate, 
-        carouselIndex + 1, 
-        totalCarousels,
-        startIndex
-      );
-      
-      messages.push(imageCarousel);
-      
-      // Add separator for multiple carousels (except last one)
-      if (carouselIndex < totalCarousels - 1) {
-        const nextBatchStart = endIndex + 1;
-        const nextBatchEnd = Math.min(endIndex + maxCarouselItems, images.length);
-        messages.push(this.buildTextMessage(`📸 อัลบัมชุดที่ ${carouselIndex + 2} (รูปที่ ${nextBatchStart}-${nextBatchEnd}) 👇`));
-      }
-    }
-    
-    // Add summary if there are remaining images
-    const displayedImages = Math.min(images.length, maxCarousels * maxCarouselItems);
-    if (images.length > displayedImages) {
-      const remainingCount = images.length - displayedImages;
-      messages.push(this.buildTextMessage(
-        `📊 แสดงแล้ว ${displayedImages}/${images.length} รูป\n` +
-        `⚠️ เหลืออีก ${remainingCount} รูป\n` +
-        `💡 ใช้คำสั่ง #view ${lotNumber} อีกครั้งเพื่อดูรูปเพิ่มเติม`
-      ));
-    } else if (totalCarousels > 1) {
-      messages.push(this.buildTextMessage(`✅ แสดงอัลบัมครบทั้งหมด ${images.length} รูปแล้ว`));
-    }
-    
-    return messages;
-  }
-
-  // Build single Image Carousel Template (LINE Template Message)
-  buildImageCarouselTemplate(images, lotNumber, formattedDate, carouselNumber = 1, totalCarousels = 1, startIndex = 0) {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    // Create image columns for the carousel
-    const imageColumns = images.map((image, index) => {
+    // Send all images as native messages (Album style)
+    images.forEach((image, index) => {
       const imageUrl = image.url.startsWith('http') 
         ? image.url 
         : `${baseUrl}${image.url}`;
       
-      const globalImageNumber = startIndex + index + 1;
-      const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      return {
-        imageUrl: imageUrl,
-        action: {
-          type: "uri",
-          uri: imageUrl  // คลิกเพื่อดูรูปขนาดใหญ่
-        }
-      };
+      // Create native LINE image message (สามารถแชร์เป็นอัลบัมได้)
+      const imageMessage = this.buildImageMessage(imageUrl);
+      messages.push(imageMessage);
     });
     
-    // Create alt text with carousel info
-    const altText = totalCarousels > 1 
-      ? `อัลบัม Lot: ${lotNumber} (ชุด ${carouselNumber}/${totalCarousels}) - เลื่อนซ้ายขวาได้ | แชร์อัลบัมได้`
-      : `อัลบัม Lot: ${lotNumber} (${images.length} รูป) - เลื่อนซ้ายขวาได้ | แชร์อัลบัมได้`;
-    
-    // Return Image Carousel Template
-    return {
-      type: "template",
-      altText: altText,
-      template: {
-        type: "image_carousel",
-        columns: imageColumns
-      }
-    };
+    return messages;
   }
 
   // Build a message for no images found
@@ -232,130 +159,158 @@ class LineMessageBuilder {
     return this.buildTextMessage(`เกิดข้อผิดพลาด: ${message}`);
   }
 
-  // Build Flex Message for image deletion selection (using carousel for better UX)
+  // Build Flex Message for image deletion selection (using grid layout)
   buildImageDeleteFlexMessage(lotNumber, imageDate, images) {
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     
-    // Limit to prevent too many options (LINE carousel limit is 10)
-    const maxItems = Math.min(images.length, 10);
+    // จำกัดจำนวนรูปที่แสดง (เพื่อความสะดวกในการเลือก)
+    const maxItems = Math.min(images.length, 9); // 3x3 grid
     const displayImages = images.slice(0, maxItems);
     
-    // Create image items for deletion selection
-    const imageItems = displayImages.map((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      
-      return {
-        type: "bubble",
-        hero: {
-          type: "image",
-          url: imageUrl,
-          size: "full",
-          aspectRatio: "1:1",
-          aspectMode: "cover"
-        },
-        body: {
+    // จัดเรียงรูปเป็น grid 3x3 สำหรับการลบ
+    const imagesPerRow = 3;
+    const rows = [];
+    
+    for (let i = 0; i < displayImages.length; i += imagesPerRow) {
+      const rowImages = displayImages.slice(i, i + imagesPerRow);
+      const imageBoxes = rowImages.map((image, index) => {
+        const imageUrl = image.url.startsWith('http') 
+          ? image.url 
+          : `${baseUrl}${image.url}`;
+        
+        const globalImageNumber = i + index + 1;
+        const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        return {
           type: "box",
           layout: "vertical",
           contents: [
             {
-              type: "text",
-              text: `รูปที่ ${index + 1}`,
-              weight: "bold",
-              size: "md",
-              align: "center",
-              color: "#1DB446"
+              type: "image",
+              url: imageUrl,
+              aspectRatio: "1:1",
+              aspectMode: "cover",
+              size: "full"
             },
             {
-              type: "text",
-              text: `เวลา: ${uploadTime}`,
-              size: "sm",
-              margin: "sm",
-              color: "#666666",
-              align: "center"
-            }
-          ],
-          spacing: "sm",
-          paddingAll: "12px"
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: `${globalImageNumber}`,
+                  weight: "bold",
+                  size: "sm",
+                  align: "center",
+                  color: "#FFFFFF"
+                },
+                {
+                  type: "text",
+                  text: uploadTime,
+                  size: "xxs",
+                  align: "center",
+                  color: "#FFFFFF",
+                  margin: "xs"
+                }
+              ],
+              position: "absolute",
+              offsetTop: "0px",
+              offsetStart: "0px",
+              offsetEnd: "0px",
+              paddingAll: "8px",
+              backgroundColor: "#00000080"
+            },
             {
               type: "button",
               style: "primary",
               color: "#FF5551",
+              height: "sm",
               action: {
                 type: "postback",
-                label: "🗑️ ลบรูปนี้",
+                label: "🗑️ ลบ",
                 data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
-                displayText: `เลือกลบรูปภาพที่ ${index + 1}`
-              }
+                displayText: `เลือกลบรูปภาพที่ ${globalImageNumber}`
+              },
+              margin: "xs"
             }
           ],
-          paddingAll: "12px"
-        }
-      };
-    });
+          flex: 1,
+          spacing: "xs",
+          margin: "xs"
+        };
+      });
+      
+      // เติมช่องว่างหากแถวไม่ครบ 3 รูป
+      while (imageBoxes.length < imagesPerRow) {
+        imageBoxes.push({
+          type: "box",
+          layout: "vertical",
+          contents: [],
+          flex: 1
+        });
+      }
+      
+      // สร้างแถว
+      rows.push({
+        type: "box",
+        layout: "horizontal",
+        contents: imageBoxes,
+        spacing: "xs",
+        margin: "xs"
+      });
+    }
     
-    // If there are more images than we can show, add a note
-    if (images.length > maxItems) {
-      // Add a bubble with information about remaining images
-      imageItems.push({
+    // สร้าง Flex Message สำหรับการลบ
+    const flexMessage = {
+      type: "flex",
+      altText: `เลือกรูปที่ต้องการลบ - Lot: ${lotNumber} (${images.length} รูป)`,
+      contents: {
         type: "bubble",
-        body: {
+        size: "mega",
+        header: {
           type: "box",
           layout: "vertical",
           contents: [
             {
               type: "text",
-              text: "มีรูปเพิ่มเติม",
+              text: `🗑️ เลือกรูปที่ต้องการลบ`,
               weight: "bold",
               size: "lg",
-              align: "center",
-              color: "#FF6B35"
+              color: "#FF5551"
             },
             {
               type: "text",
-              text: `เหลืออีก ${images.length - maxItems} รูป`,
-              size: "md",
-              margin: "md",
-              color: "#666666",
-              align: "center"
-            },
-            {
-              type: "text",
-              text: "ใช้คำสั่ง #del อีกครั้ง\nเพื่อดูรูปเพิ่มเติม",
+              text: `Lot: ${lotNumber} | ${formattedDate}`,
               size: "sm",
-              margin: "md",
+              color: "#666666",
+              margin: "xs"
+            },
+            ...(images.length > maxItems ? [{
+              type: "text",
+              text: `แสดง ${maxItems}/${images.length} รูป`,
+              size: "xs",
               color: "#999999",
-              align: "center",
-              wrap: true
-            }
+              margin: "xs"
+            }] : [])
           ],
-          spacing: "sm",
-          paddingAll: "20px",
-          justifyContent: "center"
+          paddingAll: "15px",
+          backgroundColor: "#FFF5F5"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: rows,
+          paddingAll: "10px",
+          spacing: "xs"
         }
-      });
-    }
-    
-    return {
-      type: "flex",
-      altText: `เลือกรูปที่ต้องการลบ - Lot: ${lotNumber} (${images.length} รูป)`,
-      contents: {
-        type: "carousel",
-        contents: imageItems
       }
     };
+    
+    return flexMessage;
   }
 }
 

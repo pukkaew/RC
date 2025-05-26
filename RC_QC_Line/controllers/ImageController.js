@@ -56,7 +56,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show images (Grid + All Native Images)
+  // Process date selection and show images as Album
   async processDateSelection(userId, lotNumber, date, replyToken) {
     try {
       // Get images for the specified lot and date
@@ -74,10 +74,10 @@ class ImageController {
         return;
       }
       
-      // Build Grid Layout + All Native Images
+      // Build Album Style messages (Header + All Native Images + Footer)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages with appropriate spacing
+      // Send messages with album-optimized spacing
       if (messages.length === 0) {
         // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
@@ -88,33 +88,30 @@ class ImageController {
         // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-        // Send first message as reply
+        // Send album header first
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Send remaining messages with smart delays
+        // Send images with optimized spacing for album viewing
         for (let i = 1; i < messages.length; i++) {
-          let delay = 800; // Default delay
+          let delay = 250; // Fast delivery for album experience
           
-          // Determine message type and adjust delay
+          // Check message type for appropriate delay
           const message = messages[i];
           
-          if (message.type === 'flex') {
-            // Grid layout - slower delay
-            delay = 1200;
-          } else if (message.type === 'image') {
-            // Native image - faster delay
-            delay = 300;
+          if (message.type === 'image') {
+            // Native images - fast delivery for album experience
+            delay = 250;
           } else if (message.type === 'text') {
-            // Text message - medium delay
-            delay = 600;
+            // Text messages (footer) - slightly longer delay
+            delay = 500;
           }
           
           await new Promise(resolve => setTimeout(resolve, delay));
           await lineService.pushMessage(userId, messages[i]);
           
-          // Add longer pause every 10 images for better UX
-          if (message.type === 'image' && i % 10 === 0 && i < messages.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add brief pause every 8 images to prevent overwhelming
+          if (message.type === 'image' && i % 8 === 0 && i < messages.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
           }
         }
       }
