@@ -56,7 +56,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show images using new Flex Message format
+  // Process date selection and show images using Grid Layout
   async processDateSelection(userId, lotNumber, date, replyToken) {
     try {
       // Get images for the specified lot and date
@@ -74,17 +74,10 @@ class ImageController {
         return;
       }
       
-<<<<<<< HEAD
-      // Build LINE native image messages (clickable and viewable)
+      // Build Grid Layout Flex Messages (แสดงรูปเป็นตาราง เหมือนใน LINE)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages with appropriate spacing
-=======
-      // Build Flex Message grid layout (without web actions)
-      const messages = lineMessageBuilder.buildImageViewMessages(result);
-      
-      // Send messages
->>>>>>> parent of 8ae2429 (26052025_1800)
+      // Send messages with appropriate spacing for grid layout
       if (messages.length === 0) {
         // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
@@ -95,30 +88,19 @@ class ImageController {
         // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-<<<<<<< HEAD
         // Send info message first
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Send remaining images with appropriate delays to prevent flood
+        // Send remaining grid messages with appropriate delays
         for (let i = 1; i < messages.length; i++) {
-          // Delay between images (600ms to prevent LINE flood protection)
-          await new Promise(resolve => setTimeout(resolve, 600));
+          // Delay between grid messages (1 second for better UX with large grid layouts)
+          await new Promise(resolve => setTimeout(resolve, 1000));
           await lineService.pushMessage(userId, messages[i]);
           
-          // Add a longer pause every 10 images for better user experience
-          if (i % 10 === 0 && i < messages.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // Add a longer pause every 2 grids for better user experience
+          if (i % 2 === 0 && i < messages.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
           }
-=======
-        // Send first message as reply, rest as push messages
-        await lineService.replyMessage(replyToken, messages[0]);
-        
-        // Send remaining messages as push messages with a slight delay
-        for (let i = 1; i < messages.length; i++) {
-          // Add a small delay to ensure messages are received in order
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await lineService.pushMessage(userId, messages[i]);
->>>>>>> parent of 8ae2429 (26052025_1800)
         }
       }
     } catch (error) {
