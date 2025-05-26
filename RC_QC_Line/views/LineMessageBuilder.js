@@ -95,7 +95,6 @@ class LineMessageBuilder {
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const messages = [];
     
     // If no images found
@@ -111,28 +110,62 @@ class LineMessageBuilder {
     
     messages.push(this.buildTextMessage(infoText));
     
-    // Create image carousel - รูปภาพที่เลื่อนซ้ายขวาได้
-    const imageCarousel = this.buildImageCarousel(images, lotNumber, formattedDate);
-    messages.push(imageCarousel);
+    // Use Flex Carousel (ใช้ Flex Carousel เพราะมั่นใจได้ว่าทำงาน)
+    const flexCarousel = this.buildFlexImageCarousel(images, lotNumber, formattedDate);
+    messages.push(flexCarousel);
+    
+    // Add note for remaining images if needed
+    if (images.length > 10) {
+      messages.push(this.buildTextMessage(`⚠️ แสดง 10 รูปแรกจากทั้งหมด ${images.length} รูป\nใช้คำสั่ง #view ${lotNumber} เพื่อดูรูปเพิ่มเติม`));
+    }
     
     return messages;
   }
 
-  // Build Image Carousel (รูปภาพแบบเลื่อนซ้ายขวา)
+  // Build simple native image messages (fallback option)
+  buildNativeImageMessages(result) {
+    const { lotNumber, imageDate, images } = result;
+    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const messages = [];
+    
+    // If no images found
+    if (images.length === 0) {
+      return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
+    }
+    
+    // Add info message first
+    let infoText = `📸 Lot: ${lotNumber}\n`;
+    infoText += `📅 วันที่: ${formattedDate}\n`;
+    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป`;
+    
+    messages.push(this.buildTextMessage(infoText));
+    
+    // Send all images as native LINE image messages (can be clicked and viewed)
+    images.forEach((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      messages.push(this.buildImageMessage(imageUrl));
+    });
+    
+    return messages;
+  }
+
+  // Build Image Carousel (รูปภาพแบบเลื่อนซ้ายขวา) - LINE Template
   buildImageCarousel(images, lotNumber, formattedDate) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const maxCarouselItems = 10; // LINE limit for image carousel
     
-    // Prepare image columns for carousel
+    // Prepare image columns for carousel - ต้องใช้โครงสร้างที่ถูกต้องตาม LINE API
     const imageColumns = images.slice(0, maxCarouselItems).map((image, index) => {
       const imageUrl = image.url.startsWith('http') 
         ? image.url 
         : `${baseUrl}${image.url}`;
       
       return {
-        type: "image",
-        originalContentUrl: imageUrl,
-        previewImageUrl: imageUrl,
+        imageUrl: imageUrl,  // ใช้ imageUrl แทน originalContentUrl
         action: {
           type: "uri",
           uri: imageUrl  // เมื่อแตะรูปจะเปิดรูปขนาดใหญ่
@@ -161,7 +194,7 @@ class LineMessageBuilder {
     return imageCarousel;
   }
 
-  // Alternative: Build Flex Image Carousel (สำหรับกรณีต้องการข้อมูลเพิ่มเติม)
+  // Build Flex Image Carousel (สำหรับกรณีต้องการข้อมูลเพิ่มเติม)
   buildFlexImageCarousel(images, lotNumber, formattedDate) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const maxCarouselItems = 10; // LINE limit
