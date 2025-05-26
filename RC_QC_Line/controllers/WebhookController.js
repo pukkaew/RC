@@ -429,7 +429,7 @@ class WebhookController {
         // Reset upload mode after completion
         lineService.setUploadInfo(userId, null);
       } else if (action === lineConfig.userActions.view) {
-        // Forward to image controller
+        // Forward to image controller (direct to processDateSelection)
         await imageController.processDateSelection(userId, lotNumber, date, replyToken);
       } else if (action === 'delete') {
         // Forward to delete controller for showing delete options
@@ -445,9 +445,6 @@ class WebhookController {
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
-      } else if (action === 'view_grid' || action === 'view_shareable' || action === 'view_both') {
-        // Handle view mode selection (Grid, Shareable, or Both)
-        await imageController.handleViewModeSelection(userId, action, lotNumber, date, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
