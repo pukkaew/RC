@@ -74,28 +74,37 @@ class ImageController {
         return;
       }
       
-      // Build Flex Message grid layout (without web actions)
+      // Build mixed messages (Flex summary + Native images)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages
+      // Send messages with appropriate delays
       if (messages.length === 0) {
-        // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
           replyToken,
           lineService.createTextMessage('ไม่พบรูปภาพสำหรับ Lot และวันที่ที่ระบุ')
         );
       } else if (messages.length === 1) {
-        // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-        // Send first message as reply, rest as push messages
+        // Send first message (Flex summary) as reply
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Send remaining messages as push messages with a slight delay
+        // Send remaining messages with appropriate delays
         for (let i = 1; i < messages.length; i++) {
-          // Add a small delay to ensure messages are received in order
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await lineService.pushMessage(userId, messages[i]);
+          const message = messages[i];
+          let delay;
+          
+          // Different delays based on message type
+          if (message.type === 'image') {
+            delay = 600; // 600ms for images
+          } else if (message.type === 'text') {
+            delay = 200; // 200ms for text separators
+          } else {
+            delay = 400; // 400ms for other types
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          await lineService.pushMessage(userId, message);
         }
       }
     } catch (error) {
