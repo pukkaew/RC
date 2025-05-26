@@ -106,63 +106,67 @@ class LineMessageBuilder {
     let infoText = `📸 Lot: ${lotNumber}\n`;
     infoText += `📅 วันที่: ${formattedDate}\n`;
     infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
-    infoText += `🖼️ แตะรูปเพื่อดูขนาดใหญ่`;
+    infoText += `🖼️ แตะรูปเพื่อดูใหญ่และเลื่อนดูต่อ`;
     
     messages.push(this.buildTextMessage(infoText));
     
-    // Build image grid messages (แบบ Native LINE Images)
-    const imageGridMessages = this.buildImageGridMessages(images, lotNumber);
-    messages.push(...imageGridMessages);
+    // Send images as native image messages in batches (like selecting multiple images)
+    const imageBatches = this.buildImageBatches(images);
+    messages.push(...imageBatches);
     
     return messages;
   }
 
-  // Build Image Grid Messages (แบบ Native LINE Images Grid เหมือนการส่งรูปหลายรูปพร้อมกัน)
-  buildImageGridMessages(images, lotNumber) {
+  // Build image batches like native multi-image selection (เหมือนเลือกรูปหลายรูปแล้วส่ง)
+  buildImageBatches(images) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const maxImagesPerBatch = 5; // LINE limit per message
+    const maxBatches = 10; // Maximum batches to prevent flooding
     const messages = [];
-    const imagesPerMessage = 5; // LINE รองรับส่งได้สูงสุด 5 รูปต่อข้อความ
     
-    // แบ่งรูปเป็นกลุ่มๆ กลุ่มละ 5 รูป
-    for (let i = 0; i < images.length; i += imagesPerMessage) {
-      const imageGroup = images.slice(i, i + imagesPerMessage);
-      const imageMessages = [];
+    // Calculate how many batches we need
+    const totalBatches = Math.min(
+      Math.ceil(images.length / maxImagesPerBatch),
+      maxBatches
+    );
+    
+    // Build image batches
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const startIndex = batchIndex * maxImagesPerBatch;
+      const endIndex = Math.min(startIndex + maxImagesPerBatch, images.length);
+      const batchImages = images.slice(startIndex, endIndex);
       
-      // สร้าง Native Image Messages สำหรับแต่ละรูปในกลุ่ม
-      imageGroup.forEach((image, index) => {
+      // Create native image messages for this batch
+      const imageMessages = batchImages.map(image => {
         const imageUrl = image.url.startsWith('http') 
           ? image.url 
           : `${baseUrl}${image.url}`;
         
-        imageMessages.push(this.buildImageMessage(imageUrl));
+        return this.buildImageMessage(imageUrl);
       });
       
-      // เพิ่มข้อความบอกกลุ่มถ้ามีหลายกลุ่ม
-      if (images.length > imagesPerMessage) {
-        const groupNumber = Math.floor(i / imagesPerMessage) + 1;
-        const totalGroups = Math.ceil(images.length / imagesPerMessage);
-        const startImageNumber = i + 1;
-        const endImageNumber = Math.min(i + imagesPerMessage, images.length);
-        
-        // เพิ่มข้อความแยกกลุ่ม
-        if (groupNumber > 1) {
-          messages.push(this.buildTextMessage(
-            `📸 รูปที่ ${startImageNumber}-${endImageNumber} (กลุ่ม ${groupNumber}/${totalGroups})`
-          ));
-        }
-      }
-      
-      // เพิ่มรูปภาพทั้งกลุ่มลงใน messages
+      // Add all images in this batch as a single multi-message
       messages.push(...imageMessages);
+      
+      // Add batch separator for clarity (except for the last batch)
+      if (batchIndex < totalBatches - 1) {
+        const nextBatchStart = endIndex + 1;
+        const nextBatchEnd = Math.min(endIndex + maxImagesPerBatch, images.length);
+        messages.push(this.buildTextMessage(`📷 รูปที่ ${nextBatchStart}-${nextBatchEnd} 👇`));
+      }
     }
     
-    // เพิ่มข้อความสรุปท้าย
-    if (images.length > imagesPerMessage) {
-      const totalGroups = Math.ceil(images.length / imagesPerMessage);
+    // Add summary if there are remaining images
+    const displayedImages = Math.min(images.length, maxBatches * maxImagesPerBatch);
+    if (images.length > displayedImages) {
+      const remainingCount = images.length - displayedImages;
       messages.push(this.buildTextMessage(
-        `✅ แสดงครบทั้งหมด ${images.length} รูป (${totalGroups} กลุ่ม)\n` +
-        `💡 แตะรูปเพื่อดูขนาดใหญ่`
+        `📊 แสดงแล้ว ${displayedImages}/${images.length} รูป\n` +
+        `⚠️ เหลืออีก ${remainingCount} รูป\n` +
+        `💡 ใช้คำสั่ง #view เพื่อดูรูปเพิ่มเติม`
       ));
+    } else if (totalBatches > 1) {
+      messages.push(this.buildTextMessage(`✅ แสดงครบทั้งหมด ${images.length} รูปแล้ว`));
     }
     
     return messages;
