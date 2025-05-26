@@ -117,6 +117,7 @@ class LineMessageBuilder {
     return messages;
   }
 
+<<<<<<< HEAD
   // Build image batches like native multi-image selection (เหมือนเลือกรูปหลายรูปแล้วส่ง)
   buildImageBatches(images) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
@@ -226,9 +227,11 @@ class LineMessageBuilder {
     return messages;
   }
   buildNativeImageMessages(result) {
+=======
+  // Build messages for showing images (using Flex Message grid but without web links)
+  buildImageViewMessages(result) {
+>>>>>>> parent of 8ae2429 (26052025_1800)
     const { lotNumber, imageDate, images } = result;
-    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const messages = [];
     
     // If no images found
@@ -236,6 +239,7 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
+<<<<<<< HEAD
     // Add info message first
     let infoText = `📸 Lot: ${lotNumber}\n`;
     infoText += `📅 วันที่: ${formattedDate}\n`;
@@ -251,10 +255,16 @@ class LineMessageBuilder {
       
       messages.push(this.buildImageMessage(imageUrl));
     });
+=======
+    // Create Flex Message gallery (without web actions)
+    const galleryMessage = this.buildImageGalleryFlexMessage(lotNumber, imageDate, images);
+    messages.push(galleryMessage);
+>>>>>>> parent of 8ae2429 (26052025_1800)
     
     return messages;
   }
 
+<<<<<<< HEAD
   // Build Image Carousel (รูปภาพแบบเลื่อนซ้ายขวา) - LINE Template
   buildImageCarousel(images, lotNumber, formattedDate) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
@@ -390,6 +400,8 @@ class LineMessageBuilder {
     };
   }
 
+=======
+>>>>>>> parent of 8ae2429 (26052025_1800)
   // Build a message for no images found
   buildNoImagesFoundMessage(lotNumber, date = null) {
     let message = `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}`;

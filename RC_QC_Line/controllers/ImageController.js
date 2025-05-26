@@ -74,18 +74,28 @@ class ImageController {
         return;
       }
       
+<<<<<<< HEAD
       // Build LINE native image messages (clickable and viewable)
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
       // Send messages with appropriate spacing
+=======
+      // Build Flex Message grid layout (without web actions)
+      const messages = lineMessageBuilder.buildImageViewMessages(result);
+      
+      // Send messages
+>>>>>>> parent of 8ae2429 (26052025_1800)
       if (messages.length === 0) {
+        // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
           replyToken,
           lineService.createTextMessage('ไม่พบรูปภาพสำหรับ Lot และวันที่ที่ระบุ')
         );
       } else if (messages.length === 1) {
+        // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
+<<<<<<< HEAD
         // Send info message first
         await lineService.replyMessage(replyToken, messages[0]);
         
@@ -99,6 +109,16 @@ class ImageController {
           if (i % 10 === 0 && i < messages.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
+=======
+        // Send first message as reply, rest as push messages
+        await lineService.replyMessage(replyToken, messages[0]);
+        
+        // Send remaining messages as push messages with a slight delay
+        for (let i = 1; i < messages.length; i++) {
+          // Add a small delay to ensure messages are received in order
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await lineService.pushMessage(userId, messages[i]);
+>>>>>>> parent of 8ae2429 (26052025_1800)
         }
       }
     } catch (error) {
