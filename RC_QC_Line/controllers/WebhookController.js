@@ -217,6 +217,13 @@ class WebhookController {
       const { text } = message;
       const { state, data } = userState;
       
+      // ตรวจสอบการแชร์รูป
+      if (text === '📤 แชร์รูป') {
+        // ข้อความนี้มาจากการคลิกรูปใน Grid - ไม่ต้องทำอะไร
+        // เพราะเราจะใช้ postback แทน
+        return;
+      }
+      
       // ตรวจสอบว่าเป็นคำสั่งหรือไม่
       const commandInfo = this.identifyCommand(text);
       
@@ -445,6 +452,9 @@ class WebhookController {
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
+      } else if (action === 'share_image') {
+        // Handle image sharing from grid
+        await this.handleImageSharing(userId, params, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -454,6 +464,38 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling postback event:', error);
+      throw error;
+    }
+  }
+
+  // Handle image sharing from grid (ส่งรูปเป็น Native Image Message)
+  async handleImageSharing(userId, params, replyToken) {
+    try {
+      const imageUrl = decodeURIComponent(params.get('image_url'));
+      const lotNumber = params.get('lot');
+      const imageNum = params.get('image_num');
+      
+      if (!imageUrl) {
+        await lineService.replyMessage(
+          replyToken,
+          lineService.createTextMessage('ไม่สามารถแชร์รูปภาพได้ โปรดลองใหม่อีกครั้ง')
+        );
+        return;
+      }
+      
+      // Create native image message for sharing
+      const imageMessage = lineService.createImageMessage(imageUrl);
+      
+      // Send the image as a native message (สามารถแชร์ได้)
+      await lineService.replyMessage(replyToken, imageMessage);
+      
+    } catch (error) {
+      logger.error('Error handling image sharing:', error);
+      
+      // Reply with error message
+      const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';
+      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
+      
       throw error;
     }
   }
