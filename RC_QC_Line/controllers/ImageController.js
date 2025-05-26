@@ -74,10 +74,10 @@ class ImageController {
         return;
       }
       
-      // Build new Flex Message format for showing images
+      // Build LINE native image messages
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
-      // Send messages
+      // Send messages with proper spacing to avoid flood protection
       if (messages.length === 0) {
         // If no messages (should not happen, but just in case)
         await lineService.replyMessage(
@@ -88,13 +88,17 @@ class ImageController {
         // Send single message
         await lineService.replyMessage(replyToken, messages[0]);
       } else {
-        // Send first message as reply, rest as push messages
+        // Send first message as reply
         await lineService.replyMessage(replyToken, messages[0]);
         
-        // Send remaining messages as push messages with a slight delay
+        // Send remaining messages as push messages with appropriate delays
         for (let i = 1; i < messages.length; i++) {
-          // Add a small delay to ensure messages are received in order
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Add delay between messages to prevent LINE flood protection
+          // Longer delay for image messages, shorter for text
+          const isImageMessage = messages[i].type === 'image';
+          const delay = isImageMessage ? 800 : 300; // 800ms for images, 300ms for text
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
           await lineService.pushMessage(userId, messages[i]);
         }
       }

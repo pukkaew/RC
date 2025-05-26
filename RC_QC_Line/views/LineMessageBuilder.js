@@ -143,11 +143,8 @@ class LineMessageBuilder {
                   url: imageUrl,
                   aspectRatio: "1:1",
                   aspectMode: "cover",
-                  size: "full",
-                  action: {
-                    type: "uri",
-                    uri: imageUrl
-                  }
+                  size: "full"
+                  // Removed action to prevent opening in web browser
                 },
                 {
                   type: "text",
@@ -223,42 +220,17 @@ class LineMessageBuilder {
         }
       };
       
-      // Add footer with action buttons
-      const footerContents = [];
-      
-      // Navigation info for large image sets
-      if (totalPages > maxCarouselItems && page === actualPages - 1) {
-        const remainingImages = images.length - (actualPages * itemsPerPage);
-        if (remainingImages > 0) {
-          footerContents.push({
-            type: "text",
-            text: `มีรูปภาพอีก ${remainingImages} รูป ใช้คำสั่ง #view เพื่อดูต่อ`,
-            size: "xs",
-            color: "#FF6B35",
-            wrap: true,
-            margin: "sm"
-          });
-        }
-      }
-      
-      // Add action buttons
-      footerContents.push({
-        type: "button",
-        action: {
-          type: "message",
-          label: "ดูรูปภาพ Lot อื่น",
-          text: "#view"
-        },
-        style: "primary",
-        color: "#1DB446"
-      });
-      
+      // Add footer - remove the "ดูรูปภาพ Lot อื่น" button
       if (footerContents.length > 0) {
-        bubble.footer = {
-          type: "box",
-          layout: "vertical",
-          contents: footerContents
-        };
+        // Only add footer if there are navigation messages (for large image sets)
+        if (totalPages > maxCarouselItems && page === actualPages - 1) {
+          bubble.footer = {
+            type: "box",
+            layout: "vertical",
+            contents: footerContents.filter(content => content.type === "text") // Only keep text, remove button
+          };
+        }
+        // Don't add footer for normal cases (removed the button)
       }
       
       imageItems.push(bubble);
@@ -283,9 +255,10 @@ class LineMessageBuilder {
     }
   }
 
-  // Build messages for showing images (using new Flex Message format)
+  // Build messages for showing images (using LINE native image messages)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
+    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
     const messages = [];
     
     // If no images found
@@ -293,9 +266,37 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Create Flex Message gallery
-    const galleryMessage = this.buildImageGalleryFlexMessage(lotNumber, imageDate, images);
-    messages.push(galleryMessage);
+    // Add info message first
+    let infoText = `📸 รูปภาพ Lot: ${lotNumber}\n`;
+    infoText += `📅 วันที่: ${formattedDate}\n`;
+    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป`;
+    
+    messages.push(this.buildTextMessage(infoText));
+    
+    // Send images as native LINE image messages (max 5 per group to avoid flood)
+    const maxImagesPerGroup = 5;
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    
+    for (let i = 0; i < images.length; i += maxImagesPerGroup) {
+      const imageGroup = images.slice(i, i + maxImagesPerGroup);
+      
+      // Create native image messages for this group
+      const groupMessages = imageGroup.map(image => {
+        const imageUrl = image.url.startsWith('http') 
+          ? image.url 
+          : `${baseUrl}${image.url}`;
+        
+        return this.buildImageMessage(imageUrl);
+      });
+      
+      // Add all images in this group
+      messages.push(...groupMessages);
+      
+      // Add a small separator text for large image sets (every 20 images)
+      if (images.length > 20 && i + maxImagesPerGroup < images.length && (i + maxImagesPerGroup) % 20 === 0) {
+        messages.push(this.buildTextMessage(`--- รูปที่ ${i + maxImagesPerGroup + 1} - ${Math.min(i + maxImagesPerGroup + 20, images.length)} ---`));
+      }
+    }
     
     return messages;
   }
