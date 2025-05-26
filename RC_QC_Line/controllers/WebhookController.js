@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events
+// Controller for handling LINE webhook events - Simple but robust
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -411,7 +411,7 @@ class WebhookController {
     }
   }
 
-  // Handle postback events (from buttons, date picker)
+  // Handle postback events (from buttons, date picker, advanced actions)
   async handlePostbackEvent(userId, postback, replyToken) {
     try {
       const { data } = postback;
@@ -445,9 +445,12 @@ class WebhookController {
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
-      } else if (action === 'share_image') {
-        // Handle image sharing from Advanced Flex Grid
-        await this.handleAdvancedImageSharing(userId, params, replyToken);
+      } else if (action === 'carousel_share') {
+        // Handle carousel sharing
+        await this.handleCarouselSharing(userId, params, replyToken);
+      } else if (action === 'smart_share') {
+        // Handle smart grid sharing
+        await this.handleSmartSharing(userId, params, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -461,12 +464,12 @@ class WebhookController {
     }
   }
 
-  // Handle advanced image sharing from flex grid (ส่งรูปเป็น Native Image Message)
-  async handleAdvancedImageSharing(userId, params, replyToken) {
+  // Handle carousel sharing
+  async handleCarouselSharing(userId, params, replyToken) {
     try {
       const imageUrl = decodeURIComponent(params.get('image_url'));
+      const index = params.get('index');
       const lotNumber = params.get('lot');
-      const imageNum = params.get('image_num');
       
       if (!imageUrl) {
         await lineService.replyMessage(
@@ -476,18 +479,50 @@ class WebhookController {
         return;
       }
       
-      // Create native image message for sharing
+      // Create native image message
       const imageMessage = lineService.createImageMessage(imageUrl);
       
-      // Send the image as a native message (สามารถแชร์ได้)
+      // Send the image
       await lineService.replyMessage(replyToken, imageMessage);
       
-      logger.info(`User ${userId} shared image ${imageNum} from Lot ${lotNumber}`);
+      logger.info(`Carousel share: User ${userId}, image ${index}, Lot ${lotNumber}`);
       
     } catch (error) {
-      logger.error('Error handling advanced image sharing:', error);
+      logger.error('Error handling carousel sharing:', error);
       
-      // Reply with error message
+      const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';
+      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
+      
+      throw error;
+    }
+  }
+
+  // Handle smart sharing
+  async handleSmartSharing(userId, params, replyToken) {
+    try {
+      const imageUrl = decodeURIComponent(params.get('image_url'));
+      const index = params.get('index');
+      const lotNumber = params.get('lot');
+      
+      if (!imageUrl) {
+        await lineService.replyMessage(
+          replyToken,
+          lineService.createTextMessage('ไม่สามารถแชร์รูปภาพได้ โปรดลองใหม่อีกครั้ง')
+        );
+        return;
+      }
+      
+      // Create native image message
+      const imageMessage = lineService.createImageMessage(imageUrl);
+      
+      // Send the image
+      await lineService.replyMessage(replyToken, imageMessage);
+      
+      logger.info(`Smart share: User ${userId}, image ${index}, Lot ${lotNumber}`);
+      
+    } catch (error) {
+      logger.error('Error handling smart sharing:', error);
+      
       const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
       
