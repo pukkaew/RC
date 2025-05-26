@@ -445,6 +445,9 @@ class WebhookController {
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
+      } else if (action === 'view_grid' || action === 'view_shareable' || action === 'view_both') {
+        // Handle view mode selection (Grid, Shareable, or Both)
+        await imageController.handleViewModeSelection(userId, action, lotNumber, date, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(

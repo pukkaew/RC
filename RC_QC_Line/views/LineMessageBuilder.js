@@ -91,7 +91,7 @@ class LineMessageBuilder {
     return this.buildTextMessage(text);
   }
 
-  // Build messages for showing images (using Grid Layout Flex Message)
+  // Build messages for showing images (Grid Layout + Native Images for sharing)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -105,10 +105,63 @@ class LineMessageBuilder {
     // Add info message first
     let infoText = `📸 Lot: ${lotNumber}\n`;
     infoText += `📅 วันที่: ${formattedDate}\n`;
-    infoText += `📊 รูปที่ 1-${Math.min(images.length, 12)} จาก ${images.length} รูป\n`;
-    infoText += `🖼️ แตะรูปเพื่อดูขนาดใหญ่`;
+    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
+    infoText += `🖼️ กด "ดูแบบตาราง" หรือ "ดูแบบแชร์ได้"`;
     
-    messages.push(this.buildTextMessage(infoText));
+    // Add quick reply options
+    const quickReplyMessage = {
+      type: 'text',
+      text: infoText,
+      quickReply: {
+        items: [
+          {
+            type: 'action',
+            action: {
+              type: 'postback',
+              label: '📋 ดูแบบตาราง',
+              data: `action=view_grid&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
+              displayText: 'ดูรูปแบบตาราง'
+            }
+          },
+          {
+            type: 'action',
+            action: {
+              type: 'postback',
+              label: '📤 ดูแบบแชร์ได้',
+              data: `action=view_shareable&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
+              displayText: 'ดูรูปแบบแชร์ได้'
+            }
+          },
+          {
+            type: 'action',
+            action: {
+              type: 'postback',
+              label: '📱 ดูทั้งสองแบบ',
+              data: `action=view_both&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
+              displayText: 'ดูทั้งสองแบบ'
+            }
+          }
+        ]
+      }
+    };
+    
+    messages.push(quickReplyMessage);
+    
+    return messages;
+  }
+
+  // Build Grid Layout messages only
+  buildGridLayoutMessages(result) {
+    const { lotNumber, imageDate, images } = result;
+    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
+    const messages = [];
+    
+    // Add header message
+    let headerText = `📋 แบบตาราง - Lot: ${lotNumber}\n`;
+    headerText += `📅 ${formattedDate} | ${images.length} รูป\n`;
+    headerText += `🖼️ แตะรูปเพื่อดูขนาดใหญ่`;
+    
+    messages.push(this.buildTextMessage(headerText));
     
     // Build Grid Layout Flex Messages
     const gridMessages = this.buildImageGridMessages(images, lotNumber, formattedDate);
@@ -117,11 +170,83 @@ class LineMessageBuilder {
     return messages;
   }
 
-  // Build Grid Layout Flex Messages (แสดงรูปเป็นตาราง เหมือนใน LINE)
+  // Build Shareable (Native) messages only
+  buildShareableMessages(result) {
+    const { lotNumber, imageDate, images } = result;
+    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
+    const messages = [];
+    
+    // Add header message
+    let headerText = `📤 แบบแชร์ได้ - Lot: ${lotNumber}\n`;
+    headerText += `📅 ${formattedDate} | ${images.length} รูป\n`;
+    headerText += `📱 แชร์รูปเหล่านี้ได้เลย`;
+    
+    messages.push(this.buildTextMessage(headerText));
+    
+    // Build Native Image Messages (for sharing)
+    const nativeMessages = this.buildNativeImageMessages(images);
+    messages.push(...nativeMessages);
+    
+    return messages;
+  }
+
+  // Build Both Grid and Native messages
+  buildBothViewMessages(result) {
+    const { lotNumber, imageDate, images } = result;
+    const messages = [];
+    
+    // Grid Layout first
+    const gridMessages = this.buildGridLayoutMessages(result);
+    messages.push(...gridMessages);
+    
+    // Separator
+    messages.push(this.buildTextMessage('📱 รูปแบบแชร์ได้ 👇'));
+    
+    // Native Images for sharing
+    const shareableMessages = this.buildShareableMessages(result);
+    messages.push(...shareableMessages);
+    
+    return messages;
+  }
+
+  // Build Native Image Messages (for sharing)
+  buildNativeImageMessages(images) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const messages = [];
+    const maxImagesPerBatch = 20; // Reasonable limit
+    
+    // Limit the number of images to prevent flooding
+    const displayImages = images.slice(0, maxImagesPerBatch);
+    
+    // Convert each image to native LINE image message
+    displayImages.forEach((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      // Create native LINE image message (สามารถแชร์ได้)
+      const imageMessage = this.buildImageMessage(imageUrl);
+      messages.push(imageMessage);
+    });
+    
+    // Add summary if there are remaining images
+    if (images.length > maxImagesPerBatch) {
+      const remainingCount = images.length - maxImagesPerBatch;
+      messages.push(this.buildTextMessage(
+        `📊 แสดงแล้ว ${maxImagesPerBatch}/${images.length} รูป\n` +
+        `⚠️ เหลืออีก ${remainingCount} รูป\n` +
+        `💡 ใช้คำสั่ง #view เพื่อดูรูปเพิ่มเติม`
+      ));
+    }
+    
+    return messages;
+  }
+
+  // Build Grid Layout Flex Messages (แสดงรูปเป็นตาราง)
   buildImageGridMessages(images, lotNumber, formattedDate) {
     const messages = [];
-    const imagesPerGrid = 12; // 12 รูปต่อ grid (3x4 หรือ 4x3)
-    const maxGrids = 10; // จำกัด grid เพื่อป้องกันการส่งมากเกินไป
+    const imagesPerGrid = 12; // 12 รูปต่อ grid (3x4)
+    const maxGrids = 5; // จำกัด grid เพื่อป้องกันการส่งมากเกินไป
     
     // แบ่งรูปออกเป็น grids
     const totalGrids = Math.min(
@@ -152,12 +277,10 @@ class LineMessageBuilder {
     if (images.length > displayedImages) {
       const remainingCount = images.length - displayedImages;
       messages.push(this.buildTextMessage(
-        `📊 แสดงแล้ว ${displayedImages}/${images.length} รูป\n` +
+        `📊 แสดงแล้ว ${displayedImages}/${images.length} รูป (แบบตาราง)\n` +
         `⚠️ เหลืออีก ${remainingCount} รูป\n` +
-        `💡 ใช้คำสั่ง #view ${lotNumber} อีกครั้งเพื่อดูรูปเพิ่มเติม`
+        `💡 เลือก "ดูแบบแชร์ได้" เพื่อดูรูปเพิ่มเติม`
       ));
-    } else if (totalGrids > 1) {
-      messages.push(this.buildTextMessage(`✅ แสดงครบทั้งหมด ${images.length} รูปแล้ว`));
     }
     
     return messages;
@@ -194,10 +317,18 @@ class LineMessageBuilder {
                 type: "uri",
                 uri: imageUrl  // คลิกเพื่อดูรูปขนาดใหญ่
               }
+            },
+            {
+              type: "text",
+              text: `${globalImageNumber}`,
+              size: "xs",
+              align: "center",
+              color: "#999999",
+              margin: "xs"
             }
           ],
           flex: 1,
-          spacing: "none",
+          spacing: "xs",
           margin: "xs"
         };
       });
@@ -226,17 +357,10 @@ class LineMessageBuilder {
     const headerContents = [
       {
         type: "text",
-        text: `📸 Lot: ${lotNumber}`,
+        text: `📋 Grid Layout`,
         weight: "bold",
-        size: "lg",
+        size: "md",
         color: "#1DB446"
-      },
-      {
-        type: "text",
-        text: `📅 ${formattedDate}`,
-        size: "sm",
-        color: "#666666",
-        margin: "xs"
       }
     ];
     
@@ -244,25 +368,25 @@ class LineMessageBuilder {
     if (totalGrids > 1) {
       headerContents.push({
         type: "text",
-        text: `📑 ชุดที่ ${gridNumber}/${totalGrids} (รูปที่ ${startIndex + 1}-${startIndex + images.length})`,
+        text: `ชุดที่ ${gridNumber}/${totalGrids} (รูปที่ ${startIndex + 1}-${startIndex + images.length})`,
         size: "xs",
-        color: "#999999",
-        margin: "sm"
+        color: "#666666",
+        margin: "xs"
       });
     } else {
       headerContents.push({
         type: "text",
-        text: `🖼️ ${images.length} รูป - แตะเพื่อดูขนาดใหญ่`,
+        text: `${images.length} รูป - แตะเพื่อดูขนาดใหญ่`,
         size: "xs",
-        color: "#999999",
-        margin: "sm"
+        color: "#666666",
+        margin: "xs"
       });
     }
     
     // สร้าง Flex Message
     const flexMessage = {
       type: "flex",
-      altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป) - Grid Layout`,
+      altText: `Grid Layout - Lot: ${lotNumber} (${images.length} รูป)`,
       contents: {
         type: "bubble",
         size: "mega",
@@ -270,15 +394,14 @@ class LineMessageBuilder {
           type: "box",
           layout: "vertical",
           contents: headerContents,
-          paddingAll: "15px",
-          paddingBottom: "10px",
-          backgroundColor: "#F8F9FA"
+          paddingAll: "12px",
+          backgroundColor: "#F0FFF0"
         },
         body: {
           type: "box",
           layout: "vertical",
           contents: rows,
-          paddingAll: "10px",
+          paddingAll: "8px",
           spacing: "xs"
         }
       }
