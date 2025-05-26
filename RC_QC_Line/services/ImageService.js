@@ -14,71 +14,91 @@ class ImageService {
     this.maxImagesPerMessage = appConfig.limits.maxImagesPerMessage;
   }
 
-  // Process and save uploaded images
+  // Process and save uploaded images (supports unlimited images with progress tracking)
   async processImages(files, lotNumber, imageDate, uploadedBy) {
     try {
       if (!files || files.length === 0) {
         throw new AppError('No files provided', 400);
       }
       
+      const totalFiles = files.length;
+      logger.info(`Starting to process ${totalFiles} images for Lot: ${lotNumber}`);
+      
       // Get or create lot record
       const lot = await lotModel.getOrCreate(lotNumber);
       
-      // Process each image with better error handling
+      // Process each image with better error handling and progress tracking
       const processedImages = [];
       const errors = [];
+      const batchSize = 5; // Process images in batches to prevent memory issues
       
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        try {
-          // Ensure we have a buffer
-          if (!file.buffer || file.buffer.length === 0) {
-            errors.push(`File ${i+1}: Missing or empty buffer`);
-            continue;
-          }
+      // Process images in batches for better performance with large uploads
+      for (let batchStart = 0; batchStart < totalFiles; batchStart += batchSize) {
+        const batchEnd = Math.min(batchStart + batchSize, totalFiles);
+        const currentBatch = files.slice(batchStart, batchEnd);
+        
+        logger.info(`Processing batch ${Math.floor(batchStart / batchSize) + 1}/${Math.ceil(totalFiles / batchSize)} (images ${batchStart + 1}-${batchEnd})`);
+        
+        // Process current batch
+        for (let i = 0; i < currentBatch.length; i++) {
+          const file = currentBatch[i];
+          const globalIndex = batchStart + i;
           
-          // Log the file being processed
-          logger.info(`Processing file ${i+1}/${files.length}: ${file.originalname}, size: ${file.buffer.length} bytes`);
+          try {
+            // Ensure we have a buffer
+            if (!file.buffer || file.buffer.length === 0) {
+              errors.push(`File ${globalIndex + 1}: Missing or empty buffer`);
+              continue;
+            }
+            
+            // Log the file being processed
+            logger.info(`Processing file ${globalIndex + 1}/${totalFiles}: ${file.originalname}, size: ${file.buffer.length} bytes`);
 
-          // Compress the image
-          const compressedImage = await this.imageCompressor.compressImage(
-            file.buffer,
-            file.originalname,
-            { quality: 80 }
-          );
-          
-          // Create image data object
-          const imageData = {
-            lotId: lot.lot_id,
-            imageDate: new Date(imageDate),
-            fileName: compressedImage.filename,
-            filePath: compressedImage.filePath,
-            originalSize: compressedImage.originalSize,
-            compressedSize: compressedImage.compressedSize,
-            mimeType: file.mimetype,
-            uploadedBy: uploadedBy
-          };
-          
-          // Create image record in database
-          const imageId = await imageModel.create(imageData);
-          
-          // Add to processed images
-          processedImages.push({
-            id: imageId,
-            ...imageData,
-            ...compressedImage
-          });
-          
-          logger.info(`Successfully processed file ${i+1}/${files.length}: ${compressedImage.filename}`);
-        } catch (error) {
-          const errorMsg = `Error processing file ${i+1}: ${error.message}`;
-          logger.error(errorMsg, error);
-          errors.push(errorMsg);
+            // Compress the image
+            const compressedImage = await this.imageCompressor.compressImage(
+              file.buffer,
+              file.originalname,
+              { quality: 80 }
+            );
+            
+            // Create image data object
+            const imageData = {
+              lotId: lot.lot_id,
+              imageDate: new Date(imageDate),
+              fileName: compressedImage.filename,
+              filePath: compressedImage.filePath,
+              originalSize: compressedImage.originalSize,
+              compressedSize: compressedImage.compressedSize,
+              mimeType: file.mimetype,
+              uploadedBy: uploadedBy
+            };
+            
+            // Create image record in database
+            const imageId = await imageModel.create(imageData);
+            
+            // Add to processed images
+            processedImages.push({
+              id: imageId,
+              ...imageData,
+              ...compressedImage
+            });
+            
+            logger.info(`Successfully processed file ${globalIndex + 1}/${totalFiles}: ${compressedImage.filename}`);
+          } catch (error) {
+            const errorMsg = `Error processing file ${globalIndex + 1}: ${error.message}`;
+            logger.error(errorMsg, error);
+            errors.push(errorMsg);
+          }
+        }
+        
+        // Add small delay between batches for large uploads to prevent overwhelming the system
+        if (totalFiles > 20 && batchEnd < totalFiles) {
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
       // Log summary
-      logger.info(`Processed ${processedImages.length} of ${files.length} images successfully`);
+      logger.info(`Processed ${processedImages.length} of ${totalFiles} images successfully for Lot: ${lotNumber}`);
       if (errors.length > 0) {
         logger.warn(`Encountered ${errors.length} errors during processing: ${errors.join('; ')}`);
       }
@@ -87,7 +107,7 @@ class ImageService {
         lot,
         images: processedImages,
         errors: errors,
-        totalFiles: files.length,
+        totalFiles: totalFiles,
         successfulFiles: processedImages.length
       };
     } catch (error) {
@@ -96,7 +116,7 @@ class ImageService {
     }
   }
 
-  // Get images by lot number and date
+  // Get images by lot number and date (optimized for large result sets)
   async getImagesByLotAndDate(lotNumber, imageDate) {
     try {
       // Get images from database
@@ -119,7 +139,12 @@ class ImageService {
         };
       });
       
-      // Group images for LINE sending (max 5 per message)
+      // Log info for large result sets
+      if (imagesWithUrls.length > 50) {
+        logger.info(`Retrieved ${imagesWithUrls.length} images for Lot: ${lotNumber}, Date: ${imageDate}`);
+      }
+      
+      // Group images for LINE sending (not used in new Flex Message format, but kept for compatibility)
       const groupedImages = this.groupImagesForSending(imagesWithUrls);
       
       return {
@@ -134,7 +159,7 @@ class ImageService {
     }
   }
 
-  // Group images for sending in LINE messages (max 5 per message)
+  // Group images for sending in LINE messages (max 5 per message) - kept for compatibility
   groupImagesForSending(images) {
     const groups = [];
     const totalImages = images.length;

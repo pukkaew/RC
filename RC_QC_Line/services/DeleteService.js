@@ -2,6 +2,7 @@
 const lineService = require('./LineService');
 const imageService = require('./ImageService');
 const datePickerService = require('./DatePickerService');
+const lineMessageBuilder = require('../views/LineMessageBuilder');
 const imageModel = require('../models/ImageModel');
 const lotModel = require('../models/LotModel');
 const logger = require('../utils/Logger');
@@ -140,7 +141,7 @@ class DeleteService {
     }
   }
 
-  // Create image selection for deletion
+  // Create image selection for deletion using new Flex Message format
   async createImageDeleteSelector(lotNumber, date) {
     try {
       // Get images with delete options
@@ -153,79 +154,9 @@ class DeleteService {
         };
       }
       
-      // Create a flex message with images and delete buttons
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+      // Use the new Flex Message builder for image deletion
+      return lineMessageBuilder.buildImageDeleteFlexMessage(lotNumber, new Date(date), result.images);
       
-      // Create carousel items for each image (max 10 per carousel)
-      const carouselItems = result.images.map((image, index) => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return {
-          type: "bubble",
-          hero: {
-            type: "image",
-            url: imageUrl,
-            size: "full",
-            aspectRatio: "1:1",
-            aspectMode: "cover"
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `รูปที่ ${index + 1}/${result.count}`,
-                weight: "bold",
-                size: "md"
-              },
-              {
-                type: "text",
-                text: `Lot: ${lotNumber}`,
-                size: "sm",
-                margin: "md"
-              },
-              {
-                type: "text",
-                text: `อัปโหลดเมื่อ: ${new Date(image.uploaded_at).toLocaleString('th-TH')}`,
-                size: "sm",
-                margin: "sm"
-              }
-            ]
-          },
-          footer: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#FF0000",
-                action: {
-                  type: "postback",
-                  label: "ลบรูปภาพนี้",
-                  data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-                  displayText: `เลือกลบรูปภาพที่ ${index + 1}`
-                }
-              }
-            ]
-          }
-        };
-      });
-      
-      // Create the carousel message
-      const carouselMessage = {
-        type: "flex",
-        altText: "เลือกรูปภาพที่ต้องการลบ",
-        contents: {
-          type: "carousel",
-          contents: carouselItems
-        }
-      };
-      
-      return carouselMessage;
     } catch (error) {
       logger.error('Error creating image delete selector:', error);
       throw error;

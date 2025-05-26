@@ -56,7 +56,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show images
+  // Process date selection and show images using new Flex Message format
   async processDateSelection(userId, lotNumber, date, replyToken) {
     try {
       // Get images for the specified lot and date
@@ -74,7 +74,7 @@ class ImageController {
         return;
       }
       
-      // Build messages for showing images
+      // Build new Flex Message format for showing images
       const messages = lineMessageBuilder.buildImageViewMessages(result);
       
       // Send messages

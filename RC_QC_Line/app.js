@@ -23,12 +23,22 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
+const uploadController = require('./controllers/UploadController');
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
 
 // Error handling middleware
 app.use(errorHandler);
+
+// Setup cleanup timer for pending uploads (every 5 minutes)
+setInterval(() => {
+  try {
+    uploadController.cleanupPendingUploads();
+  } catch (error) {
+    logger.error('Error during cleanup:', error);
+  }
+}, 5 * 60 * 1000); // 5 minutes
 
 // Start server
 const PORT = process.env.PORT || 3000;

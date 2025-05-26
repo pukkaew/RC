@@ -91,38 +91,211 @@ class LineMessageBuilder {
     return this.buildTextMessage(text);
   }
 
-  // Build messages for showing images
-  buildImageViewMessages(result) {
-    const { lotNumber, imageDate, images, groupedImages } = result;
+  // Build Flex Message for displaying images in a grid layout (supports unlimited images)
+  buildImageGalleryFlexMessage(lotNumber, imageDate, images) {
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    
+    // Create image items for carousel
+    const imageItems = [];
+    const itemsPerPage = 12; // 12 images per bubble (6 rows x 2 columns)
+    const maxCarouselItems = 10; // LINE limit for carousel
+    
+    // Calculate how many carousel items we need
+    const totalPages = Math.ceil(images.length / itemsPerPage);
+    const actualPages = Math.min(totalPages, maxCarouselItems);
+    
+    // Group images into chunks
+    for (let page = 0; page < actualPages; page++) {
+      const startIndex = page * itemsPerPage;
+      let endIndex = startIndex + itemsPerPage;
+      
+      // For the last page, adjust to include remaining images
+      if (page === actualPages - 1 && actualPages < totalPages) {
+        endIndex = images.length;
+      }
+      
+      const imageGroup = images.slice(startIndex, endIndex);
+      
+      // Create grid layout for this group
+      const imageContents = [];
+      
+      // Create rows of images (2 images per row)
+      for (let j = 0; j < imageGroup.length; j += 2) {
+        const rowImages = imageGroup.slice(j, j + 2);
+        
+        const imageRow = {
+          type: "box",
+          layout: "horizontal",
+          contents: rowImages.map((image, index) => {
+            const imageUrl = image.url.startsWith('http') 
+              ? image.url 
+              : `${baseUrl}${image.url}`;
+            
+            const imageNumber = startIndex + j + index + 1;
+            
+            return {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "image",
+                  url: imageUrl,
+                  aspectRatio: "1:1",
+                  aspectMode: "cover",
+                  size: "full",
+                  action: {
+                    type: "uri",
+                    uri: imageUrl
+                  }
+                },
+                {
+                  type: "text",
+                  text: `รูปที่ ${imageNumber}`,
+                  size: "xxs",
+                  align: "center",
+                  margin: "xs",
+                  color: "#999999"
+                }
+              ],
+              flex: 1,
+              margin: index > 0 ? "sm" : "none"
+            };
+          }),
+          margin: j > 0 ? "sm" : "none"
+        };
+        
+        // If only one image in the row, add spacer
+        if (rowImages.length === 1) {
+          imageRow.contents.push({
+            type: "spacer",
+            size: "full"
+          });
+        }
+        
+        imageContents.push(imageRow);
+      }
+      
+      // Calculate display range for this page
+      const displayStart = startIndex + 1;
+      const displayEnd = Math.min(endIndex, images.length);
+      
+      // Create bubble for this group
+      const bubble = {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `Lot: ${lotNumber}`,
+              weight: "bold",
+              size: "lg",
+              color: "#1DB446"
+            },
+            {
+              type: "text",
+              text: `วันที่: ${formattedDate}`,
+              size: "sm",
+              color: "#999999",
+              margin: "xs"
+            },
+            {
+              type: "text",
+              text: totalPages > maxCarouselItems 
+                ? `รูปที่ ${displayStart}-${displayEnd} จาก ${images.length} รูป (${totalPages} หน้า, แสดง ${actualPages} หน้าแรก)`
+                : `รูปที่ ${displayStart}-${displayEnd} จาก ${images.length} รูป (หน้า ${page + 1}/${actualPages})`,
+              size: "xs",
+              color: "#666666",
+              margin: "xs",
+              wrap: true
+            }
+          ],
+          paddingBottom: "sm"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: imageContents,
+          spacing: "sm"
+        }
+      };
+      
+      // Add footer with action buttons
+      const footerContents = [];
+      
+      // Navigation info for large image sets
+      if (totalPages > maxCarouselItems && page === actualPages - 1) {
+        const remainingImages = images.length - (actualPages * itemsPerPage);
+        if (remainingImages > 0) {
+          footerContents.push({
+            type: "text",
+            text: `มีรูปภาพอีก ${remainingImages} รูป ใช้คำสั่ง #view เพื่อดูต่อ`,
+            size: "xs",
+            color: "#FF6B35",
+            wrap: true,
+            margin: "sm"
+          });
+        }
+      }
+      
+      // Add action buttons
+      footerContents.push({
+        type: "button",
+        action: {
+          type: "message",
+          label: "ดูรูปภาพ Lot อื่น",
+          text: "#view"
+        },
+        style: "primary",
+        color: "#1DB446"
+      });
+      
+      if (footerContents.length > 0) {
+        bubble.footer = {
+          type: "box",
+          layout: "vertical",
+          contents: footerContents
+        };
+      }
+      
+      imageItems.push(bubble);
+    }
+    
+    // Return appropriate message structure
+    if (imageItems.length === 1) {
+      return {
+        type: "flex",
+        altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป)`,
+        contents: imageItems[0]
+      };
+    } else {
+      return {
+        type: "flex",
+        altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป)`,
+        contents: {
+          type: "carousel",
+          contents: imageItems
+        }
+      };
+    }
+  }
+
+  // Build messages for showing images (using new Flex Message format)
+  buildImageViewMessages(result) {
+    const { lotNumber, imageDate, images } = result;
     const messages = [];
-    
-    // Add info message
-    let infoText = `รูปภาพสำหรับ Lot: ${lotNumber}\n`;
-    infoText += `วันที่: ${formattedDate}\n`;
-    infoText += `จำนวนรูปภาพ: ${images.length} รูป`;
-    
-    messages.push(this.buildTextMessage(infoText));
     
     // If no images found
     if (images.length === 0) {
-      messages.push(this.buildTextMessage('ไม่พบรูปภาพสำหรับ Lot และวันที่ที่ระบุ'));
-      return messages;
+      return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Add image messages (grouped by 5 images per message)
-    groupedImages.forEach(group => {
-      const imageMessages = group.map(image => {
-        // Make sure we have absolute URLs with the proper BASE_URL
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${process.env.BASE_URL || 'http://localhost:3000'}${image.url}`;
-        
-        return this.buildImageMessage(imageUrl);
-      });
-      
-      messages.push(...imageMessages);
-    });
+    // Create Flex Message gallery
+    const galleryMessage = this.buildImageGalleryFlexMessage(lotNumber, imageDate, images);
+    messages.push(galleryMessage);
     
     return messages;
   }
@@ -144,6 +317,82 @@ class LineMessageBuilder {
   // Build an error message
   buildErrorMessage(message) {
     return this.buildTextMessage(`เกิดข้อผิดพลาด: ${message}`);
+  }
+
+  // Build Flex Message for image deletion selection
+  buildImageDeleteFlexMessage(lotNumber, imageDate, images) {
+    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    
+    // Create image items for selection
+    const imageItems = images.map((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      return {
+        type: "bubble",
+        hero: {
+          type: "image",
+          url: imageUrl,
+          size: "full",
+          aspectRatio: "1:1",
+          aspectMode: "cover"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `รูปที่ ${index + 1}`,
+              weight: "bold",
+              size: "md"
+            },
+            {
+              type: "text",
+              text: `Lot: ${lotNumber}`,
+              size: "sm",
+              margin: "md",
+              color: "#999999"
+            },
+            {
+              type: "text",
+              text: `วันที่: ${formattedDate}`,
+              size: "sm",
+              margin: "xs",
+              color: "#999999"
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#FF0000",
+              action: {
+                type: "postback",
+                label: "ลบรูปภาพนี้",
+                data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
+                displayText: `เลือกลบรูปภาพที่ ${index + 1}`
+              }
+            }
+          ]
+        }
+      };
+    });
+    
+    return {
+      type: "flex",
+      altText: "เลือกรูปภาพที่ต้องการลบ",
+      contents: {
+        type: "carousel",
+        contents: imageItems
+      }
+    };
   }
 }
 
