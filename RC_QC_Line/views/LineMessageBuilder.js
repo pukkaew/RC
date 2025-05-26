@@ -91,185 +91,7 @@ class LineMessageBuilder {
     return this.buildTextMessage(text);
   }
 
-  // Build Flex Message for displaying images in a grid layout (supports unlimited images)
-  buildImageGalleryFlexMessage(lotNumber, imageDate, images) {
-    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    // Create image items for carousel
-    const imageItems = [];
-    const itemsPerPage = 12; // 12 images per bubble (6 rows x 2 columns)
-    const maxCarouselItems = 10; // LINE limit for carousel
-    
-    // Calculate how many carousel items we need
-    const totalPages = Math.ceil(images.length / itemsPerPage);
-    const actualPages = Math.min(totalPages, maxCarouselItems);
-    
-    // Group images into chunks
-    for (let page = 0; page < actualPages; page++) {
-      const startIndex = page * itemsPerPage;
-      let endIndex = startIndex + itemsPerPage;
-      
-      // For the last page, adjust to include remaining images
-      if (page === actualPages - 1 && actualPages < totalPages) {
-        endIndex = images.length;
-      }
-      
-      const imageGroup = images.slice(startIndex, endIndex);
-      
-      // Create grid layout for this group
-      const imageContents = [];
-      
-      // Create rows of images (2 images per row)
-      for (let j = 0; j < imageGroup.length; j += 2) {
-        const rowImages = imageGroup.slice(j, j + 2);
-        
-        const imageRow = {
-          type: "box",
-          layout: "horizontal",
-          contents: rowImages.map((image, index) => {
-            const imageUrl = image.url.startsWith('http') 
-              ? image.url 
-              : `${baseUrl}${image.url}`;
-            
-            const imageNumber = startIndex + j + index + 1;
-            
-            return {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "image",
-                  url: imageUrl,
-                  aspectRatio: "1:1",
-                  aspectMode: "cover",
-                  size: "full"
-                  // No action - image will display in LINE directly
-                },
-                {
-                  type: "text",
-                  text: `รูปที่ ${imageNumber}`,
-                  size: "xxs",
-                  align: "center",
-                  margin: "xs",
-                  color: "#999999"
-                }
-              ],
-              flex: 1,
-              margin: index > 0 ? "sm" : "none"
-            };
-          }),
-          margin: j > 0 ? "sm" : "none"
-        };
-        
-        // If only one image in the row, add spacer
-        if (rowImages.length === 1) {
-          imageRow.contents.push({
-            type: "spacer",
-            size: "full"
-          });
-        }
-        
-        imageContents.push(imageRow);
-      }
-      
-      // Calculate display range for this page
-      const displayStart = startIndex + 1;
-      const displayEnd = Math.min(endIndex, images.length);
-      
-      // Create bubble for this group
-      const bubble = {
-        type: "bubble",
-        size: "mega",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `Lot: ${lotNumber}`,
-              weight: "bold",
-              size: "lg",
-              color: "#1DB446"
-            },
-            {
-              type: "text",
-              text: `วันที่: ${formattedDate}`,
-              size: "sm",
-              color: "#999999",
-              margin: "xs"
-            },
-            {
-              type: "text",
-              text: totalPages > maxCarouselItems 
-                ? `รูปที่ ${displayStart}-${displayEnd} จาก ${images.length} รูป (${totalPages} หน้า, แสดง ${actualPages} หน้าแรก)`
-                : `รูปที่ ${displayStart}-${displayEnd} จาก ${images.length} รูป (หน้า ${page + 1}/${actualPages})`,
-              size: "xs",
-              color: "#666666",
-              margin: "xs",
-              wrap: true
-            }
-          ],
-          paddingBottom: "sm"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: imageContents,
-          spacing: "sm"
-        }
-      };
-      
-      // Add footer - remove the "ดูรูปภาพ Lot อื่น" button completely
-      const footerContents = [];
-      
-      // Navigation info for large image sets only
-      if (totalPages > maxCarouselItems && page === actualPages - 1) {
-        const remainingImages = images.length - (actualPages * itemsPerPage);
-        if (remainingImages > 0) {
-          footerContents.push({
-            type: "text",
-            text: `มีรูปภาพอีก ${remainingImages} รูป ใช้คำสั่ง #view เพื่อดูต่อ`,
-            size: "xs",
-            color: "#FF6B35",
-            wrap: true,
-            margin: "sm"
-          });
-        }
-      }
-      
-      // Only add footer if there are navigation messages (no buttons)
-      if (footerContents.length > 0) {
-        bubble.footer = {
-          type: "box",
-          layout: "vertical",
-          contents: footerContents
-        };
-      }
-      
-      imageItems.push(bubble);
-    }
-    
-    // Return appropriate message structure
-    if (imageItems.length === 1) {
-      return {
-        type: "flex",
-        altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป)`,
-        contents: imageItems[0]
-      };
-    } else {
-      return {
-        type: "flex",
-        altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป)`,
-        contents: {
-          type: "carousel",
-          contents: imageItems
-        }
-      };
-    }
-  }
-
-  // Build messages for showing images (LINE native images with grouping)
+  // Build Image Carousel messages that can be swiped left/right (แบบเลื่อนซ้ายขวาได้)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -284,20 +106,132 @@ class LineMessageBuilder {
     // Add info message first
     let infoText = `📸 Lot: ${lotNumber}\n`;
     infoText += `📅 วันที่: ${formattedDate}\n`;
-    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป`;
+    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
+    infoText += `👈👉 เลื่อนซ้ายขวาเพื่อดูรูปภาพ`;
     
     messages.push(this.buildTextMessage(infoText));
     
-    // Send all images as native LINE image messages (can be clicked and viewed)
-    images.forEach((image, index) => {
+    // Create image carousel - รูปภาพที่เลื่อนซ้ายขวาได้
+    const imageCarousel = this.buildImageCarousel(images, lotNumber, formattedDate);
+    messages.push(imageCarousel);
+    
+    return messages;
+  }
+
+  // Build Image Carousel (รูปภาพแบบเลื่อนซ้ายขวา)
+  buildImageCarousel(images, lotNumber, formattedDate) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const maxCarouselItems = 10; // LINE limit for image carousel
+    
+    // Prepare image columns for carousel
+    const imageColumns = images.slice(0, maxCarouselItems).map((image, index) => {
       const imageUrl = image.url.startsWith('http') 
         ? image.url 
         : `${baseUrl}${image.url}`;
       
-      messages.push(this.buildImageMessage(imageUrl));
+      return {
+        type: "image",
+        originalContentUrl: imageUrl,
+        previewImageUrl: imageUrl,
+        action: {
+          type: "uri",
+          uri: imageUrl  // เมื่อแตะรูปจะเปิดรูปขนาดใหญ่
+        }
+      };
     });
     
-    return messages;
+    // Create image carousel message
+    const imageCarousel = {
+      type: "template",
+      altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป) - เลื่อนซ้ายขวาเพื่อดู`,
+      template: {
+        type: "image_carousel",
+        columns: imageColumns
+      }
+    };
+    
+    // If there are more than 10 images, add a note
+    if (images.length > maxCarouselItems) {
+      return [
+        imageCarousel,
+        this.buildTextMessage(`⚠️ แสดง ${maxCarouselItems} รูปแรกจากทั้งหมด ${images.length} รูป\nใช้คำสั่ง #view ${lotNumber} เพื่อดูรูปเพิ่มเติม`)
+      ];
+    }
+    
+    return imageCarousel;
+  }
+
+  // Alternative: Build Flex Image Carousel (สำหรับกรณีต้องการข้อมูลเพิ่มเติม)
+  buildFlexImageCarousel(images, lotNumber, formattedDate) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const maxCarouselItems = 10; // LINE limit
+    
+    // Create image bubbles for flex carousel
+    const imageBubbles = images.slice(0, maxCarouselItems).map((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      return {
+        type: "bubble",
+        hero: {
+          type: "image",
+          url: imageUrl,
+          size: "full",
+          aspectRatio: "1:1",
+          aspectMode: "cover",
+          action: {
+            type: "uri",
+            uri: imageUrl
+          }
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `รูปที่ ${index + 1}`,
+              weight: "bold",
+              size: "lg",
+              align: "center"
+            },
+            {
+              type: "text",
+              text: `Lot: ${lotNumber}`,
+              size: "sm",
+              align: "center",
+              color: "#666666",
+              margin: "sm"
+            },
+            {
+              type: "text",
+              text: `เวลา: ${uploadTime}`,
+              size: "xs",
+              align: "center",
+              color: "#999999",
+              margin: "xs"
+            }
+          ],
+          spacing: "sm",
+          paddingAll: "13px"
+        }
+      };
+    });
+    
+    return {
+      type: "flex",
+      altText: `รูปภาพ Lot: ${lotNumber} (${images.length} รูป) - เลื่อนซ้ายขวาเพื่อดู`,
+      contents: {
+        type: "carousel",
+        contents: imageBubbles
+      }
+    };
   }
 
   // Build a message for no images found
@@ -319,12 +253,12 @@ class LineMessageBuilder {
     return this.buildTextMessage(`เกิดข้อผิดพลาด: ${message}`);
   }
 
-  // Build Flex Message for image deletion selection
+  // Build Flex Message for image deletion selection (ใช้ Image Carousel แบบเลื่อนได้)
   buildImageDeleteFlexMessage(lotNumber, imageDate, images) {
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     
-    // Create image items for selection
+    // Create image items for deletion selection
     const imageItems = images.map((image, index) => {
       const imageUrl = image.url.startsWith('http') 
         ? image.url 
@@ -347,21 +281,24 @@ class LineMessageBuilder {
               type: "text",
               text: `รูปที่ ${index + 1}`,
               weight: "bold",
-              size: "md"
+              size: "md",
+              align: "center"
             },
             {
               type: "text",
               text: `Lot: ${lotNumber}`,
               size: "sm",
               margin: "md",
-              color: "#999999"
+              color: "#666666",
+              align: "center"
             },
             {
               type: "text",
               text: `วันที่: ${formattedDate}`,
               size: "sm",
               margin: "xs",
-              color: "#999999"
+              color: "#666666",
+              align: "center"
             }
           ]
         },
@@ -375,7 +312,7 @@ class LineMessageBuilder {
               color: "#FF0000",
               action: {
                 type: "postback",
-                label: "ลบรูปภาพนี้",
+                label: "🗑️ ลบรูปภาพนี้",
                 data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${this.dateFormatter.formatISODate(imageDate)}`,
                 displayText: `เลือกลบรูปภาพที่ ${index + 1}`
               }
@@ -387,7 +324,7 @@ class LineMessageBuilder {
     
     return {
       type: "flex",
-      altText: "เลือกรูปภาพที่ต้องการลบ",
+      altText: "เลือกรูปภาพที่ต้องการลบ - เลื่อนซ้ายขวาเพื่อดู",
       contents: {
         type: "carousel",
         contents: imageItems
