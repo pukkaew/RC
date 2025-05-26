@@ -144,7 +144,7 @@ class LineMessageBuilder {
                   aspectRatio: "1:1",
                   aspectMode: "cover",
                   size: "full"
-                  // Removed action to prevent opening in web browser
+                  // No action - image will display in LINE directly
                 },
                 {
                   type: "text",
@@ -220,17 +220,31 @@ class LineMessageBuilder {
         }
       };
       
-      // Add footer - remove the "ดูรูปภาพ Lot อื่น" button
-      if (footerContents.length > 0) {
-        // Only add footer if there are navigation messages (for large image sets)
-        if (totalPages > maxCarouselItems && page === actualPages - 1) {
-          bubble.footer = {
-            type: "box",
-            layout: "vertical",
-            contents: footerContents.filter(content => content.type === "text") // Only keep text, remove button
-          };
+      // Add footer - remove the "ดูรูปภาพ Lot อื่น" button completely
+      const footerContents = [];
+      
+      // Navigation info for large image sets only
+      if (totalPages > maxCarouselItems && page === actualPages - 1) {
+        const remainingImages = images.length - (actualPages * itemsPerPage);
+        if (remainingImages > 0) {
+          footerContents.push({
+            type: "text",
+            text: `มีรูปภาพอีก ${remainingImages} รูป ใช้คำสั่ง #view เพื่อดูต่อ`,
+            size: "xs",
+            color: "#FF6B35",
+            wrap: true,
+            margin: "sm"
+          });
         }
-        // Don't add footer for normal cases (removed the button)
+      }
+      
+      // Only add footer if there are navigation messages (no buttons)
+      if (footerContents.length > 0) {
+        bubble.footer = {
+          type: "box",
+          layout: "vertical",
+          contents: footerContents
+        };
       }
       
       imageItems.push(bubble);
@@ -255,10 +269,9 @@ class LineMessageBuilder {
     }
   }
 
-  // Build messages for showing images (using LINE native image messages)
+  // Build messages for showing images (using Flex Message grid but without web links)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
-    const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
     const messages = [];
     
     // If no images found
@@ -266,37 +279,9 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Add info message first
-    let infoText = `📸 รูปภาพ Lot: ${lotNumber}\n`;
-    infoText += `📅 วันที่: ${formattedDate}\n`;
-    infoText += `📊 จำนวนรูปภาพ: ${images.length} รูป`;
-    
-    messages.push(this.buildTextMessage(infoText));
-    
-    // Send images as native LINE image messages (max 5 per group to avoid flood)
-    const maxImagesPerGroup = 5;
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    for (let i = 0; i < images.length; i += maxImagesPerGroup) {
-      const imageGroup = images.slice(i, i + maxImagesPerGroup);
-      
-      // Create native image messages for this group
-      const groupMessages = imageGroup.map(image => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return this.buildImageMessage(imageUrl);
-      });
-      
-      // Add all images in this group
-      messages.push(...groupMessages);
-      
-      // Add a small separator text for large image sets (every 20 images)
-      if (images.length > 20 && i + maxImagesPerGroup < images.length && (i + maxImagesPerGroup) % 20 === 0) {
-        messages.push(this.buildTextMessage(`--- รูปที่ ${i + maxImagesPerGroup + 1} - ${Math.min(i + maxImagesPerGroup + 20, images.length)} ---`));
-      }
-    }
+    // Create Flex Message gallery (without web actions)
+    const galleryMessage = this.buildImageGalleryFlexMessage(lotNumber, imageDate, images);
+    messages.push(galleryMessage);
     
     return messages;
   }
