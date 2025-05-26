@@ -217,13 +217,6 @@ class WebhookController {
       const { text } = message;
       const { state, data } = userState;
       
-      // ตรวจสอบการแชร์รูป
-      if (text === '📤 แชร์รูป') {
-        // ข้อความนี้มาจากการคลิกรูปใน Grid - ไม่ต้องทำอะไร
-        // เพราะเราจะใช้ postback แทน
-        return;
-      }
-      
       // ตรวจสอบว่าเป็นคำสั่งหรือไม่
       const commandInfo = this.identifyCommand(text);
       
@@ -453,8 +446,8 @@ class WebhookController {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
       } else if (action === 'share_image') {
-        // Handle image sharing from grid
-        await this.handleImageSharing(userId, params, replyToken);
+        // Handle image sharing from Advanced Flex Grid
+        await this.handleAdvancedImageSharing(userId, params, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -468,8 +461,8 @@ class WebhookController {
     }
   }
 
-  // Handle image sharing from grid (ส่งรูปเป็น Native Image Message)
-  async handleImageSharing(userId, params, replyToken) {
+  // Handle advanced image sharing from flex grid (ส่งรูปเป็น Native Image Message)
+  async handleAdvancedImageSharing(userId, params, replyToken) {
     try {
       const imageUrl = decodeURIComponent(params.get('image_url'));
       const lotNumber = params.get('lot');
@@ -489,8 +482,10 @@ class WebhookController {
       // Send the image as a native message (สามารถแชร์ได้)
       await lineService.replyMessage(replyToken, imageMessage);
       
+      logger.info(`User ${userId} shared image ${imageNum} from Lot ${lotNumber}`);
+      
     } catch (error) {
-      logger.error('Error handling image sharing:', error);
+      logger.error('Error handling advanced image sharing:', error);
       
       // Reply with error message
       const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';

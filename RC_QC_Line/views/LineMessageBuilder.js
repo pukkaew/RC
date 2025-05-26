@@ -91,7 +91,7 @@ class LineMessageBuilder {
     return this.buildTextMessage(text);
   }
 
-  // Build messages for showing images (Album Style - All Native Images)
+  // Build messages for showing images (Advanced Flex + Shareable)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -102,42 +102,243 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Add album header with info
-    let headerText = `📸 อัลบัม Lot: ${lotNumber}\n`;
-    headerText += `📅 วันที่: ${formattedDate}\n`;
-    headerText += `📊 จำนวนรูปภาพ: ${images.length} รูป\n`;
-    headerText += `📱 แชร์เป็นอัลบัมได้เลย`;
-    
-    messages.push(this.buildTextMessage(headerText));
-    
-    // Build all native images (Album style)
-    const albumImages = this.buildAlbumStyleImages(images, lotNumber);
-    messages.push(...albumImages);
-    
-    // Add album footer
-    const footerText = `✅ อัลบัม Lot: ${lotNumber} ครบ ${images.length} รูป\n📤 แชร์ได้เลย | 💾 บันทึกได้ทั้งชุด`;
-    messages.push(this.buildTextMessage(footerText));
+    // Build Advanced Flex Messages with shareable images
+    const flexMessages = this.buildAdvancedFlexMessages(images, lotNumber, formattedDate);
+    messages.push(...flexMessages);
     
     return messages;
   }
 
-  // Build Album Style Images (ส่งรูปทั้งหมดเป็น Native Images - แชร์เป็นอัลบัมได้)
-  buildAlbumStyleImages(images, lotNumber) {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  // Build Advanced Flex Messages (กรอบสี่เหลี่ยม + Grid + Shareable)
+  buildAdvancedFlexMessages(images, lotNumber, formattedDate) {
     const messages = [];
+    const imagesPerFlex = 12; // 12 รูปต่อ Flex Message (3x4)
+    const maxFlexes = 10; // จำกัดจำนวน Flex Messages
     
-    // Send all images as native messages (Album style)
-    images.forEach((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
+    // แบ่งรูปออกเป็น Flex Messages
+    const totalFlexes = Math.min(
+      Math.ceil(images.length / imagesPerFlex),
+      maxFlexes
+    );
+    
+    for (let flexIndex = 0; flexIndex < totalFlexes; flexIndex++) {
+      const startIndex = flexIndex * imagesPerFlex;
+      const endIndex = Math.min(startIndex + imagesPerFlex, images.length);
+      const flexImages = images.slice(startIndex, endIndex);
       
-      // Create native LINE image message (สามารถแชร์เป็นอัลบัมได้)
-      const imageMessage = this.buildImageMessage(imageUrl);
-      messages.push(imageMessage);
-    });
+      // สร้าง Advanced Flex Message
+      const flexMessage = this.buildAdvancedFlexMessage(
+        flexImages, 
+        lotNumber, 
+        formattedDate, 
+        flexIndex + 1, 
+        totalFlexes,
+        startIndex
+      );
+      
+      messages.push(flexMessage);
+    }
+    
+    // เพิ่มข้อความสรุปหากมีรูปเหลือ
+    const displayedImages = Math.min(images.length, maxFlexes * imagesPerFlex);
+    if (images.length > displayedImages) {
+      const remainingCount = images.length - displayedImages;
+      messages.push(this.buildTextMessage(
+        `📊 แสดงแล้ว ${displayedImages}/${images.length} รูป\n` +
+        `⚠️ เหลืออีก ${remainingCount} รูป\n` +
+        `💡 ใช้คำสั่ง #view ${lotNumber} อีกครั้งเพื่อดูรูปเพิ่มเติม`
+      ));
+    }
     
     return messages;
+  }
+
+  // Build single Advanced Flex Message (กรอบสี่เหลี่ยม + Grid + Shareable Images)
+  buildAdvancedFlexMessage(images, lotNumber, formattedDate, flexNumber = 1, totalFlexes = 1, startIndex = 0) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    
+    // จัดเรียงรูปเป็น rows (3 รูปต่อแถว)
+    const imagesPerRow = 3;
+    const rows = [];
+    
+    for (let i = 0; i < images.length; i += imagesPerRow) {
+      const rowImages = images.slice(i, i + imagesPerRow);
+      const imageBoxes = rowImages.map((image, index) => {
+        const imageUrl = image.url.startsWith('http') 
+          ? image.url 
+          : `${baseUrl}${image.url}`;
+        
+        const globalImageNumber = startIndex + i + index + 1;
+        
+        return {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "image",
+              url: imageUrl,
+              aspectRatio: "1:1",
+              aspectMode: "cover",
+              size: "full",
+              action: {
+                type: "postback",
+                data: `action=share_image&image_url=${encodeURIComponent(imageUrl)}&lot=${lotNumber}&image_num=${globalImageNumber}`,
+                displayText: `📤 แชร์รูปที่ ${globalImageNumber}`
+              }
+            },
+            {
+              type: "text",
+              text: `รูป${globalImageNumber}`,
+              size: "xs",
+              align: "center",
+              color: "#1DB446",
+              margin: "xs",
+              weight: "bold"
+            }
+          ],
+          flex: 1,
+          spacing: "xs",
+          margin: "xs"
+        };
+      });
+      
+      // เติมช่องว่างหากแถวไม่ครบ 3 รูป
+      while (imageBoxes.length < imagesPerRow) {
+        imageBoxes.push({
+          type: "box",
+          layout: "vertical",
+          contents: [],
+          flex: 1
+        });
+      }
+      
+      // สร้างแถว
+      rows.push({
+        type: "box",
+        layout: "horizontal",
+        contents: imageBoxes,
+        spacing: "xs",
+        margin: "xs"
+      });
+    }
+    
+    // สร้าง Header กรอบสี่เหลี่ยม
+    const headerContents = [
+      {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: "📸",
+            size: "sm",
+            flex: 0,
+            margin: "none"
+          },
+          {
+            type: "text",
+            text: `Lot: ${lotNumber}`,
+            weight: "bold",
+            size: "md",
+            color: "#1DB446",
+            flex: 1,
+            margin: "sm"
+          }
+        ]
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: "📅",
+            size: "sm",
+            flex: 0,
+            margin: "none"
+          },
+          {
+            type: "text",
+            text: formattedDate,
+            size: "sm",
+            color: "#666666",
+            flex: 1,
+            margin: "sm"
+          }
+        ],
+        margin: "sm"
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: "📊",
+            size: "sm",
+            flex: 0,
+            margin: "none"
+          },
+          {
+            type: "text",
+            text: totalFlexes > 1 
+              ? `ชุดที่ ${flexNumber}/${totalFlexes} (รูปที่ ${startIndex + 1}-${startIndex + images.length})`
+              : `จำนวนรูปภาพ: ${images.length} รูป`,
+            size: "sm",
+            color: "#666666",
+            flex: 1,
+            margin: "sm"
+          }
+        ],
+        margin: "sm"
+      }
+    ];
+    
+    // สร้าง Advanced Flex Message
+    const flexMessage = {
+      type: "flex",
+      altText: `Advanced Gallery - Lot: ${lotNumber} (${images.length} รูป)`,
+      contents: {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: headerContents,
+          paddingAll: "15px",
+          backgroundColor: "#F8F9FA",
+          borderWidth: "2px",
+          borderColor: "#E9ECEF"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: rows,
+          paddingAll: "10px",
+          spacing: "xs",
+          borderWidth: "2px",
+          borderColor: "#E9ECEF"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "💡 แตะรูปเพื่อแชร์ภาพนั้นๆ",
+              size: "xs",
+              color: "#999999",
+              align: "center"
+            }
+          ],
+          paddingAll: "8px",
+          borderWidth: "2px",
+          borderColor: "#E9ECEF"
+        }
+      }
+    };
+    
+    return flexMessage;
   }
 
   // Build a message for no images found
