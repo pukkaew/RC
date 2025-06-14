@@ -1,4 +1,4 @@
-// Main application file - Fixed Version
+// Main application file - Updated with API Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -20,14 +20,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use('/liff', express.static(path.join(__dirname, 'public/liff')));
 
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
 const lineService = require('./services/LineService');
 
+// Import API routes
+const apiRoutes = require('./routes/api');
+
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
+
+// API routes for LIFF
+app.use('/api', apiRoutes);
 
 // Add system monitoring endpoint
 app.get('/status', (req, res) => {
@@ -98,8 +105,10 @@ app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`Webhook URL: http://localhost:${PORT}/webhook`);
   logger.info(`Status endpoint: http://localhost:${PORT}/status`);
+  logger.info(`LIFF viewer: http://localhost:${PORT}/liff/view.html`);
   logger.info('Note: For production, use HTTPS for webhook URL');
   logger.info('Multi-chat support enabled');
+  logger.info('LIFF photo viewer enabled');
 });
 
 // Handle uncaught exceptions

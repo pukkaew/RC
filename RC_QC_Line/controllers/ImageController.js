@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Updated for Multi-Chat Support (Fixed)
+// Controller for image retrieval and viewing - Updated with LIFF Support
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -73,12 +73,12 @@ class ImageController {
     }
   }
 
-  // Process date selection and show images as Native Batches (Multi-message)
+  // Process date selection and automatically open LIFF
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
       
-      // Get images for the specified lot and date
+      // Get images to check if they exist
       const result = await imageService.getImagesByLotAndDate(lotNumber, date);
       
       // Reset user state
@@ -93,20 +93,48 @@ class ImageController {
         return;
       }
       
-      // Build Native Image messages (Header + All Native Images)
-      const messages = lineMessageBuilder.buildImageViewMessages(result);
+      // Build LIFF URL with parameters
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
       
-      // Send messages using LINE's multi-message capability
-      if (messages.length === 0) {
-        // If no messages (should not happen, but just in case)
-        await lineService.replyMessage(
-          replyToken,
-          lineService.createTextMessage('ไม่พบรูปภาพสำหรับ Lot และวันที่ที่ระบุ')
-        );
-      } else {
-        // Send all messages at once using LINE's multi-message API
-        await this.sendMultipleMessages(userId, messages, replyToken, chatContext);
-      }
+      // Create message with automatic LIFF opening
+      const messages = [
+        {
+          type: "text",
+          text: `📸 พบรูปภาพ ${result.images.length} รูป\n📦 Lot: ${lotNumber}\n📅 วันที่: ${new Date(date).toLocaleDateString('th-TH')}\n\n🔄 กำลังเปิดหน้าดูรูปภาพ...`
+        },
+        {
+          type: "flex",
+          altText: "เปิดดูรูปภาพ",
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "button",
+                  action: {
+                    type: "uri",
+                    uri: liffUrl
+                  },
+                  height: "sm",
+                  style: "link",
+                  gravity: "center"
+                }
+              ],
+              height: "50px",
+              backgroundColor: "#FFFFFF",
+              action: {
+                type: "uri",
+                uri: liffUrl
+              }
+            }
+          }
+        }
+      ];
+      
+      // Send messages with auto-opening LIFF
+      await lineService.replyMessage(replyToken, messages);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -119,40 +147,187 @@ class ImageController {
     }
   }
 
-  // Send Multiple Messages at once (ส่งหลายรูปพร้อมกันในคำสั่งเดียว) - Updated for Multi-Chat
-  async sendMultipleMessages(userId, messages, replyToken, chatContext = null) {
-    try {
-      const maxMessagesPerCall = 5; // LINE API limit per call
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Send first batch as reply (up to 5 messages)
-      const firstBatch = messages.slice(0, maxMessagesPerCall);
-      await lineService.replyMessage(replyToken, firstBatch);
-      
-      // Send remaining messages in batches via push message
-      if (messages.length > maxMessagesPerCall) {
-        const remainingMessages = messages.slice(maxMessagesPerCall);
-        
-        // Split remaining messages into batches of 5
-        for (let i = 0; i < remainingMessages.length; i += maxMessagesPerCall) {
-          const batch = remainingMessages.slice(i, i + maxMessagesPerCall);
-          
-          // Small delay between batches to ensure delivery order
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Send appropriate message type based on chat context
-          if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatId, batch, chatContext.chatType);
-          } else {
-            await lineService.pushMessage(userId, batch);
-          }
+  // Build LIFF viewer message (not used anymore but kept for compatibility)
+  buildLiffViewerMessage(lotNumber, date, imageCount, liffUrl) {
+    const formattedDate = new Date(date).toLocaleDateString('th-TH');
+    
+    return {
+      type: "flex",
+      altText: `ดูรูปภาพ ${imageCount} รูป - Lot: ${lotNumber}`,
+      contents: {
+        type: "bubble",
+        hero: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              contents: [
+                {
+                  type: "text",
+                  text: "📸",
+                  size: "4xl",
+                  flex: 0,
+                  align: "center"
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "Photo Viewer",
+                      size: "xl",
+                      weight: "bold",
+                      color: "#00B900"
+                    },
+                    {
+                      type: "text",
+                      text: "ดูและแชร์รูปภาพ QC",
+                      size: "sm",
+                      color: "#666666"
+                    }
+                  ],
+                  margin: "lg",
+                  flex: 1
+                }
+              ],
+              paddingAll: "20px",
+              backgroundColor: "#F0FFF0"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `พบรูปภาพ ${imageCount} รูป`,
+              size: "lg",
+              weight: "bold",
+              color: "#00B900",
+              align: "center"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "lg",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "📦 Lot:",
+                      flex: 0,
+                      color: "#666666"
+                    },
+                    {
+                      type: "text",
+                      text: lotNumber,
+                      flex: 1,
+                      weight: "bold",
+                      align: "end"
+                    }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "📅 วันที่:",
+                      flex: 0,
+                      color: "#666666"
+                    },
+                    {
+                      type: "text",
+                      text: formattedDate,
+                      flex: 1,
+                      weight: "bold",
+                      align: "end"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "separator",
+              margin: "lg"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "lg",
+              contents: [
+                {
+                  type: "text",
+                  text: "✨ คุณสมบัติ",
+                  weight: "bold",
+                  color: "#333333",
+                  size: "sm"
+                },
+                {
+                  type: "text",
+                  text: "• ดูรูปภาพทั้งหมดในรูปแบบ Grid",
+                  size: "xs",
+                  color: "#666666",
+                  margin: "sm",
+                  wrap: true
+                },
+                {
+                  type: "text",
+                  text: "• เลือกและแชร์รูปที่ต้องการ",
+                  size: "xs",
+                  color: "#666666",
+                  wrap: true
+                },
+                {
+                  type: "text",
+                  text: "• ดูรูปแบบเต็มจอได้",
+                  size: "xs",
+                  color: "#666666",
+                  wrap: true
+                }
+              ]
+            }
+          ],
+          paddingAll: "20px"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              height: "md",
+              action: {
+                type: "uri",
+                label: "🖼️ เปิดดูรูปภาพ",
+                uri: liffUrl
+              },
+              color: "#00B900"
+            },
+            {
+              type: "text",
+              text: "กดปุ่มด้านบนเพื่อเปิดหน้าดูรูปภาพ",
+              size: "xs",
+              color: "#999999",
+              align: "center",
+              margin: "sm"
+            }
+          ],
+          paddingAll: "20px"
         }
       }
-      
-    } catch (error) {
-      logger.error('Error sending multiple messages:', error);
-      throw error;
-    }
+    };
   }
 
   // Handle case when no images are found for lot and date

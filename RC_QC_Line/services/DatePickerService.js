@@ -1,4 +1,4 @@
-// Service for date picker functionality in LINE - Updated for Multi-Chat Support
+// Service for date picker functionality with Direct LIFF Opening
 const lineService = require('./LineService');
 const dateFormatter = require('../utils/DateFormatter');
 const logger = require('../utils/Logger');
@@ -11,7 +11,7 @@ class DatePickerService {
     this.dateFormatter = dateFormatter;
   }
 
-  // Get available dates for a lot (dates that have images) - ENHANCED WITH DEBUG
+  // Get available dates for a lot (dates that have images)
   async getAvailableDatesForLot(lotNumber) {
     try {
       logger.info(`DatePicker: Getting available dates for Lot: ${lotNumber}`);
@@ -56,7 +56,8 @@ class DatePickerService {
         return {
           date: this.dateFormatter.formatISODate(date),
           display: this.dateFormatter.formatDisplayDate(date),
-          thai: this.dateFormatter.formatThaiDate(date)
+          thai: this.dateFormatter.formatThaiDate(date),
+          count: row.count
         };
       });
       
@@ -129,7 +130,287 @@ class DatePickerService {
     return flexMessage;
   }
 
-  // Create date picker flex message for viewing images - ENHANCED WITH DEBUG
+  // Create date picker flex message with direct LIFF opening
+  async createViewDatePickerFlexMessageWithLiff(lotNumber, action = 'view') {
+    logger.info(`DatePicker: Creating ${action} date picker with LIFF for Lot: ${lotNumber}`);
+    
+    // Get dates that have images for this lot
+    const availableDates = await this.getAvailableDatesForLot(lotNumber);
+    
+    if (availableDates.length === 0) {
+      logger.warn(`DatePicker: No available dates found for Lot: ${lotNumber}`);
+      
+      // No images found for this lot
+      return {
+        type: "flex",
+        altText: "ไม่พบรูปภาพ",
+        contents: {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}`,
+                weight: "bold",
+                size: "md",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: "กรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน",
+                size: "sm",
+                color: "#999999",
+                margin: "md",
+                wrap: true
+              }
+            ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                action: {
+                  type: "message",
+                  label: "ดูรูปภาพ Lot อื่น",
+                  text: "#view"
+                }
+              }
+            ]
+          }
+        }
+      };
+    }
+    
+    logger.info(`DatePicker: Creating date picker with ${availableDates.length} available dates`);
+    
+    // Create date buttons that open LIFF directly
+    const dateButtons = availableDates.map(dateObj => {
+      // Add "(วันนี้)" for current date
+      const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
+      const label = isToday 
+        ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
+        : `${dateObj.display} - ${dateObj.count} รูป`;
+      
+      // Build LIFF URL
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
+      
+      logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
+      
+      return {
+        type: "button",
+        style: isToday ? "primary" : "secondary",
+        action: {
+          type: "uri",
+          label: label,
+          uri: liffUrl
+        },
+        margin: "sm",
+        height: "sm"
+      };
+    });
+    
+    // Create the flex message
+    const flexMessage = {
+      type: "flex",
+      altText: "เลือกวันที่เพื่อดูรูปภาพ",
+      contents: {
+        type: "bubble",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "📸 ดูรูปภาพ QC",
+              weight: "bold",
+              size: "lg",
+              color: "#00B900"
+            }
+          ],
+          paddingAll: "15px"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `📦 Lot: ${lotNumber}`,
+              weight: "bold",
+              size: "lg",
+              wrap: true
+            },
+            {
+              type: "text",
+              text: "กดเลือกวันที่เพื่อเปิดดูรูปภาพทันที",
+              size: "sm",
+              color: "#666666",
+              margin: "md"
+            },
+            {
+              type: "separator",
+              margin: "lg"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "lg",
+              spacing: "sm",
+              contents: dateButtons
+            }
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "💡 กดวันที่เพื่อเปิดหน้าดูรูปภาพทันที",
+              size: "xs",
+              color: "#999999",
+              align: "center"
+            }
+          ],
+          paddingAll: "10px"
+        }
+      }
+    };
+    
+    return flexMessage;
+  }
+
+  // Send date picker for uploads
+  async sendUploadDatePicker(userId, lotNumber, chatContext = null) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Create the date picker flex message
+      const flexMessage = await this.createUploadDatePickerFlexMessage(lotNumber);
+      
+      // Send the message to the user
+      if (chatContext?.isGroupChat) {
+        await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+      } else {
+        await lineService.pushMessage(userId, flexMessage);
+      }
+      
+      // Update user state to waiting for date selection with chat context
+      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
+        lotNumber,
+        action: 'upload'
+      }, chatId);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error sending upload date picker:', error);
+      throw new AppError('Failed to send date picker', 500, { error: error.message });
+    }
+  }
+
+  // Send date picker for viewing images with direct LIFF opening
+  async sendViewDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Create the date picker flex message with LIFF links
+      const flexMessage = await this.createViewDatePickerFlexMessageWithLiff(lotNumber, 'view');
+      
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerWithLiffFallback(lotNumber, 'view');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
+        }
+      }
+      
+      // Clear user state since we're opening LIFF directly
+      lineService.clearUserState(userId, chatId);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error sending view date picker:', error);
+      throw new AppError('Failed to send date picker', 500, { error: error.message });
+    }
+  }
+  
+  // Send date picker for deleting images
+  async sendDeleteDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Create the date picker flex message with delete action (original behavior)
+      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'delete');
+      
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending delete date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message with quick reply
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'delete');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
+        }
+      }
+      
+      // Update user state to waiting for date selection with chat context
+      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
+        lotNumber,
+        action: 'delete'
+      }, chatId);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error sending delete date picker:', error);
+      throw new AppError('Failed to send date picker', 500, { error: error.message });
+    }
+  }
+
+  // Create original date picker flex message for non-view actions
   async createViewDatePickerFlexMessage(lotNumber, action = 'view') {
     logger.info(`DatePicker: Creating ${action} date picker for Lot: ${lotNumber}`);
     
@@ -250,135 +531,38 @@ class DatePickerService {
     return flexMessage;
   }
 
-  // Send date picker for uploads
-  async sendUploadDatePicker(userId, lotNumber, chatContext = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Create the date picker flex message
-      const flexMessage = await this.createUploadDatePickerFlexMessage(lotNumber);
-      
-      // Send the message to the user
-      if (chatContext?.isGroupChat) {
-        await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
-      } else {
-        await lineService.pushMessage(userId, flexMessage);
-      }
-      
-      // Update user state to waiting for date selection with chat context
-      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
-        lotNumber,
-        action: 'upload'
-      }, chatId);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error sending upload date picker:', error);
-      throw new AppError('Failed to send date picker', 500, { error: error.message });
+  // Create text-based date picker fallback for groups with LIFF
+  async createTextDatePickerWithLiffFallback(lotNumber, action = 'view') {
+    const availableDates = await this.getAvailableDatesForLot(lotNumber);
+    
+    if (availableDates.length === 0) {
+      return {
+        type: 'text',
+        text: `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}\nกรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน`
+      };
     }
+    
+    // Create text message with LIFF links
+    let message = `📸 ดูรูปภาพ QC\n📦 Lot: ${lotNumber}\n\nกดลิงก์ด้านล่างเพื่อดูรูปภาพ:\n\n`;
+    
+    availableDates.forEach(dateObj => {
+      const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
+      const label = isToday 
+        ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
+        : `${dateObj.display} - ${dateObj.count} รูป`;
+      
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
+      
+      message += `${label}\n${liffUrl}\n\n`;
+    });
+    
+    return {
+      type: 'text',
+      text: message.trim()
+    };
   }
 
-  // Send date picker for viewing images
-  async sendViewDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Create the date picker flex message
-      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'view');
-      
-      // Enhanced error handling for group chats
-      try {
-        // Send the message - use replyToken if provided, otherwise use push
-        if (replyToken) {
-          await lineService.replyMessage(replyToken, flexMessage);
-        } else {
-          if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
-          } else {
-            await lineService.pushMessage(userId, flexMessage);
-          }
-        }
-      } catch (sendError) {
-        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
-        
-        // Fallback: If flex message fails in group, send text message with quick reply
-        if (chatContext?.isGroupChat) {
-          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'view');
-          
-          if (replyToken) {
-            await lineService.replyMessage(replyToken, fallbackMessage);
-          } else {
-            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
-          }
-        } else {
-          throw sendError; // Re-throw for direct chats
-        }
-      }
-      
-      // Update user state to waiting for date selection with chat context
-      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
-        lotNumber,
-        action: 'view'
-      }, chatId);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error sending view date picker:', error);
-      throw new AppError('Failed to send date picker', 500, { error: error.message });
-    }
-  }
-  
-  // Send date picker for deleting images
-  async sendDeleteDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Create the date picker flex message with delete action
-      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'delete');
-      
-      // Enhanced error handling for group chats
-      try {
-        // Send the message - use replyToken if provided, otherwise use push
-        if (replyToken) {
-          await lineService.replyMessage(replyToken, flexMessage);
-        } else {
-          if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
-          } else {
-            await lineService.pushMessage(userId, flexMessage);
-          }
-        }
-      } catch (sendError) {
-        logger.error(`Error sending delete date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
-        
-        // Fallback: If flex message fails in group, send text message with quick reply
-        if (chatContext?.isGroupChat) {
-          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'delete');
-          
-          if (replyToken) {
-            await lineService.replyMessage(replyToken, fallbackMessage);
-          } else {
-            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
-          }
-        } else {
-          throw sendError; // Re-throw for direct chats
-        }
-      }
-      
-      // Update user state to waiting for date selection with chat context
-      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
-        lotNumber,
-        action: 'delete'
-      }, chatId);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error sending delete date picker:', error);
-      throw new AppError('Failed to send date picker', 500, { error: error.message });
-    }
-  }
-
-  // Create text-based date picker fallback for groups
+  // Create text-based date picker fallback for groups (original)
   async createTextDatePickerFallback(lotNumber, action = 'view') {
     const availableDates = await this.getAvailableDatesForLot(lotNumber);
     
