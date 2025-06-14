@@ -9,6 +9,8 @@ router.get('/images/:lot/:date', async (req, res) => {
   try {
     const { lot, date } = req.params;
     
+    logger.info(`API Request - Lot: ${lot}, Date: ${date}`);
+    
     // Validate parameters
     if (!lot || !date) {
       return res.status(400).json({
@@ -19,6 +21,8 @@ router.get('/images/:lot/:date', async (req, res) => {
     
     // Get images
     const result = await imageService.getImagesByLotAndDate(lot, date);
+    
+    logger.info(`API Response - Found ${result.images.length} images`);
     
     // Transform URLs to full URLs
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
@@ -42,7 +46,8 @@ router.get('/images/:lot/:date', async (req, res) => {
     logger.error('Error fetching images for LIFF:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching images'
+      message: 'Error fetching images',
+      error: error.message
     });
   }
 });
