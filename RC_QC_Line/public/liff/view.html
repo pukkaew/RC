@@ -395,7 +395,9 @@
             try {
                 // Use the BASE_URL from query parameter or default
                 const params = new URLSearchParams(window.location.search);
-                const baseUrl = params.get('base_url') || window.location.origin;
+                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
+                
+                console.log('Loading images from:', `${baseUrl}/api/images/${lotNumber}/${imageDate}`);
                 
                 const response = await fetch(`${baseUrl}/api/images/${lotNumber}/${imageDate}`, {
                     method: 'GET',
@@ -409,10 +411,12 @@
                 }
                 
                 const data = await response.json();
+                console.log('API Response:', data);
+                
                 images = data.images || [];
                 
                 if (images.length === 0) {
-                    showError('ไม่พบรูปภาพสำหรับ Lot และวันที่นี้');
+                    showError(`ไม่พบรูปภาพ\n\n📦 Lot: ${lotNumber}\n📅 วันที่: ${new Date(imageDate).toLocaleDateString('th-TH')}\n\nกรุณาตรวจสอบ:\n• เลข Lot ถูกต้องหรือไม่\n• มีการอัปโหลดรูปภาพในวันนี้หรือไม่`);
                     return;
                 }
                 
@@ -429,7 +433,13 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`ไม่สามารถโหลดรูปภาพได้\n\nรายละเอียด: ${error.message}\n\nกรุณาตรวจสอบ:\n1. Server ทำงานอยู่หรือไม่\n2. มีการตั้งค่า HTTPS หรือไม่\n3. BASE_URL ถูกต้องหรือไม่`);
+                
+                // Check if it's a network error
+                if (error.message.includes('Failed to fetch')) {
+                    showError('ไม่สามารถเชื่อมต่อกับ Server ได้\n\nกรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+                } else {
+                    showError(`เกิดข้อผิดพลาด\n\n${error.message}`);
+                }
             }
         }
         
