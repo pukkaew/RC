@@ -380,18 +380,32 @@
                 
             } catch (error) {
                 console.error('LIFF initialization failed', error);
-                showError('ไม่สามารถเริ่มต้น LIFF ได้');
+                
+                // Check if it's a development mode error
+                if (error.code === 'INVALID_ARGUMENT' || error.message?.includes('developing')) {
+                    showError('⚠️ LIFF อยู่ในโหมดพัฒนา\n\nกรุณาติดต่อผู้ดูแลระบบเพื่อ:\n1. เปลี่ยนเป็น Published mode\n2. หรือเพิ่มสิทธิ์ Developer ให้คุณ');
+                } else {
+                    showError('ไม่สามารถเริ่มต้น LIFF ได้\n' + (error.message || ''));
+                }
             }
         }
         
         // Load images from server
         async function loadImages() {
             try {
-                const baseUrl = window.location.origin;
-                const response = await fetch(`${baseUrl}/api/images/${lotNumber}/${imageDate}`);
+                // Use the BASE_URL from query parameter or default
+                const params = new URLSearchParams(window.location.search);
+                const baseUrl = params.get('base_url') || window.location.origin;
+                
+                const response = await fetch(`${baseUrl}/api/images/${lotNumber}/${imageDate}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to load images');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -415,7 +429,7 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError('ไม่สามารถโหลดรูปภาพได้');
+                showError(`ไม่สามารถโหลดรูปภาพได้\n\nรายละเอียด: ${error.message}\n\nกรุณาตรวจสอบ:\n1. Server ทำงานอยู่หรือไม่\n2. มีการตั้งค่า HTTPS หรือไม่\n3. BASE_URL ถูกต้องหรือไม่`);
             }
         }
         

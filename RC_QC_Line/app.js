@@ -10,6 +10,21 @@ const path = require('path');
 // Create Express app
 const app = express();
 
+// CORS middleware for LIFF
+app.use((req, res, next) => {
+  // Allow requests from LIFF
+  res.header('Access-Control-Allow-Origin', 'https://liff.line.me');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 // Middleware
 app.use(bodyParser.json({ 
   verify: (req, res, buf) => {

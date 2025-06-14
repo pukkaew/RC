@@ -196,8 +196,9 @@ class DatePickerService {
         ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
         : `${dateObj.display} - ${dateObj.count} รูป`;
       
-      // Build LIFF URL
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
+      // Build LIFF URL with BASE_URL
+      const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}&base_url=${encodeURIComponent(baseUrl)}`;
       
       logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
       
@@ -551,7 +552,8 @@ class DatePickerService {
         ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
         : `${dateObj.display} - ${dateObj.count} รูป`;
       
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
+      const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}&base_url=${encodeURIComponent(baseUrl)}`;
       
       message += `${label}\n${liffUrl}\n\n`;
     });
