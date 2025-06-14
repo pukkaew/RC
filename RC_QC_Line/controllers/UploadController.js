@@ -44,7 +44,7 @@ class UploadController {
   }
 
   // Handle image upload from LINE with specified Lot
-  async handleImageUploadWithLot(userId, message, replyToken, lotNumber) {
+  async handleImageUploadWithLot(userId, message, replyToken, lotNumber, chatContext) {
     try {
       const { id: messageId } = message;
       
@@ -193,7 +193,7 @@ class UploadController {
   }
 
   // Handle regular image upload from LINE
-  async handleImageUpload(userId, message, replyToken) {
+  async handleImageUpload(userId, message, replyToken, chatContext) {
     try {
       const { id: messageId } = message;
       
@@ -240,7 +240,7 @@ class UploadController {
         setTimeout(async () => {
           const currentUpload = this.pendingUploads.get(userId);
           if (currentUpload && !currentUpload.lotRequested) {
-            await this.requestLotNumber(userId, null, currentUpload.images.length);
+            await this.requestLotNumber(userId, null, currentUpload.images.length, chatContext);
           }
         }, 2000); // 2 seconds delay
       }
@@ -257,7 +257,7 @@ class UploadController {
   }
 
   // Request Lot number for uploaded images
-  async requestLotNumber(userId, replyToken, imageCount = 1) {
+  async requestLotNumber(userId, replyToken, imageCount = 1, chatContext) {
     try {
       const pendingUpload = this.pendingUploads.get(userId);
       
@@ -272,9 +272,10 @@ class UploadController {
       }
       
       // Set user state to waiting for Lot
+      const chatId = chatContext?.chatId || 'direct';
       lineService.setUserState(userId, lineConfig.userStates.waitingForLot, {
         action: lineConfig.userActions.upload
-      });
+      }, chatId);
       
       // Mark that we've requested a Lot number
       pendingUpload.lotRequested = true;
@@ -297,7 +298,7 @@ class UploadController {
   }
 
   // Setup upload with Lot already specified
-  async setupUploadWithLot(userId, lotNumber, replyToken) {
+  async setupUploadWithLot(userId, lotNumber, replyToken, chatContext) {
     try {
       // Validate lot number
       if (!lotNumber || lotNumber.trim() === '') {
@@ -309,11 +310,12 @@ class UploadController {
       }
       
       // Set upload info with specified Lot
+      const chatId = chatContext?.chatId || 'direct';
       lineService.setUploadInfo(userId, {
         isActive: true,
         lotNumber: lotNumber.trim(),
         startTime: Date.now()
-      });
+      }, chatId);
       
       // Clear any pending uploads for this user
       this.pendingUploads.delete(userId);
@@ -335,7 +337,7 @@ class UploadController {
   }
 
   // Process Lot number and complete upload (using today's date)
-  async processLotNumber(userId, lotNumber, replyToken) {
+  async processLotNumber(userId, lotNumber, replyToken, chatContext) {
     try {
       const pendingUpload = this.pendingUploads.get(userId);
       
@@ -382,7 +384,8 @@ class UploadController {
       this.pendingUploads.delete(userId);
       
       // Reset user state
-      lineService.clearUserState(userId);
+      const chatId = chatContext?.chatId || 'direct';
+      lineService.clearUserState(userId, chatId);
       
       // Build success message
       const successMessage = lineMessageBuilder.buildUploadSuccessMessage(result);
@@ -401,7 +404,7 @@ class UploadController {
   }
 
   // Process date selection and complete upload (backward compatibility)
-  async processDateSelection(userId, lotNumber, date, replyToken) {
+  async processDateSelection(userId, lotNumber, date, replyToken, chatContext) {
     try {
       const pendingUpload = this.pendingUploads.get(userId);
       
@@ -429,7 +432,8 @@ class UploadController {
       this.pendingUploads.delete(userId);
       
       // Reset user state
-      lineService.clearUserState(userId);
+      const chatId = chatContext?.chatId || 'direct';
+      lineService.clearUserState(userId, chatId);
       
       // Build success message
       const successMessage = lineMessageBuilder.buildUploadSuccessMessage(result);
@@ -452,11 +456,13 @@ class UploadController {
     try {
       const now = Date.now();
       const timeout = 30 * 60 * 1000; // 30 minutes
+      let cleanedCount = 0;
       
       for (const [userId, upload] of this.pendingUploads.entries()) {
         if (now - upload.lastUpdateTime > timeout) {
           logger.info(`Cleaning up stale upload for user ${userId}`);
           this.pendingUploads.delete(userId);
+          cleanedCount++;
           
           // Clear timer if exists
           if (this.uploadTimers.has(userId)) {
@@ -465,8 +471,42 @@ class UploadController {
           }
         }
       }
+      
+      return cleanedCount;
     } catch (error) {
       logger.error('Error cleaning up pending uploads:', error);
+      return 0;
+    }
+  }
+
+  // Get upload statistics for monitoring
+  getUploadStatistics() {
+    try {
+      const stats = {
+        totalPendingUploads: this.pendingUploads.size,
+        activeTimers: this.uploadTimers.size,
+        pendingByUser: {}
+      };
+      
+      // Get details for each pending upload
+      for (const [userId, upload] of this.pendingUploads.entries()) {
+        stats.pendingByUser[userId] = {
+          imageCount: upload.images.length,
+          lastUpdateTime: new Date(upload.lastUpdateTime).toISOString(),
+          lotNumber: upload.lotNumber || 'not set',
+          lotRequested: upload.lotRequested || false
+        };
+      }
+      
+      return stats;
+    } catch (error) {
+      logger.error('Error getting upload statistics:', error);
+      return {
+        totalPendingUploads: 0,
+        activeTimers: 0,
+        pendingByUser: {},
+        error: error.message
+      };
     }
   }
 }

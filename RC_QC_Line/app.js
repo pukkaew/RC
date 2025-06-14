@@ -1,4 +1,4 @@
-// Main application file - Updated with Enhanced Cleanup
+// Main application file - Fixed Version
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -69,10 +69,10 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000); // 5 minutes
 
-// Additional cleanup for very old data (every 30 minutes)
+// System monitoring (every 30 minutes)
 setInterval(() => {
   try {
-    logger.info('Running extended cleanup...');
+    logger.info('Running system monitoring...');
     
     // Get upload statistics for monitoring
     const uploadStats = uploadController.getUploadStatistics();
@@ -88,7 +88,7 @@ setInterval(() => {
     }
     
   } catch (error) {
-    logger.error('Error during extended cleanup:', error);
+    logger.error('Error during system monitoring:', error);
   }
 }, 30 * 60 * 1000); // 30 minutes
 
