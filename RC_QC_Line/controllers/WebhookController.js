@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Simple but robust
+// Controller for handling LINE webhook events - Updated for Multi-Chat Support
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -121,6 +121,9 @@ class WebhookController {
       const { type, source, message, postback, replyToken } = event;
       const userId = source.userId;
       
+      // Extract chat context for multi-chat support
+      const chatContext = lineService.getChatContext(source);
+      
       // Skip processing if this is a group message and not a command
       if (source.type === 'group' || source.type === 'room') {
         // Only process messages that are commands
@@ -131,8 +134,8 @@ class WebhookController {
             return;
           }
         } else if (type === 'message' && message.type === 'image') {
-          // Process images only if user is in upload mode
-          const userUploadInfo = lineService.getUploadInfo(userId);
+          // Process images only if user is in upload mode for this specific chat
+          const userUploadInfo = lineService.getUploadInfo(userId, chatContext.chatId);
           if (!userUploadInfo || !userUploadInfo.isActive) {
             // Ignore images in groups if not in upload mode
             return;
@@ -149,11 +152,11 @@ class WebhookController {
       // Handle different event types
       switch (type) {
         case 'message':
-          await this.handleMessageEvent(userId, message, replyToken);
+          await this.handleMessageEvent(userId, message, replyToken, chatContext);
           break;
           
         case 'postback':
-          await this.handlePostbackEvent(userId, postback, replyToken);
+          await this.handlePostbackEvent(userId, postback, replyToken, chatContext);
           break;
           
         case 'follow':
@@ -175,31 +178,31 @@ class WebhookController {
   }
 
   // Handle message events
-  async handleMessageEvent(userId, message, replyToken) {
+  async handleMessageEvent(userId, message, replyToken, chatContext) {
     try {
       const { type, id } = message;
       
-      // Get current user state
-      const userState = lineService.getUserState(userId);
+      // Get current user state with chat context
+      const userState = lineService.getUserState(userId, chatContext.chatId);
       
       // Handle message based on type
       switch (type) {
         case 'text':
-          await this.handleTextMessage(userId, message, replyToken, userState);
+          await this.handleTextMessage(userId, message, replyToken, userState, chatContext);
           break;
           
         case 'image':
-          // Process images only if user is in upload mode
-          const userUploadInfo = lineService.getUploadInfo(userId);
+          // Process images only if user is in upload mode for this specific chat
+          const userUploadInfo = lineService.getUploadInfo(userId, chatContext.chatId);
           if (userUploadInfo && userUploadInfo.isActive) {
-            await this.handleImageMessage(userId, message, replyToken, userState, userUploadInfo);
+            await this.handleImageMessage(userId, message, replyToken, userState, userUploadInfo, chatContext);
           }
           break;
           
         default:
           // Don't reply with unsupported message type to avoid spam
           // Only reply if it's a direct message to the bot
-          if (message.source && message.source.type === 'user') {
+          if (!chatContext.isGroupChat) {
             const unsupportedMessage = `ขออภัย ไม่รองรับข้อความประเภท "${type}"`;
             await lineService.replyMessage(replyToken, lineService.createTextMessage(unsupportedMessage));
           }
@@ -212,10 +215,11 @@ class WebhookController {
   }
 
   // Handle text messages
-  async handleTextMessage(userId, message, replyToken, userState) {
+  async handleTextMessage(userId, message, replyToken, userState, chatContext) {
     try {
       const { text } = message;
       const { state, data } = userState;
+      const chatId = chatContext.chatId;
       
       // ตรวจสอบว่าเป็นคำสั่งหรือไม่
       const commandInfo = this.identifyCommand(text);
@@ -238,13 +242,13 @@ class WebhookController {
           
           // จัดการตาม action
           if (data.action === lineConfig.userActions.upload) {
-            await uploadController.processLotNumber(userId, lotNumber, replyToken);
+            await uploadController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === lineConfig.userActions.view) {
-            await imageController.processLotNumber(userId, lotNumber, replyToken);
+            await imageController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'delete') {
-            await deleteController.processLotNumber(userId, lotNumber, replyToken);
+            await deleteController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'correct') {
-            await correctController.processOldLot(userId, lotNumber, replyToken);
+            await correctController.processOldLot(userId, lotNumber, replyToken, chatContext);
           }
           return;
         }
@@ -263,7 +267,7 @@ class WebhookController {
           }
           
           // จัดการการแก้ไข Lot
-          await correctController.processNewLot(userId, data.oldLot, newLotNumber, replyToken);
+          await correctController.processNewLot(userId, data.oldLot, newLotNumber, replyToken, chatContext);
           return;
         }
       }
@@ -271,8 +275,8 @@ class WebhookController {
       // คำสั่ง #cancel มีความสำคัญสูงสุด
       if (commandInfo.isCommand && commandInfo.commandKey === 'cancel') {
         // ยกเลิกการทำงานปัจจุบัน
-        lineService.clearUserState(userId);
-        lineService.setUploadInfo(userId, null);
+        lineService.clearUserState(userId, chatId);
+        lineService.setUploadInfo(userId, null, chatId);
         
         await lineService.replyMessage(
           replyToken,
@@ -289,10 +293,10 @@ class WebhookController {
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #up ABC123)
             if (commandInfo.args.length > 0) {
               const lotNumber = commandInfo.args[0];
-              await uploadController.setupUploadWithLot(userId, lotNumber, replyToken);
+              await uploadController.setupUploadWithLot(userId, lotNumber, replyToken, chatContext);
             } else {
               // กรณีไม่ระบุ Lot
-              await uploadController.requestLotNumber(userId, replyToken);
+              await uploadController.requestLotNumber(userId, replyToken, 0, chatContext);
             }
             break;
             
@@ -301,10 +305,10 @@ class WebhookController {
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #view ABC123)
             if (commandInfo.args.length > 0) {
               const lotNumber = commandInfo.args[0];
-              await imageController.processLotNumber(userId, lotNumber, replyToken);
+              await imageController.processLotNumber(userId, lotNumber, replyToken, chatContext);
             } else {
               // กรณีไม่ระบุ Lot
-              await imageController.requestLotNumber(userId, replyToken);
+              await imageController.requestLotNumber(userId, replyToken, chatContext);
             }
             break;
             
@@ -313,10 +317,10 @@ class WebhookController {
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #del ABC123)
             if (commandInfo.args.length > 0) {
               const lotNumber = commandInfo.args[0];
-              await deleteController.processLotNumber(userId, lotNumber, replyToken);
+              await deleteController.processLotNumber(userId, lotNumber, replyToken, chatContext);
             } else {
               // กรณีไม่ระบุ Lot
-              await deleteController.requestLotNumber(userId, replyToken);
+              await deleteController.requestLotNumber(userId, replyToken, chatContext);
             }
             break;
             
@@ -326,16 +330,16 @@ class WebhookController {
             if (commandInfo.args.length >= 2) {
               const oldLot = commandInfo.args[0];
               const newLot = commandInfo.args[1];
-              await correctController.correctLot(userId, oldLot, newLot, replyToken);
+              await correctController.correctLot(userId, oldLot, newLot, replyToken, chatContext);
             } 
             // กรณีระบุเฉพาะ Lot เก่า (เช่น #correct ABC123)
             else if (commandInfo.args.length === 1) {
               const oldLot = commandInfo.args[0];
-              await correctController.requestNewLot(userId, oldLot, replyToken);
+              await correctController.requestNewLot(userId, oldLot, replyToken, chatContext);
             }
             // กรณีไม่ระบุ Lot
             else {
-              await correctController.requestOldLot(userId, replyToken);
+              await correctController.requestOldLot(userId, replyToken, chatContext);
             }
             break;
             
@@ -391,7 +395,7 @@ class WebhookController {
   }
 
   // Handle image messages
-  async handleImageMessage(userId, message, replyToken, userState, uploadInfo) {
+  async handleImageMessage(userId, message, replyToken, userState, uploadInfo, chatContext) {
     try {
       // ถ้ามี Lot กำหนดไว้แล้ว ให้อัปโหลดทันที
       if (uploadInfo.lotNumber) {
@@ -399,11 +403,12 @@ class WebhookController {
           userId, 
           message, 
           replyToken, 
-          uploadInfo.lotNumber
+          uploadInfo.lotNumber,
+          chatContext
         );
       } else {
         // ถ้ายังไม่มี Lot ให้ทำงานแบบเดิม
-        await uploadController.handleImageUpload(userId, message, replyToken);
+        await uploadController.handleImageUpload(userId, message, replyToken, chatContext);
       }
     } catch (error) {
       logger.error('Error handling image message:', error);
@@ -412,7 +417,7 @@ class WebhookController {
   }
 
   // Handle postback events (from buttons, date picker, advanced actions)
-  async handlePostbackEvent(userId, postback, replyToken) {
+  async handlePostbackEvent(userId, postback, replyToken, chatContext) {
     try {
       const { data } = postback;
       
@@ -425,32 +430,32 @@ class WebhookController {
       // Handle based on action
       if (action === lineConfig.userActions.upload) {
         // Forward to upload controller
-        await uploadController.processDateSelection(userId, lotNumber, date, replyToken);
+        await uploadController.processDateSelection(userId, lotNumber, date, replyToken, chatContext);
         // Reset upload mode after completion
-        lineService.setUploadInfo(userId, null);
+        lineService.setUploadInfo(userId, null, chatContext.chatId);
       } else if (action === lineConfig.userActions.view) {
         // Forward to image controller (direct to processDateSelection)
-        await imageController.processDateSelection(userId, lotNumber, date, replyToken);
+        await imageController.processDateSelection(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'delete') {
         // Forward to delete controller for showing delete options
-        await deleteController.processDateSelection(userId, lotNumber, date, replyToken);
+        await deleteController.processDateSelection(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'delete_image') {
         // Handle image deletion request
         const imageId = params.get('image_id');
-        await deleteController.handleDeleteRequest(userId, imageId, lotNumber, date, replyToken);
+        await deleteController.handleDeleteRequest(userId, imageId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'confirm_delete') {
         // Handle delete confirmation
         const imageId = params.get('image_id');
-        await deleteController.handleDeleteConfirmation(userId, imageId, lotNumber, date, replyToken);
+        await deleteController.handleDeleteConfirmation(userId, imageId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
-        await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken);
+        await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'carousel_share') {
         // Handle carousel sharing
-        await this.handleCarouselSharing(userId, params, replyToken);
+        await this.handleCarouselSharing(userId, params, replyToken, chatContext);
       } else if (action === 'smart_share') {
         // Handle smart grid sharing
-        await this.handleSmartSharing(userId, params, replyToken);
+        await this.handleSmartSharing(userId, params, replyToken, chatContext);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -465,7 +470,7 @@ class WebhookController {
   }
 
   // Handle carousel sharing
-  async handleCarouselSharing(userId, params, replyToken) {
+  async handleCarouselSharing(userId, params, replyToken, chatContext) {
     try {
       const imageUrl = decodeURIComponent(params.get('image_url'));
       const index = params.get('index');
@@ -485,7 +490,7 @@ class WebhookController {
       // Send the image
       await lineService.replyMessage(replyToken, imageMessage);
       
-      logger.info(`Carousel share: User ${userId}, image ${index}, Lot ${lotNumber}`);
+      logger.info(`Carousel share: User ${userId}, image ${index}, Lot ${lotNumber}, Chat: ${chatContext.chatId}`);
       
     } catch (error) {
       logger.error('Error handling carousel sharing:', error);
@@ -498,7 +503,7 @@ class WebhookController {
   }
 
   // Handle smart sharing
-  async handleSmartSharing(userId, params, replyToken) {
+  async handleSmartSharing(userId, params, replyToken, chatContext) {
     try {
       const imageUrl = decodeURIComponent(params.get('image_url'));
       const index = params.get('index');
@@ -518,7 +523,7 @@ class WebhookController {
       // Send the image
       await lineService.replyMessage(replyToken, imageMessage);
       
-      logger.info(`Smart share: User ${userId}, image ${index}, Lot ${lotNumber}`);
+      logger.info(`Smart share: User ${userId}, image ${index}, Lot ${lotNumber}, Chat: ${chatContext.chatId}`);
       
     } catch (error) {
       logger.error('Error handling smart sharing:', error);
@@ -561,15 +566,29 @@ class WebhookController {
       // Update user status
       await userController.deactivateUser(userId);
       
-      // Clear user states and modes
-      lineService.clearUserState(userId);
-      lineService.setUploadInfo(userId, null);
+      // Clear all user states and modes across all chats
+      lineService.clearAllUserStates(userId);
+      
+      // Clear upload info for all chats
+      const allUploads = lineService.getAllUploadInfoForUser(userId);
+      allUploads.forEach(upload => {
+        lineService.setUploadInfo(userId, null, upload.chatId);
+      });
       
       logger.info(`User ${userId} has unfollowed the bot`);
     } catch (error) {
       logger.error('Error handling unfollow event:', error);
       throw error;
     }
+  }
+
+  // Get system statistics for monitoring
+  getSystemStatistics() {
+    return {
+      activeStates: lineService.getActiveStates(),
+      uploadStats: uploadController.getUploadStatistics(),
+      timestamp: new Date().toISOString()
+    };
   }
 }
 

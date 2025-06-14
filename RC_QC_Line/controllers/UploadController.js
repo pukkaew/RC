@@ -87,28 +87,8 @@ class UploadController {
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
       
-      // Send confirmation with progress indicator for large uploads
-      const confirmMessage = pendingUpload.images.length > 10 
-        ? `ได้รับรูปที่ ${pendingUpload.images.length} สำหรับ Lot: ${lotNumber} แล้ว (ระบบจะประมวลผลใน ${Math.ceil((pendingUpload.images.length * 200 + 5000) / 1000)} วินาที)`
-        : `ได้รับรูปที่ ${pendingUpload.images.length} สำหรับ Lot: ${lotNumber} แล้ว`;
-      
-      if (pendingUpload.images.length === 1) {
-        // For the first image, use reply
-        await lineService.replyMessage(replyToken, lineService.createTextMessage(confirmMessage));
-      } else {
-        // For subsequent images, use push message
-        await lineService.pushMessage(userId, lineService.createTextMessage(confirmMessage));
-      }
-      
       // Schedule processing with appropriate delay for image count
       this.scheduleImageProcessing(userId, lotNumber);
-      
-      // Send progress update for large uploads
-      if (pendingUpload.images.length === 15 || pendingUpload.images.length === 25 || pendingUpload.images.length % 50 === 0) {
-        await lineService.pushMessage(userId, lineService.createTextMessage(
-          `📸 ได้รับรูปภาพแล้ว ${pendingUpload.images.length} รูป กำลังรอรูปเพิ่มเติม...`
-        ));
-      }
       
     } catch (error) {
       logger.error('Error handling image upload with Lot:', error);
@@ -253,10 +233,6 @@ class UploadController {
       
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
-      
-      // Send confirmation and ask for Lot
-      const confirmMessage = `ได้รับรูปที่ ${pendingUpload.images.length} แล้ว`;
-      await lineService.replyMessage(replyToken, lineService.createTextMessage(confirmMessage));
       
       // Ask for Lot number if this is the first image
       if (pendingUpload.images.length === 1) {

@@ -1,4 +1,4 @@
-// Service for date picker functionality in LINE
+// Service for date picker functionality in LINE - Updated for Multi-Chat Support
 const lineService = require('./LineService');
 const dateFormatter = require('../utils/DateFormatter');
 const logger = require('../utils/Logger');
@@ -11,22 +11,28 @@ class DatePickerService {
     this.dateFormatter = dateFormatter;
   }
 
-  // Get available dates for a lot (dates that have images)
+  // Get available dates for a lot (dates that have images) - ENHANCED WITH DEBUG
   async getAvailableDatesForLot(lotNumber) {
     try {
+      logger.info(`DatePicker: Getting available dates for Lot: ${lotNumber}`);
+      
       // Get lot info
       const lot = await lotModel.getByLotNumber(lotNumber);
       
       if (!lot) {
+        logger.warn(`DatePicker: Lot ${lotNumber} not found in database`);
         return [];
       }
       
+      logger.info(`DatePicker: Found Lot ${lotNumber} with ID: ${lot.lot_id}`);
+      
       // Query for dates with images for this lot
       const query = `
-        SELECT DISTINCT CONVERT(DATE, image_date) as date
+        SELECT DISTINCT CONVERT(DATE, image_date) as date, COUNT(*) as count
         FROM Images
         WHERE lot_id = @lotId
           AND status = 'active'
+        GROUP BY CONVERT(DATE, image_date)
         ORDER BY date DESC
       `;
       
@@ -35,6 +41,14 @@ class DatePickerService {
       ];
       
       const result = await require('../services/DatabaseService').executeQuery(query, params);
+      
+      logger.info(`DatePicker: Found ${result.recordset.length} distinct dates with images for Lot ${lotNumber}`);
+      
+      // Log each available date
+      result.recordset.forEach(row => {
+        const dateStr = new Date(row.date).toISOString().split('T')[0];
+        logger.info(`DatePicker: - ${dateStr}: ${row.count} images`);
+      });
       
       // Format dates
       const availableDates = result.recordset.map(row => {
@@ -115,12 +129,16 @@ class DatePickerService {
     return flexMessage;
   }
 
-  // Create date picker flex message for viewing images
+  // Create date picker flex message for viewing images - ENHANCED WITH DEBUG
   async createViewDatePickerFlexMessage(lotNumber, action = 'view') {
+    logger.info(`DatePicker: Creating ${action} date picker for Lot: ${lotNumber}`);
+    
     // Get dates that have images for this lot
     const availableDates = await this.getAvailableDatesForLot(lotNumber);
     
     if (availableDates.length === 0) {
+      logger.warn(`DatePicker: No available dates found for Lot: ${lotNumber}`);
+      
       // No images found for this lot
       return {
         type: "flex",
@@ -167,6 +185,8 @@ class DatePickerService {
       };
     }
     
+    logger.info(`DatePicker: Creating date picker with ${availableDates.length} available dates`);
+    
     // Create date buttons
     const dateButtons = availableDates.map(dateObj => {
       // Add "(วันนี้)" for current date
@@ -174,6 +194,8 @@ class DatePickerService {
       const label = isToday 
         ? `${dateObj.display} (วันนี้)` 
         : dateObj.display;
+      
+      logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
       
       return {
         type: "button",
@@ -229,19 +251,25 @@ class DatePickerService {
   }
 
   // Send date picker for uploads
-  async sendUploadDatePicker(userId, lotNumber) {
+  async sendUploadDatePicker(userId, lotNumber, chatContext = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Create the date picker flex message
       const flexMessage = await this.createUploadDatePickerFlexMessage(lotNumber);
       
       // Send the message to the user
-      await lineService.pushMessage(userId, flexMessage);
+      if (chatContext?.isGroupChat) {
+        await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+      } else {
+        await lineService.pushMessage(userId, flexMessage);
+      }
       
-      // Update user state to waiting for date selection
+      // Update user state to waiting for date selection with chat context
       lineService.setUserState(userId, lineService.userStates.waitingForDate, {
         lotNumber,
         action: 'upload'
-      });
+      }, chatId);
       
       return true;
     } catch (error) {
@@ -251,19 +279,47 @@ class DatePickerService {
   }
 
   // Send date picker for viewing images
-  async sendViewDatePicker(userId, lotNumber) {
+  async sendViewDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Create the date picker flex message
       const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'view');
       
-      // Send the message to the user
-      await lineService.pushMessage(userId, flexMessage);
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message with quick reply
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'view');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
+        }
+      }
       
-      // Update user state to waiting for date selection
+      // Update user state to waiting for date selection with chat context
       lineService.setUserState(userId, lineService.userStates.waitingForDate, {
         lotNumber,
         action: 'view'
-      });
+      }, chatId);
       
       return true;
     } catch (error) {
@@ -273,19 +329,47 @@ class DatePickerService {
   }
   
   // Send date picker for deleting images
-  async sendDeleteDatePicker(userId, lotNumber) {
+  async sendDeleteDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Create the date picker flex message with delete action
       const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'delete');
       
-      // Send the message to the user
-      await lineService.pushMessage(userId, flexMessage);
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending delete date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message with quick reply
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'delete');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
+        }
+      }
       
-      // Update user state to waiting for date selection
+      // Update user state to waiting for date selection with chat context
       lineService.setUserState(userId, lineService.userStates.waitingForDate, {
         lotNumber,
         action: 'delete'
-      });
+      }, chatId);
       
       return true;
     } catch (error) {
@@ -294,8 +378,46 @@ class DatePickerService {
     }
   }
 
+  // Create text-based date picker fallback for groups
+  async createTextDatePickerFallback(lotNumber, action = 'view') {
+    const availableDates = await this.getAvailableDatesForLot(lotNumber);
+    
+    if (availableDates.length === 0) {
+      return {
+        type: 'text',
+        text: `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}\nกรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน`
+      };
+    }
+    
+    // Create quick reply items for available dates
+    const quickReplyItems = availableDates.map(dateObj => {
+      const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
+      const label = isToday 
+        ? `${dateObj.display} (วันนี้)` 
+        : dateObj.display;
+      
+      return {
+        type: 'action',
+        action: {
+          type: 'postback',
+          label: label,
+          data: `action=${action}&lot=${lotNumber}&date=${dateObj.date}`,
+          displayText: `เลือกวันที่ ${dateObj.display}`
+        }
+      };
+    });
+    
+    return {
+      type: 'text',
+      text: `เลือกวันที่สำหรับ Lot: ${lotNumber}`,
+      quickReply: {
+        items: quickReplyItems
+      }
+    };
+  }
+
   // Handle date selection from postback
-  async handleDateSelection(userId, lotNumber, date, action) {
+  async handleDateSelection(userId, lotNumber, date, action, chatContext = null) {
     try {
       // Parse the date string
       const selectedDate = this.dateFormatter.parseDate(date);
@@ -307,7 +429,11 @@ class DatePickerService {
       );
       
       // Send confirmation to user
-      await lineService.pushMessage(userId, confirmMessage);
+      if (chatContext?.isGroupChat) {
+        await lineService.pushMessageToChat(chatContext.chatId, confirmMessage, chatContext.chatType);
+      } else {
+        await lineService.pushMessage(userId, confirmMessage);
+      }
       
       // Return the selected date information
       return {

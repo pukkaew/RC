@@ -1,4 +1,4 @@
-// Service for LINE API interactions
+// Service for LINE API interactions - Updated for Multi-Chat Support
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -14,8 +14,38 @@ class LineService {
     
     this.client = new line.Client(this.lineConfig);
     this.messageTypes = lineConfig.messageTypes;
-    this.userStates = new Map(); // In-memory storage for user states
-    this.uploadInfo = new Map(); // Track users upload information
+    
+    // Multi-Chat Support: Use composite keys (userId + chatId)
+    this.userStates = new Map(); // In-memory storage for user states per chat
+    this.uploadInfo = new Map(); // Track users upload information per chat
+  }
+
+  // Generate composite key for multi-chat support
+  generateChatKey(userId, chatId = 'direct') {
+    return `${userId}:${chatId}`;
+  }
+
+  // Extract chat context from LINE event source
+  getChatContext(source) {
+    if (source.type === 'group') {
+      return {
+        chatType: 'group',
+        chatId: source.groupId,
+        isGroupChat: true
+      };
+    } else if (source.type === 'room') {
+      return {
+        chatType: 'room', 
+        chatId: source.roomId,
+        isGroupChat: true
+      };
+    } else {
+      return {
+        chatType: 'user',
+        chatId: 'direct',
+        isGroupChat: false
+      };
+    }
   }
 
   // Check if a message starts with a specific command prefix
@@ -24,18 +54,41 @@ class LineService {
     return text.trim().toLowerCase().startsWith(prefix.toLowerCase());
   }
 
-  // Get user upload info
-  getUploadInfo(userId) {
-    return this.uploadInfo.get(userId);
+  // Get user upload info with chat context
+  getUploadInfo(userId, chatId = 'direct') {
+    const chatKey = this.generateChatKey(userId, chatId);
+    return this.uploadInfo.get(chatKey);
   }
 
-  // Set user upload info
-  setUploadInfo(userId, info) {
+  // Set user upload info with chat context
+  setUploadInfo(userId, info, chatId = 'direct') {
+    const chatKey = this.generateChatKey(userId, chatId);
     if (info === null) {
-      this.uploadInfo.delete(userId);
+      this.uploadInfo.delete(chatKey);
       return;
     }
-    this.uploadInfo.set(userId, info);
+    // Add chat context to upload info
+    const enrichedInfo = {
+      ...info,
+      chatId: chatId,
+      chatKey: chatKey,
+      userId: userId
+    };
+    this.uploadInfo.set(chatKey, enrichedInfo);
+  }
+
+  // Get all upload info for a user across all chats
+  getAllUploadInfoForUser(userId) {
+    const userUploads = [];
+    for (const [chatKey, info] of this.uploadInfo.entries()) {
+      if (chatKey.startsWith(`${userId}:`)) {
+        userUploads.push({
+          chatKey,
+          ...info
+        });
+      }
+    }
+    return userUploads;
   }
 
   // Verify LINE webhook signature
@@ -70,6 +123,29 @@ class LineService {
     } catch (error) {
       logger.error('Error pushing LINE message:', error);
       throw new AppError('Failed to push message', 500, { error: error.message });
+    }
+  }
+
+  // Push a message to a group or room
+  async pushMessageToChat(chatId, messages, chatType = 'group') {
+    try {
+      if (!Array.isArray(messages)) {
+        messages = [messages];
+      }
+      
+      if (chatType === 'group') {
+        await this.client.pushMessage(chatId, messages);
+      } else if (chatType === 'room') {
+        await this.client.pushMessage(chatId, messages);
+      } else {
+        // Direct message
+        await this.client.pushMessage(chatId, messages);
+      }
+      
+      return true;
+    } catch (error) {
+      logger.error('Error pushing message to chat:', error);
+      throw new AppError('Failed to push message to chat', 500, { error: error.message });
     }
   }
 
@@ -118,19 +194,93 @@ class LineService {
     };
   }
 
-  // Set a user's state
-  setUserState(userId, state, data = {}) {
-    this.userStates.set(userId, { state, data });
+  // Set a user's state with chat context
+  setUserState(userId, state, data = {}, chatId = 'direct') {
+    const chatKey = this.generateChatKey(userId, chatId);
+    const enrichedData = {
+      ...data,
+      chatId: chatId,
+      chatKey: chatKey,
+      userId: userId,
+      timestamp: Date.now()
+    };
+    this.userStates.set(chatKey, { state, data: enrichedData });
+    
+    // Log state change for debugging
+    logger.info(`User state changed: ${chatKey} -> ${state}`, enrichedData);
   }
 
-  // Get a user's state
-  getUserState(userId) {
-    return this.userStates.get(userId) || { state: lineConfig.userStates.idle, data: {} };
+  // Get a user's state with chat context
+  getUserState(userId, chatId = 'direct') {
+    const chatKey = this.generateChatKey(userId, chatId);
+    const defaultState = { 
+      state: lineConfig.userStates.idle, 
+      data: { 
+        chatId: chatId, 
+        userId: userId, 
+        chatKey: chatKey 
+      } 
+    };
+    return this.userStates.get(chatKey) || defaultState;
   }
 
-  // Clear a user's state
-  clearUserState(userId) {
-    this.userStates.delete(userId);
+  // Clear a user's state with chat context
+  clearUserState(userId, chatId = 'direct') {
+    const chatKey = this.generateChatKey(userId, chatId);
+    this.userStates.delete(chatKey);
+    logger.info(`User state cleared: ${chatKey}`);
+  }
+
+  // Clear all states for a user across all chats
+  clearAllUserStates(userId) {
+    const keysToDelete = [];
+    for (const [chatKey] of this.userStates.entries()) {
+      if (chatKey.startsWith(`${userId}:`)) {
+        keysToDelete.push(chatKey);
+      }
+    }
+    
+    keysToDelete.forEach(key => {
+      this.userStates.delete(key);
+      logger.info(`User state cleared: ${key}`);
+    });
+    
+    return keysToDelete.length;
+  }
+
+  // Get all active states for debugging/monitoring
+  getActiveStates() {
+    const states = {};
+    for (const [chatKey, stateData] of this.userStates.entries()) {
+      states[chatKey] = {
+        state: stateData.state,
+        timestamp: stateData.data.timestamp,
+        chatId: stateData.data.chatId,
+        userId: stateData.data.userId
+      };
+    }
+    return states;
+  }
+
+  // Clean up expired states (older than 30 minutes)
+  cleanupExpiredStates() {
+    const now = Date.now();
+    const expiredThreshold = 30 * 60 * 1000; // 30 minutes
+    const expiredKeys = [];
+    
+    for (const [chatKey, stateData] of this.userStates.entries()) {
+      const timestamp = stateData.data.timestamp || 0;
+      if (now - timestamp > expiredThreshold) {
+        expiredKeys.push(chatKey);
+      }
+    }
+    
+    expiredKeys.forEach(key => {
+      this.userStates.delete(key);
+      logger.info(`Expired state cleaned up: ${key}`);
+    });
+    
+    return expiredKeys.length;
   }
 }
 

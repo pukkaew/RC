@@ -1,4 +1,4 @@
-// Service for image processing and management
+// Service for image processing and management - Add Debug Logging
 const path = require('path');
 const fs = require('fs');
 const imageCompressor = require('../utils/ImageCompressor');
@@ -116,13 +116,30 @@ class ImageService {
     }
   }
 
-  // Get images by lot number and date (optimized for large result sets)
+  // Get images by lot number and date (optimized for large result sets) - ENHANCED WITH DEBUG
   async getImagesByLotAndDate(lotNumber, imageDate) {
     try {
+      // Enhanced logging for debugging
+      logger.info(`Searching for images - Lot: ${lotNumber}, Date: ${imageDate}`);
+      
       // Get images from database
       const images = await imageModel.getByLotNumberAndDate(lotNumber, imageDate);
       
+      // Enhanced logging
+      logger.info(`Found ${images ? images.length : 0} images for lot ${lotNumber} on date ${imageDate}`);
+      
       if (!images || images.length === 0) {
+        // Debug: Check if lot exists at all
+        const lot = await lotModel.getByLotNumber(lotNumber);
+        if (!lot) {
+          logger.warn(`Lot ${lotNumber} does not exist in database`);
+        } else {
+          logger.info(`Lot ${lotNumber} exists (ID: ${lot.lot_id}) but no images found for date ${imageDate}`);
+          
+          // Debug: Check what dates have images for this lot
+          await this.debugLotImageDates(lotNumber, lot.lot_id);
+        }
+        
         return {
           lotNumber,
           imageDate,
@@ -159,6 +176,37 @@ class ImageService {
     }
   }
 
+  // Debug helper: Check what dates have images for a lot
+  async debugLotImageDates(lotNumber, lotId) {
+    try {
+      const query = `
+        SELECT DISTINCT CONVERT(DATE, image_date) as date, COUNT(*) as count
+        FROM Images
+        WHERE lot_id = @lotId AND status = 'active'
+        GROUP BY CONVERT(DATE, image_date)
+        ORDER BY date DESC
+      `;
+      
+      const params = [
+        { name: 'lotId', type: require('mssql').Int, value: lotId }
+      ];
+      
+      const result = await require('./DatabaseService').executeQuery(query, params);
+      
+      if (result.recordset.length > 0) {
+        logger.info(`Available dates for Lot ${lotNumber}:`);
+        result.recordset.forEach(row => {
+          const dateStr = new Date(row.date).toISOString().split('T')[0];
+          logger.info(`  - ${dateStr}: ${row.count} images`);
+        });
+      } else {
+        logger.info(`No images found for Lot ${lotNumber} on any date`);
+      }
+    } catch (error) {
+      logger.error('Error debugging lot image dates:', error);
+    }
+  }
+
   // Group images for sending in LINE messages (max 5 per message) - kept for compatibility
   groupImagesForSending(images) {
     const groups = [];
@@ -184,7 +232,7 @@ class ImageService {
         { name: 'imageId', type: require('mssql').Int, value: imageId }
       ];
       
-      const result = await require('../services/DatabaseService').executeQuery(query, params);
+      const result = await require('./DatabaseService').executeQuery(query, params);
       
       if (!result.recordset || result.recordset.length === 0) {
         throw new AppError('Image not found', 404);

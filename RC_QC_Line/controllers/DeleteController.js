@@ -1,4 +1,4 @@
-// Controller for handling image deletion
+// Controller for handling image deletion - Updated for Multi-Chat Support (Fixed)
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const deleteService = require('../services/DeleteService');
@@ -8,12 +8,14 @@ const { asyncHandler, AppError } = require('../utils/ErrorHandler');
 
 class DeleteController {
   // Request Lot number for deleting images
-  async requestLotNumber(userId, replyToken) {
+  async requestLotNumber(userId, replyToken, chatContext = null) {
     try {
-      // Set user state to waiting for Lot number
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Set user state to waiting for Lot number with chat context
       lineService.setUserState(userId, lineConfig.userStates.waitingForLot, {
         action: 'delete'
-      });
+      }, chatId);
       
       // Ask for Lot number
       const requestMessage = {
@@ -29,8 +31,10 @@ class DeleteController {
   }
 
   // Process Lot number and show date picker with available dates
-  async processLotNumber(userId, lotNumber, replyToken) {
+  async processLotNumber(userId, lotNumber, replyToken, chatContext = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Validate lot number
       if (!lotNumber || lotNumber.trim() === '') {
         await lineService.replyMessage(
@@ -40,14 +44,10 @@ class DeleteController {
         return;
       }
       
-      // Show date picker with only dates that have images and delete action
-      await datePickerService.sendDeleteDatePicker(userId, lotNumber.trim());
+      // Show date picker with only dates that have images and delete action (NO CONFIRMATION MESSAGE)
+      // Pass replyToken to sendDeleteDatePicker so it can reply directly
+      await datePickerService.sendDeleteDatePicker(userId, lotNumber.trim(), chatContext, replyToken);
       
-      // Confirm Lot number
-      await lineService.replyMessage(
-        replyToken,
-        lineService.createTextMessage(`ได้รับเลข Lot: ${lotNumber} กรุณาเลือกวันที่ที่มีรูปภาพที่ต้องการลบ`)
-      );
     } catch (error) {
       logger.error('Error processing Lot number for deleting:', error);
       
@@ -60,10 +60,12 @@ class DeleteController {
   }
 
   // Process date selection and show images for deletion
-  async processDateSelection(userId, lotNumber, date, replyToken) {
+  async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Reset user state
-      lineService.setUserState(userId, lineConfig.userStates.idle);
+      lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
       
       // Create image delete selector
       const deleteSelector = await deleteService.createImageDeleteSelector(lotNumber, date);
@@ -82,7 +84,7 @@ class DeleteController {
   }
 
   // Handle image deletion request (confirmation)
-  async handleDeleteRequest(userId, imageId, lotNumber, date, replyToken) {
+  async handleDeleteRequest(userId, imageId, lotNumber, date, replyToken, chatContext = null) {
     try {
       // Create confirmation message
       const confirmMessage = await deleteService.createDeleteConfirmationMessage(imageId, lotNumber, date);
@@ -101,7 +103,7 @@ class DeleteController {
   }
 
   // Handle delete confirmation
-  async handleDeleteConfirmation(userId, imageId, lotNumber, date, replyToken) {
+  async handleDeleteConfirmation(userId, imageId, lotNumber, date, replyToken, chatContext = null) {
     try {
       // Delete the image
       await deleteService.deleteImage(imageId);
@@ -125,7 +127,7 @@ class DeleteController {
   }
 
   // Handle delete cancellation
-  async handleDeleteCancellation(userId, lotNumber, date, replyToken) {
+  async handleDeleteCancellation(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       // Send cancellation message
       const cancelMessage = {

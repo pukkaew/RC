@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing
+// Controller for image retrieval and viewing - Updated for Multi-Chat Support (Fixed)
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -9,12 +9,14 @@ const { asyncHandler, AppError } = require('../utils/ErrorHandler');
 
 class ImageController {
   // Request Lot number for viewing images
-  async requestLotNumber(userId, replyToken) {
+  async requestLotNumber(userId, replyToken, chatContext = null) {
     try {
-      // Set user state to waiting for Lot number
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Set user state to waiting for Lot number with chat context
       lineService.setUserState(userId, lineConfig.userStates.waitingForLot, {
         action: lineConfig.userActions.view
-      });
+      }, chatId);
       
       // Ask for Lot number
       const lotRequestMessage = lineMessageBuilder.buildLotNumberRequestMessage(lineConfig.userActions.view);
@@ -26,10 +28,15 @@ class ImageController {
   }
 
   // Process Lot number and show date picker with available dates
-  async processLotNumber(userId, lotNumber, replyToken) {
+  async processLotNumber(userId, lotNumber, replyToken, chatContext = null) {
     try {
-      // Validate lot number
-      if (!lotNumber || lotNumber.trim() === '') {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Enhanced validation with debug logging
+      logger.info(`ImageController: Processing Lot number: "${lotNumber}"`);
+      
+      if (!lotNumber) {
+        logger.warn(`ImageController: Lot number is null or undefined`);
         await lineService.replyMessage(
           replyToken, 
           lineService.createTextMessage('เลข Lot ไม่ถูกต้อง กรุณาระบุเลข Lot อีกครั้ง')
@@ -37,14 +44,24 @@ class ImageController {
         return;
       }
       
-      // Show date picker with only dates that have images
-      await datePickerService.sendViewDatePicker(userId, lotNumber.trim());
+      const trimmedLot = lotNumber.trim();
+      logger.info(`ImageController: Trimmed Lot number: "${trimmedLot}"`);
       
-      // Confirm Lot number
-      await lineService.replyMessage(
-        replyToken,
-        lineService.createTextMessage(`ได้รับเลข Lot: ${lotNumber} กรุณาเลือกวันที่`)
-      );
+      if (trimmedLot === '') {
+        logger.warn(`ImageController: Lot number is empty after trim`);
+        await lineService.replyMessage(
+          replyToken, 
+          lineService.createTextMessage('เลข Lot ไม่ถูกต้อง กรุณาระบุเลข Lot อีกครั้ง')
+        );
+        return;
+      }
+      
+      logger.info(`ImageController: Lot validation passed, proceeding to DatePicker`);
+      
+      // Show date picker with only dates that have images (NO CONFIRMATION MESSAGE)
+      // Pass replyToken to sendViewDatePicker so it can reply directly
+      await datePickerService.sendViewDatePicker(userId, trimmedLot, chatContext, replyToken);
+      
     } catch (error) {
       logger.error('Error processing Lot number for viewing:', error);
       
@@ -57,13 +74,15 @@ class ImageController {
   }
 
   // Process date selection and show images as Native Batches (Multi-message)
-  async processDateSelection(userId, lotNumber, date, replyToken) {
+  async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Get images for the specified lot and date
       const result = await imageService.getImagesByLotAndDate(lotNumber, date);
       
       // Reset user state
-      lineService.setUserState(userId, lineConfig.userStates.idle);
+      lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
       
       // Check if images were found
       if (!result.images || result.images.length === 0) {
@@ -86,7 +105,7 @@ class ImageController {
         );
       } else {
         // Send all messages at once using LINE's multi-message API
-        await this.sendMultipleMessages(userId, messages, replyToken);
+        await this.sendMultipleMessages(userId, messages, replyToken, chatContext);
       }
       
     } catch (error) {
@@ -100,10 +119,11 @@ class ImageController {
     }
   }
 
-  // Send Multiple Messages at once (ส่งหลายรูปพร้อมกันในคำสั่งเดียว)
-  async sendMultipleMessages(userId, messages, replyToken) {
+  // Send Multiple Messages at once (ส่งหลายรูปพร้อมกันในคำสั่งเดียว) - Updated for Multi-Chat
+  async sendMultipleMessages(userId, messages, replyToken, chatContext = null) {
     try {
       const maxMessagesPerCall = 5; // LINE API limit per call
+      const chatId = chatContext?.chatId || 'direct';
       
       // Send first batch as reply (up to 5 messages)
       const firstBatch = messages.slice(0, maxMessagesPerCall);
@@ -119,7 +139,13 @@ class ImageController {
           
           // Small delay between batches to ensure delivery order
           await new Promise(resolve => setTimeout(resolve, 100));
-          await lineService.pushMessage(userId, batch);
+          
+          // Send appropriate message type based on chat context
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, batch, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, batch);
+          }
         }
       }
       
@@ -130,15 +156,17 @@ class ImageController {
   }
 
   // Handle case when no images are found for lot and date
-  async handleNoImagesFound(userId, lotNumber, replyToken) {
+  async handleNoImagesFound(userId, lotNumber, replyToken, chatContext = null) {
     try {
+      const chatId = chatContext?.chatId || 'direct';
+      
       // Send message that no images were found
       const noImageMessage = lineMessageBuilder.buildNoImagesFoundMessage(lotNumber);
       
       await lineService.replyMessage(replyToken, noImageMessage);
       
       // Reset user state
-      lineService.setUserState(userId, lineConfig.userStates.idle);
+      lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
     } catch (error) {
       logger.error('Error handling no images found:', error);
       throw error;

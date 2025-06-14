@@ -1,4 +1,4 @@
-// Builder for LINE messages - Advanced Hybrid System (Fixed)
+// Builder for LINE messages - Fixed Version
 const lineConfig = require('../config/line');
 const dateFormatter = require('../utils/DateFormatter');
 
@@ -75,9 +75,9 @@ class LineMessageBuilder {
     const lotNumber = lot.lot_number;
     const date = this.dateFormatter.formatDisplayDate(images[0].imageDate);
     
-    let text = `อัปโหลดสำเร็จ ${imageCount} รูปภาพ\n`;
-    text += `Lot: ${lotNumber}\n`;
-    text += `วันที่: ${date}\n\n`;
+    let text = `✅ อัปโหลดสำเร็จ ${imageCount} รูปภาพ\n`;
+    text += `📦 Lot: ${lotNumber}\n`;
+    text += `📅 วันที่: ${date}\n\n`;
     
     if (imageCount > 0) {
       const savedSize = images.reduce((total, img) => {
@@ -85,13 +85,13 @@ class LineMessageBuilder {
       }, 0);
       
       const savedMB = (savedSize / (1024 * 1024)).toFixed(2);
-      text += `ประหยัดพื้นที่ได้: ${savedMB} MB`;
+      text += `💾 ประหยัดพื้นที่ได้: ${savedMB} MB`;
     }
     
     return this.buildTextMessage(text);
   }
 
-  // Build messages for showing images (Simplified but Robust System)
+  // Build messages for showing images (Fixed Strategy)
   buildImageViewMessages(result) {
     const { lotNumber, imageDate, images } = result;
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
@@ -102,28 +102,38 @@ class LineMessageBuilder {
       return [this.buildNoImagesFoundMessage(lotNumber, imageDate)];
     }
     
-    // Add header message
-    const headerText = `📸 Lot: ${lotNumber}\n📅 ${formattedDate}\n🎯 ${images.length} รูปภาพ`;
+    // Add header message with count
+    const headerText = `📸 Lot: ${lotNumber}\n📅 ${formattedDate}\n🎯 พบ ${images.length} รูปภาพ`;
     messages.push(this.buildTextMessage(headerText));
     
-    // Choose display strategy based on image count
-    if (images.length <= 5) {
-      // Small sets: Show all as native images
-      messages.push(...this.buildNativeImages(images));
-    } else if (images.length <= 12) {
-      // Medium sets: Carousel + selective native
-      messages.push(this.buildImageCarousel(images, lotNumber));
-      messages.push(...this.buildSelectiveNativeImages(images));
-    } else {
-      // Large sets: Flex grid + samples
-      messages.push(this.buildFlexGrid(images, lotNumber, formattedDate));
-      messages.push(...this.buildSampleNativeImages(images, 3));
+    // Strategy: Send ALL images as native messages for reliability
+    // LINE supports up to 5 messages per reply, then use push
+    const allNativeImages = this.buildAllNativeImages(images);
+    messages.push(...allNativeImages);
+    
+    // Add footer with summary if many images
+    if (images.length > 10) {
+      const footerText = `✅ แสดงครบทั้ง ${images.length} รูปแล้ว`;
+      messages.push(this.buildTextMessage(footerText));
     }
     
     return messages;
   }
 
-  // Build native images
+  // Build ALL images as native images (most reliable method)
+  buildAllNativeImages(images) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    
+    return images.map(image => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      return this.buildImageMessage(imageUrl);
+    });
+  }
+
+  // Build native images (subset)
   buildNativeImages(images) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     
@@ -136,7 +146,7 @@ class LineMessageBuilder {
     });
   }
 
-  // Build image carousel
+  // Build image carousel (for reference, but simplified)
   buildImageCarousel(images, lotNumber) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     
@@ -165,168 +175,31 @@ class LineMessageBuilder {
     };
   }
 
-  // Build flex grid
-  buildFlexGrid(images, lotNumber, formattedDate) {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    const gridSize = Math.min(images.length, 9); // 3x3 optimal
-    const gridImages = images.slice(0, gridSize);
-    
-    // Create 3x3 grid
-    const rows = [];
-    for (let r = 0; r < 3; r++) {
-      const rowImages = gridImages.slice(r * 3, (r + 1) * 3);
-      const rowBoxes = rowImages.map((image, index) => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        const globalIndex = r * 3 + index + 1;
-        
-        return {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "image",
-              url: imageUrl,
-              aspectRatio: "1:1",
-              aspectMode: "cover",
-              size: "full",
-              action: {
-                type: "postback",
-                data: `action=smart_share&image_url=${encodeURIComponent(imageUrl)}&index=${globalIndex}&lot=${lotNumber}`,
-                displayText: `แชร์รูปที่ ${globalIndex}`
-              }
-            },
-            {
-              type: "text",
-              text: `${globalIndex}`,
-              size: "xs",
-              align: "center",
-              color: "#00C851",
-              weight: "bold",
-              margin: "xs"
-            }
-          ],
-          flex: 1,
-          margin: "xs"
-        };
-      });
-      
-      // Fill empty slots if needed
-      while (rowBoxes.length < 3) {
-        rowBoxes.push({
-          type: "box",
-          layout: "vertical",
-          contents: [],
-          flex: 1
-        });
-      }
-      
-      rows.push({
-        type: "box",
-        layout: "horizontal",
-        contents: rowBoxes,
-        spacing: "xs",
-        margin: "xs"
-      });
-    }
-    
-    return {
-      type: "flex",
-      altText: `🔳 Grid - ${lotNumber}`,
-      contents: {
-        type: "bubble",
-        size: "mega",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `🔳 Grid: ${lotNumber}`,
-              weight: "bold",
-              size: "md",
-              color: "#00C851"
-            },
-            {
-              type: "text",
-              text: `📅 ${formattedDate} | 🎯 ${gridSize}/${images.length} รูป`,
-              size: "sm",
-              color: "#666666",
-              margin: "xs"
-            }
-          ],
-          paddingAll: "12px",
-          backgroundColor: "#F0FFF0"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: rows,
-          paddingAll: "8px",
-          spacing: "xs"
-        }
-      }
-    };
-  }
-
-  // Build selective native images (key images only)
-  buildSelectiveNativeImages(images) {
-    const keyIndices = this.selectKeyImageIndices(images.length);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    return keyIndices.map(index => {
-      const image = images[index];
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return this.buildImageMessage(imageUrl);
-    });
-  }
-
-  // Build sample native images (first N images)
-  buildSampleNativeImages(images, count = 3) {
-    const sampleImages = images.slice(0, count);
-    return this.buildNativeImages(sampleImages);
-  }
-
-  // Select key image indices
-  selectKeyImageIndices(totalImages) {
-    if (totalImages <= 3) return Array.from({length: totalImages}, (_, i) => i);
-    if (totalImages <= 10) return [0, Math.floor(totalImages/2), totalImages-1];
-    
-    // For large sets, select strategic samples
-    const step = Math.floor(totalImages / 5);
-    return [0, step, step*2, step*3, totalImages-1];
-  }
-
   // Build a message for no images found
   buildNoImagesFoundMessage(lotNumber, date = null) {
-    let message = `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}`;
+    let message = `❌ ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}`;
     
     if (date) {
       const formattedDate = this.dateFormatter.formatDisplayDate(date);
       message += ` วันที่: ${formattedDate}`;
     }
     
-    message += '\nกรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน';
+    message += '\n\n💡 กรุณาตรวจสอบ:\n• เลข Lot ถูกต้องหรือไม่\n• มีการอัปโหลดรูปภาพแล้วหรือไม่';
     
     return this.buildTextMessage(message);
   }
 
   // Build an error message
   buildErrorMessage(message) {
-    return this.buildTextMessage(`เกิดข้อผิดพลาด: ${message}`);
+    return this.buildTextMessage(`❌ เกิดข้อผิดพลาด: ${message}`);
   }
 
-  // Build Flex Message for image deletion selection
+  // Build Flex Message for image deletion selection (Simplified)
   buildImageDeleteFlexMessage(lotNumber, imageDate, images) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const formattedDate = this.dateFormatter.formatDisplayDate(imageDate);
     
-    // Create delete buttons for first 6 images (to fit in flex message)
+    // Limit to first 6 images for deletion UI
     const deleteImages = images.slice(0, 6);
     
     const imageBoxes = deleteImages.map((image, index) => {
@@ -407,7 +280,7 @@ class LineMessageBuilder {
             },
             {
               type: "text",
-              text: `Lot: ${lotNumber} | ${formattedDate}`,
+              text: `📦 Lot: ${lotNumber} | 📅 ${formattedDate}`,
               size: "sm",
               color: "#666666",
               margin: "xs"
