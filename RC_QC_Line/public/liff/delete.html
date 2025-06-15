@@ -91,7 +91,7 @@
         
         .image-item img {
             width: 100%;
-            height: 120px;
+            aspect-ratio: 1/1;
             object-fit: cover;
             display: block;
         }
@@ -409,8 +409,7 @@
         // Load images from server
         async function loadImages() {
             try {
-                const params = new URLSearchParams(window.location.search);
-                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
+                const baseUrl = 'https://line.ruxchai.co.th';
                 
                 console.log('Loading images from:', `${baseUrl}/api/images/${lotNumber}/${imageDate}`);
                 
@@ -609,11 +608,11 @@
                 const accessToken = liff.getAccessToken();
                 
                 // Send delete request
-                const response = await fetch('/api/images/delete', {
+                const baseUrl = 'https://line.ruxchai.co.th';
+                const response = await fetch(`${baseUrl}/api/images/delete`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${accessToken}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         userId: profile.userId,
