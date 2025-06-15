@@ -534,7 +534,7 @@
             }
         }
         
-        // Share images - Simplified version
+        // Share images - Alternative approach using URL scheme
         async function shareImages() {
             try {
                 let imagesToShare = [];
@@ -547,85 +547,80 @@
                     imagesToShare = images;
                 }
                 
+                // Create share message
+                const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป\n\n`;
+                
+                // Create URLs for first 5 images
+                let imageUrls = '';
+                const maxImages = Math.min(imagesToShare.length, 5);
+                for (let i = 0; i < maxImages; i++) {
+                    imageUrls += `${imagesToShare[i].url}\n\n`;
+                }
+                
+                // Full message
+                const fullMessage = shareText + imageUrls;
+                
                 // Check if in LINE app
                 if (!liff.isInClient()) {
-                    // Not in LINE app - copy link instead
-                    const shareUrl = `${window.location.href}`;
-                    
+                    // Not in LINE app - copy message
                     try {
-                        await navigator.clipboard.writeText(shareUrl);
-                        showToast('📋 คัดลอก Link แล้ว\nสามารถวางในแชท LINE ได้');
+                        await navigator.clipboard.writeText(fullMessage);
+                        showToast('📋 คัดลอกข้อความและลิงก์รูปภาพแล้ว\nสามารถวางในแชท LINE ได้');
                     } catch (e) {
-                        // Fallback for older browsers
+                        // Fallback
                         const textArea = document.createElement('textarea');
-                        textArea.value = shareUrl;
+                        textArea.value = fullMessage;
                         document.body.appendChild(textArea);
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        showToast('📋 คัดลอก Link แล้ว');
+                        showToast('📋 คัดลอกข้อความแล้ว');
                     }
                     return;
                 }
                 
-                // Prepare messages for sending
-                const messages = [];
-                
-                // Add header message
-                messages.push({
-                    type: 'text',
-                    text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป`
-                });
-                
-                // Add images (max 5 due to LINE limitation)
-                const maxImages = Math.min(imagesToShare.length, 5);
-                for (let i = 0; i < maxImages; i++) {
-                    messages.push({
-                        type: 'image',
-                        originalContentUrl: imagesToShare[i].url,
-                        previewImageUrl: imagesToShare[i].url
-                    });
-                }
-                
-                // Send messages to current chat
+                // Try using LINE URL scheme to open share dialog
                 try {
-                    await liff.sendMessages(messages);
+                    // Encode message for URL
+                    const encodedMessage = encodeURIComponent(fullMessage);
                     
-                    showToast('✅ ส่งรูปภาพสำเร็จ');
+                    // Create LINE share URL
+                    const lineShareUrl = `https://line.me/R/msg/text/?${encodedMessage}`;
                     
-                    if (imagesToShare.length > 5) {
-                        setTimeout(() => {
-                            showToast(`📌 ส่งได้ 5 จาก ${imagesToShare.length} รูป\n(ข้อจำกัดของ LINE)`);
-                        }, 2000);
-                    }
+                    // Open share dialog
+                    window.location.href = lineShareUrl;
                     
-                    // Close LIFF after success
+                    showToast('🔄 กำลังเปิดหน้าแชร์...');
+                    
+                    // Alternative: If share dialog doesn't work, create share button
                     setTimeout(() => {
-                        liff.closeWindow();
+                        if (confirm('หากไม่สามารถแชร์ได้ ต้องการคัดลอกข้อความเพื่อวางเองหรือไม่?')) {
+                            navigator.clipboard.writeText(fullMessage);
+                            showToast('📋 คัดลอกข้อความแล้ว');
+                        }
                     }, 3000);
                     
-                } catch (error) {
-                    console.error('Send message error:', error);
+                } catch (shareError) {
+                    console.error('Share error:', shareError);
                     
-                    // If send fails, try alternative method
-                    const shareText = `📸 ดูรูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🔗 ${window.location.href}`;
+                    // Final fallback - create downloadable text file
+                    const blob = new Blob([fullMessage], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `QC_Images_${lotNumber}_${imageDate}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
                     
-                    // Use LINE's native share if available
-                    if (window.LineIt) {
-                        window.LineIt.share({
-                            url: window.location.href,
-                            text: shareText
-                        });
-                    } else {
-                        // Copy link as fallback
-                        await navigator.clipboard.writeText(shareText);
-                        showToast('📋 คัดลอกข้อความและ Link แล้ว\nสามารถวางในแชทได้');
-                    }
+                    showToast('💾 ดาวน์โหลดข้อมูลรูปภาพแล้ว');
                 }
                 
             } catch (error) {
                 console.error('Error in share function:', error);
-                showToast(`❌ เกิดข้อผิดพลาด\n${error.message || 'ไม่สามารถแชร์ได้'}`);
+                
+                // Last resort - show URLs in alert
+                const urls = images.slice(0, 5).map(img => img.url).join('\n\n');
+                alert(`รูปภาพ QC - Lot: ${lotNumber}\n\nคัดลอก URL ด้านล่างไปแชร์:\n\n${urls}`);
             }
         }
         
