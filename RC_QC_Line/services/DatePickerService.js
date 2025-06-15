@@ -1,5 +1,6 @@
 // Service for date picker functionality with Direct LIFF Opening
 const lineService = require('./LineService');
+const lineConfig = require('../config/line'); // Added missing import
 const dateFormatter = require('../utils/DateFormatter');
 const logger = require('../utils/Logger');
 const { AppError } = require('../utils/ErrorHandler');
@@ -449,7 +450,7 @@ class DatePickerService {
       }
       
       // Update user state to waiting for date selection with chat context
-      lineService.setUserState(userId, lineService.userStates.waitingForDate, {
+      lineService.setUserState(userId, lineConfig.userStates.waitingForDate, {
         lotNumber,
         action: 'delete'
       }, chatId);
