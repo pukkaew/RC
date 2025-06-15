@@ -59,14 +59,29 @@
         // Router for different LIFF pages
         function routeToPage() {
             try {
-                const params = new URLSearchParams(window.location.search);
+                let params = new URLSearchParams(window.location.search);
+                
+                // Check if parameters are in liff.state
+                const liffState = params.get('liff.state');
+                if (liffState) {
+                    console.log('Found liff.state:', liffState);
+                    // Decode liff.state and create new params
+                    const decodedState = decodeURIComponent(liffState);
+                    console.log('Decoded state:', decodedState);
+                    
+                    // Remove the ? at the beginning if present
+                    const cleanState = decodedState.startsWith('?') ? decodedState.substring(1) : decodedState;
+                    params = new URLSearchParams(cleanState);
+                }
+                
                 const page = params.get('page');
                 const lot = params.get('lot');
                 const date = params.get('date');
                 
-                console.log('Page parameter:', page);
-                console.log('Lot:', lot);
-                console.log('Date:', date);
+                console.log('Parsed parameters:');
+                console.log('- Page:', page);
+                console.log('- Lot:', lot);
+                console.log('- Date:', date);
                 
                 // Check if we have required parameters
                 if (!lot || !date) {
@@ -81,8 +96,16 @@
                     targetFile = 'delete.html';
                 }
                 
-                // Build the target URL preserving all parameters
-                const targetUrl = `/liff/${targetFile}${window.location.search}`;
+                // Build the target URL with clean parameters
+                const cleanParams = new URLSearchParams({
+                    lot: lot,
+                    date: date
+                });
+                if (page) {
+                    cleanParams.set('page', page);
+                }
+                
+                const targetUrl = `/liff/${targetFile}?${cleanParams.toString()}`;
                 
                 console.log('Redirecting to:', targetUrl);
                 
