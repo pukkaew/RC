@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Updated with Album Preview
+// Controller for image retrieval and viewing - Updated with Album Preview and PC Support
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -92,11 +92,11 @@ class ImageController {
         return;
       }
       
-      // Build album preview message
-      const albumMessage = this.buildAlbumPreviewMessage(lotNumber, date, result.images);
+      // Build album preview message with PC support
+      const messages = this.buildAlbumPreviewWithPCSupport(lotNumber, date, result.images);
       
       // Send album preview
-      await lineService.replyMessage(replyToken, albumMessage);
+      await lineService.replyMessage(replyToken, messages);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -107,6 +107,93 @@ class ImageController {
       
       throw error;
     }
+  }
+
+  // Build album preview with PC support
+  buildAlbumPreviewWithPCSupport(lotNumber, date, images) {
+    const messages = [];
+    
+    // First message: Album preview
+    messages.push(this.buildAlbumPreviewMessage(lotNumber, date, images));
+    
+    // Second message: PC support options
+    messages.push(this.buildPCSupportMessage(lotNumber, date, images));
+    
+    return messages;
+  }
+
+  // Build PC support message
+  buildPCSupportMessage(lotNumber, date, images) {
+    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+    const webViewUrl = `${baseUrl}/liff/view.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
+    
+    return {
+      type: "flex",
+      altText: "ตัวเลือกสำหรับ PC",
+      contents: {
+        type: "bubble",
+        size: "kilo",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "💻 ใช้งานบน PC?",
+              weight: "bold",
+              size: "md",
+              color: "#666666"
+            },
+            {
+              type: "text",
+              text: "LIFF ไม่รองรับบน LINE PC\nกรุณาเลือกวิธีการดูรูปภาพ:",
+              size: "sm",
+              color: "#999999",
+              margin: "sm",
+              wrap: true
+            }
+          ],
+          paddingAll: "15px"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              style: "secondary",
+              height: "sm",
+              action: {
+                type: "postback",
+                label: "📱 ส่งรูปมาที่แชท",
+                data: `action=send_to_chat&lot=${lotNumber}&date=${date}`,
+                displayText: "ส่งรูปภาพมาที่แชท"
+              }
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "🌐 เปิดในเว็บเบราว์เซอร์",
+                uri: webViewUrl
+              }
+            },
+            {
+              type: "text",
+              text: "📱 หรือสแกน QR Code ด้วยมือถือ",
+              size: "xs",
+              color: "#999999",
+              align: "center",
+              margin: "md"
+            }
+          ],
+          paddingAll: "10px"
+        }
+      }
+    };
   }
 
   // Build album preview message with thumbnails
@@ -295,6 +382,50 @@ class ImageController {
         }
       }
     };
+  }
+
+  // Handle sending images to chat for PC users
+  async handleSendToChat(userId, lotNumber, date, replyToken, chatContext = null) {
+    try {
+      // Get images
+      const result = await imageService.getImagesByLotAndDate(lotNumber, date);
+      
+      if (!result.images || result.images.length === 0) {
+        await lineService.replyMessage(
+          replyToken,
+          lineMessageBuilder.buildNoImagesFoundMessage(lotNumber, date)
+        );
+        return;
+      }
+      
+      // Build messages for sending images
+      const messages = lineMessageBuilder.buildImageViewMessages(result);
+      
+      // Send images (max 5 per reply)
+      const firstBatch = messages.slice(0, 5);
+      await lineService.replyMessage(replyToken, firstBatch);
+      
+      // Send remaining messages if any
+      if (messages.length > 5) {
+        for (let i = 5; i < messages.length; i += 5) {
+          const batch = messages.slice(i, i + 5);
+          await lineService.pushMessage(userId, batch);
+          
+          // Small delay between batches
+          if (i + 5 < messages.length) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      }
+      
+    } catch (error) {
+      logger.error('Error sending images to chat:', error);
+      
+      const errorMessage = 'เกิดข้อผิดพลาดในการส่งรูปภาพ โปรดลองใหม่อีกครั้ง';
+      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
+      
+      throw error;
+    }
   }
 
   // Handle case when no images are found for lot and date

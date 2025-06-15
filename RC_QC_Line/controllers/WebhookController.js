@@ -450,6 +450,9 @@ class WebhookController {
       } else if (action === 'cancel_delete') {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken, chatContext);
+      } else if (action === 'send_to_chat') {
+        // Handle sending images to chat for PC users
+        await imageController.handleSendToChat(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'carousel_share') {
         // Handle carousel sharing
         await this.handleCarouselSharing(userId, params, replyToken, chatContext);
