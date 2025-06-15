@@ -280,6 +280,9 @@
             font-size: 14px;
             z-index: 2000;
             animation: slideUp 0.3s;
+            white-space: pre-line;
+            text-align: center;
+            max-width: 80%;
         }
         
         @keyframes slideUp {
@@ -291,6 +294,38 @@
                 transform: translateX(-50%) translateY(0);
                 opacity: 1;
             }
+        }
+        
+        /* Share Loading Modal */
+        .share-loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .share-loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .share-loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #00B900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -343,6 +378,15 @@
         </div>
     </div>
     
+    <!-- Share Loading Modal -->
+    <div class="share-loading" id="shareLoading">
+        <div class="share-loading-content">
+            <div class="share-loading-spinner"></div>
+            <h3>กำลังส่งรูปภาพ...</h3>
+            <p id="shareProgress">กรุณารอสักครู่</p>
+        </div>
+    </div>
+    
     <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     
@@ -354,6 +398,8 @@
         let currentModalIndex = 0;
         let lotNumber = '';
         let imageDate = '';
+        let isSharing = false;
+        let userProfile = null;
         
         // Initialize LIFF
         async function initializeLiff() {
@@ -368,6 +414,14 @@
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
+                }
+                
+                // Get user profile
+                try {
+                    userProfile = await liff.getProfile();
+                    console.log('User profile:', userProfile);
+                } catch (profileError) {
+                    console.error('Error getting profile:', profileError);
                 }
                 
                 // Get parameters from URL
@@ -534,9 +588,24 @@
             }
         }
         
-        // Share images - Send directly as forwardable message
+        // Share images using Bot Share API
         async function shareImages() {
+            if (isSharing) return;
+            isSharing = true;
+            
             try {
+                // Check if we have user profile
+                if (!userProfile || !userProfile.userId) {
+                    showToast('❌ ไม่สามารถระบุตัวตนผู้ใช้ได้');
+                    isSharing = false;
+                    return;
+                }
+                
+                // Show loading
+                document.getElementById('shareLoading').style.display = 'flex';
+                document.getElementById('shareProgress').textContent = 'กำลังเตรียมรูปภาพ...';
+                
+                // Prepare images to share
                 let imagesToShare = [];
                 let imageIds = [];
                 
@@ -550,122 +619,63 @@
                     imageIds = images.map(img => img.image_id);
                 }
                 
-                showToast('🔄 กำลังเตรียมรูปภาพ...');
+                console.log('Sharing images:', imageIds);
+                
+                // Call Bot Share API
+                const baseUrl = 'https://line.ruxchai.co.th';
                 
                 try {
-                    // Check if in LINE app
-                    if (!liff.isInClient()) {
-                        // Not in LINE - use URL method
-                        await shareViaUrl();
-                        return;
-                    }
+                    const response = await fetch(`${baseUrl}/api/bot-share`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            userId: userProfile.userId,
+                            lotNumber: lotNumber,
+                            imageDate: imageDate,
+                            imageIds: imageIds,
+                            accessToken: await liff.getAccessToken()
+                        })
+                    });
                     
-                    // Get user profile
-                    const profile = await liff.getProfile();
+                    const result = await response.json();
+                    console.log('Bot share result:', result);
                     
-                    // Method 1: Send images to current chat for forwarding
-                    if (true) { // Always use this method for now
-                        // Create messages to send
-                        const messages = [];
+                    // Hide loading
+                    document.getElementById('shareLoading').style.display = 'none';
+                    
+                    if (result.success) {
+                        showToast(`✅ ส่งรูป ${result.count} รูปเรียบร้อยแล้ว\n\nกรุณาเช็คแชทของคุณ`);
                         
-                        // Add header message
-                        messages.push({
-                            type: 'text',
-                            text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ ${imagesToShare.length} รูป\n\n💡 กดค้างที่รูปหรือข้อความนี้แล้วเลือก "Forward" เพื่อส่งต่อ`,
-                            quickReply: {
-                                items: [{
-                                    type: 'action',
-                                    action: {
-                                        type: 'message',
-                                        label: '📤 วิธี Forward',
-                                        text: 'วิธี Forward: กดค้างที่รูป → เลือก Forward → เลือกห้องแชท → ส่ง'
-                                    }
-                                }]
-                            }
-                        });
-                        
-                        // Add images (max 5 due to LIFF limitation)
-                        const maxImages = Math.min(imagesToShare.length, 5);
-                        for (let i = 0; i < maxImages; i++) {
-                            messages.push({
-                                type: 'image',
-                                originalContentUrl: imagesToShare[i].url,
-                                previewImageUrl: imagesToShare[i].url
-                            });
-                        }
-                        
-                        // Send messages to current chat
-                        await liff.sendMessages(messages);
-                        
-                        showToast(`✅ ส่งรูป ${maxImages} รูปแล้ว\n\n💡 วิธีส่งต่อ:\n1. กดค้างที่รูป\n2. เลือก "Forward"\n3. เลือกห้องแชท\n4. กด "ส่ง"`);
-                        
-                        if (imagesToShare.length > 5) {
-                            setTimeout(() => {
-                                showToast(`📌 ส่งได้ 5 จาก ${imagesToShare.length} รูป\n(ข้อจำกัดของ LIFF)\n\n🔗 ดูทั้งหมด:\n${window.location.href}`);
-                            }, 3000);
-                        }
-                        
-                        // Reset select mode
+                        // Reset select mode if active
                         if (selectMode) {
                             toggleSelectMode();
                         }
                         
-                        // Close LIFF after delay
+                        // Close LIFF after a delay
                         setTimeout(() => {
-                            showToast('📱 กลับไปที่แชทเพื่อ Forward รูป');
+                            showToast('📱 กลับไปที่แชทเพื่อดูรูปภาพ');
                             setTimeout(() => {
                                 liff.closeWindow();
                             }, 2000);
-                        }, 5000);
-                        
-                    }
-                    
-                } catch (error) {
-                    console.error('Share error:', error);
-                    
-                    // Check error type
-                    if (error.code === 'UNAUTHORIZED') {
-                        showToast('❌ ไม่มีสิทธิ์ส่งข้อความ\nกำลังใช้วิธีอื่น...');
-                        await shareViaUrl();
+                        }, 3000);
                     } else {
-                        showToast(`❌ เกิดข้อผิดพลาด\n${error.message || 'ไม่สามารถส่งรูปได้'}`);
+                        showToast(`❌ เกิดข้อผิดพลาด\n${result.message || 'ไม่สามารถส่งรูปได้'}`);
                     }
+                    
+                } catch (apiError) {
+                    console.error('API error:', apiError);
+                    document.getElementById('shareLoading').style.display = 'none';
+                    showToast(`❌ เกิดข้อผิดพลาด\n${apiError.message || 'ไม่สามารถเชื่อมต่อ API ได้'}`);
                 }
                 
             } catch (error) {
                 console.error('Error in share function:', error);
+                document.getElementById('shareLoading').style.display = 'none';
                 showToast(`❌ เกิดข้อผิดพลาด\n${error.message || 'ไม่สามารถแชร์ได้'}`);
-            }
-        }
-        
-        // Fallback: Share via URL  
-        async function shareViaUrl() {
-            let shareText = `📸 รูปภาพ QC\n`;
-            shareText += `📦 Lot: ${lotNumber}\n`;
-            shareText += `📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n`;
-            shareText += `🖼️ จำนวน ${selectedImages.size || images.length} รูป\n\n`;
-            shareText += `🔗 ดูรูปภาพ:\n${window.location.href}\n\n`;
-            
-            const selectedOrAll = selectedImages.size > 0 ? 
-                Array.from(selectedImages).map(i => images[i]) : 
-                images;
-            
-            // Add URLs (max 5)
-            const maxUrls = Math.min(selectedOrAll.length, 5);
-            for (let i = 0; i < maxUrls; i++) {
-                shareText += `${i + 1}. ${selectedOrAll[i].url}\n`;
-            }
-            
-            // Copy to clipboard
-            await navigator.clipboard.writeText(shareText);
-            showToast('📋 คัดลอก URL แล้ว\nวางในแชทที่ต้องการได้');
-            
-            // Open LINE share if in mobile
-            if (/Line/i.test(navigator.userAgent)) {
-                setTimeout(() => {
-                    const encodedMessage = encodeURIComponent(shareText);
-                    window.location.href = `https://line.me/R/msg/text/?${encodedMessage}`;
-                }, 1000);
+            } finally {
+                isSharing = false;
             }
         }
         
@@ -712,11 +722,11 @@
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').innerHTML = message.replace(/\n/g, '<br>');
         }
         
         // Show toast message
-        function showToast(message) {
+        function showToast(message, duration = 3000) {
             const existingToast = document.querySelector('.toast');
             if (existingToast) {
                 existingToast.remove();
@@ -729,7 +739,7 @@
             
             setTimeout(() => {
                 toast.remove();
-            }, 3000);
+            }, duration);
         }
         
         // Event listeners

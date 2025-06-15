@@ -2211,3 +2211,32 @@
 {"level":"info","message":"Running extended cleanup...","service":"rc-qc-line","timestamp":"2025-06-15 02:28:19"}
 {"level":"error","message":"Error during extended cleanup: uploadController.getUploadStatistics is not a function","service":"rc-qc-line","stack":"TypeError: uploadController.getUploadStatistics is not a function\n    at Timeout._onTimeout (D:\\Apps\\RC_QC_Line\\app.js:78:42)\n    at listOnTimeout (node:internal/timers:594:17)\n    at process.processTimers (node:internal/timers:529:7)","timestamp":"2025-06-15 02:28:19"}
 {"level":"info","message":"SIGINT received, shutting down gracefully","service":"rc-qc-line","timestamp":"2025-06-15 02:45:21"}
+{"level":"info","message":"API Request - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:16:46"}
+{"level":"info","message":"Searching for images - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:16:46"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:16:46"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:16:46"}
+{"level":"info","message":"API Response - Found 2 images","service":"rc-qc-line","timestamp":"2025-06-15 09:16:46"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"ImageController: Processing Lot number: \"1122\"","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"ImageController: Trimmed Lot number: \"1122\"","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"ImageController: Lot validation passed, proceeding to DatePicker","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Creating view date picker with LIFF for Lot: 1122","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Getting available dates for Lot: 1122","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Found Lot 1122 with ID: 14","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Found 2 distinct dates with images for Lot 1122","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: - 2025-06-15: 2 images","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: - 2025-06-13: 6 images","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Creating date picker with 2 available dates","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Adding date button: 15/06/2025 (วันนี้) - 2 รูป (2025-06-15)","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"DatePicker: Adding date button: 13/06/2025 - 6 รูป (2025-06-13)","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"User state cleared: U944dd605dd72df5a658e775bc0eaef6e:direct","service":"rc-qc-line","timestamp":"2025-06-15 09:17:11"}
+{"level":"info","message":"API Request - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:14"}
+{"level":"info","message":"Searching for images - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:14"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:14"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:14"}
+{"level":"info","message":"API Response - Found 2 images","service":"rc-qc-line","timestamp":"2025-06-15 09:17:14"}
+{"level":"info","message":"API Request - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
+{"level":"info","message":"Searching for images - Lot: 1122, Date: 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
+{"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
+{"level":"info","message":"API Response - Found 2 images","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
