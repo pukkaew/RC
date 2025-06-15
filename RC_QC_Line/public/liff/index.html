@@ -15,6 +15,15 @@
             align-items: center;
             min-height: 100vh;
         }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 400px;
+        }
         .loading {
             text-align: center;
             color: #666;
@@ -46,93 +55,144 @@
             border-radius: 8px;
             font-size: 12px;
             color: #666;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            color: #00B900;
+            margin-top: 20px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #1976d2;
         }
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">
-        <div class="loading-spinner"></div>
-        <div>กำลังโหลด...</div>
-    </div>
-    
-    <div class="error" id="error" style="display: none;">
-        <h2>เกิดข้อผิดพลาด</h2>
-        <p id="errorMessage"></p>
-        <div class="error-details" id="errorDetails" style="display: none;"></div>
+    <div class="container">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div>กำลังโหลด...</div>
+        </div>
+        
+        <div class="error" id="error" style="display: none;">
+            <h2>เกิดข้อผิดพลาด</h2>
+            <p id="errorMessage"></p>
+            <div class="error-details" id="errorDetails" style="display: none;"></div>
+        </div>
+        
+        <div class="info" id="info" style="display: none;">
+            <p id="infoMessage"></p>
+        </div>
     </div>
 
     <script>
         // Enhanced debug logging
-        console.log('=== LIFF Router Debug ===');
+        console.log('=== LIFF Router Starting ===');
+        console.log('Timestamp:', new Date().toISOString());
         console.log('Current URL:', window.location.href);
         console.log('Origin:', window.location.origin);
         console.log('Pathname:', window.location.pathname);
-        console.log('Search params:', window.location.search);
+        console.log('Search:', window.location.search);
         console.log('Hash:', window.location.hash);
+        console.log('User Agent:', navigator.userAgent);
+        
+        // Function to show info
+        function showInfo(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('info').style.display = 'block';
+            document.getElementById('infoMessage').textContent = message;
+        }
+        
+        // Function to show error
+        function showError(message, details = null) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+            
+            if (details) {
+                const detailsEl = document.getElementById('errorDetails');
+                detailsEl.style.display = 'block';
+                if (typeof details === 'object') {
+                    detailsEl.textContent = JSON.stringify(details, null, 2);
+                } else {
+                    detailsEl.textContent = details;
+                }
+            }
+        }
         
         // Function to extract parameters from various sources
         function extractParameters() {
             const params = {};
             
-            // Method 1: Direct query parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            console.log('Direct URL params:', Array.from(urlParams.entries()));
-            
-            // Method 2: Check liff.state parameter
-            const liffState = urlParams.get('liff.state');
-            if (liffState) {
-                console.log('Found liff.state:', liffState);
-                try {
-                    // Decode and parse liff.state
-                    const decodedState = decodeURIComponent(liffState);
-                    console.log('Decoded liff.state:', decodedState);
-                    
-                    // Remove leading ? if present
-                    const cleanState = decodedState.startsWith('?') ? decodedState.substring(1) : decodedState;
-                    const stateParams = new URLSearchParams(cleanState);
-                    
-                    // Extract parameters from liff.state
-                    for (const [key, value] of stateParams.entries()) {
-                        params[key] = value;
-                    }
-                } catch (e) {
-                    console.error('Error parsing liff.state:', e);
-                }
-            }
-            
-            // Method 3: Check hash parameters (sometimes LIFF uses hash)
-            if (window.location.hash) {
-                console.log('Found hash:', window.location.hash);
-                try {
-                    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                    for (const [key, value] of hashParams.entries()) {
-                        if (!params[key]) {
+            try {
+                // Method 1: Direct query parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                console.log('URL Search Params:', window.location.search);
+                
+                // Method 2: Check for LIFF state parameter
+                const liffState = urlParams.get('liff.state');
+                if (liffState) {
+                    console.log('Found liff.state:', liffState);
+                    try {
+                        const decodedState = decodeURIComponent(liffState);
+                        console.log('Decoded liff.state:', decodedState);
+                        
+                        const cleanState = decodedState.startsWith('?') ? decodedState.substring(1) : decodedState;
+                        const stateParams = new URLSearchParams(cleanState);
+                        
+                        for (const [key, value] of stateParams.entries()) {
                             params[key] = value;
                         }
+                    } catch (e) {
+                        console.error('Error parsing liff.state:', e);
                     }
-                } catch (e) {
-                    console.error('Error parsing hash:', e);
                 }
+                
+                // Method 3: Direct URL parameters (override liff.state if present)
+                for (const [key, value] of urlParams.entries()) {
+                    if (key !== 'liff.state' && key !== 'liff.referrer') {
+                        params[key] = value;
+                    }
+                }
+                
+                // Method 4: Check hash parameters
+                if (window.location.hash && window.location.hash.length > 1) {
+                    console.log('Found hash:', window.location.hash);
+                    try {
+                        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                        for (const [key, value] of hashParams.entries()) {
+                            if (!params[key]) {
+                                params[key] = value;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing hash:', e);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error extracting parameters:', error);
             }
             
-            // Method 4: Direct URL parameters (override liff.state if present)
-            for (const [key, value] of urlParams.entries()) {
-                if (key !== 'liff.state' && key !== 'liff.referrer') {
-                    params[key] = value;
-                }
-            }
-            
-            console.log('Final extracted parameters:', params);
+            console.log('Extracted parameters:', params);
             return params;
         }
         
         // Router for different LIFF pages
         function routeToPage() {
             try {
-                // Extract parameters from all possible sources
+                console.log('Starting route process...');
+                
+                // Extract parameters
                 const params = extractParameters();
                 
-                const page = params.page;
+                // Check if we have minimum required data
+                const page = params.page || 'view'; // default to view
                 const lot = params.lot;
                 const date = params.date;
                 
@@ -141,10 +201,18 @@
                 console.log('- Lot:', lot);
                 console.log('- Date:', date);
                 
+                // If no parameters at all, show a friendly message
+                if (!lot && !date) {
+                    showInfo('ยินดีต้อนรับสู่ระบบดูรูปภาพ QC\n\nกรุณาเข้าใช้งานผ่านการเลือกวันที่จากเมนูในแชท');
+                    return;
+                }
+                
                 // Validate required parameters
                 if (!lot || !date) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่', {
+                    showError('ข้อมูลไม่ครบถ้วน', {
+                        error: 'Missing required parameters',
                         receivedParams: params,
+                        requiredParams: ['lot', 'date'],
                         url: window.location.href
                     });
                     return;
@@ -160,61 +228,62 @@
                 // Build the target URL with clean parameters
                 const cleanParams = new URLSearchParams({
                     lot: lot,
-                    date: date
+                    date: date,
+                    page: page,
+                    base_url: window.location.origin
                 });
                 
-                // Add base_url for API calls
-                const baseUrl = window.location.origin;
-                cleanParams.set('base_url', baseUrl);
+                const targetPath = `${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`;
                 
-                if (page) {
-                    cleanParams.set('page', page);
-                }
+                console.log('Target URL:', targetPath);
+                showInfo(`กำลังเปิดหน้า ${page === 'delete' ? 'ลบรูปภาพ' : 'ดูรูปภาพ'}...`);
                 
-                const targetUrl = `/liff/${targetFile}?${cleanParams.toString()}`;
-                
-                console.log('Redirecting to:', targetUrl);
-                
-                // Use replace to avoid back button issues
-                window.location.replace(targetUrl);
+                // Redirect after a short delay
+                setTimeout(() => {
+                    console.log('Redirecting to:', targetPath);
+                    window.location.replace(targetPath);
+                }, 500);
                 
             } catch (error) {
                 console.error('Router error:', error);
                 showError('เกิดข้อผิดพลาดในการเปิดหน้า', {
                     error: error.message,
-                    stack: error.stack
+                    stack: error.stack,
+                    url: window.location.href
                 });
-            }
-        }
-        
-        function showError(message, details = null) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
-            
-            if (details) {
-                const detailsEl = document.getElementById('errorDetails');
-                detailsEl.style.display = 'block';
-                detailsEl.innerHTML = '<pre>' + JSON.stringify(details, null, 2) + '</pre>';
             }
         }
         
         // Add error handler for debugging
         window.addEventListener('error', (event) => {
-            console.error('Window error:', event.error);
+            console.error('Window error:', event);
             showError('JavaScript Error', {
-                message: event.error.message,
+                message: event.error?.message || event.message,
                 filename: event.filename,
                 line: event.lineno,
                 column: event.colno
             });
         });
         
-        // Route immediately when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', routeToPage);
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event);
+            showError('Unhandled Promise Rejection', {
+                reason: event.reason
+            });
+        });
+        
+        // Check if we're running in LIFF or normal browser
+        if (window.location.search || window.location.hash) {
+            // We have parameters, try to route
+            console.log('Parameters detected, routing...');
+            
+            // Small delay for LIFF to initialize properly
+            setTimeout(routeToPage, 100);
         } else {
-            routeToPage();
+            // No parameters
+            console.log('No parameters detected');
+            showInfo('ยินดีต้อนรับสู่ระบบดูรูปภาพ QC\n\nกรุณาเข้าใช้งานผ่านการเลือกวันที่จากเมนูในแชท');
         }
     </script>
 </body>
