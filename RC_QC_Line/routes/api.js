@@ -1,202 +1,89 @@
-// Main application file - Updated with API Routes
-require('dotenv').config();
+// API routes for LIFF integration
 const express = require('express');
-const bodyParser = require('body-parser');
-const { errorHandler } = require('./utils/ErrorHandler');
-const logger = require('./utils/Logger');
-const appConfig = require('./config/app');
-const path = require('path');
+const router = express.Router();
+const imageService = require('../services/ImageService');
+const logger = require('../utils/Logger');
 
-// Create Express app
-const app = express();
-
-// CORS middleware for LIFF
-app.use((req, res, next) => {
-  // Allow requests from LIFF
-  res.header('Access-Control-Allow-Origin', 'https://liff.line.me');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
-
-// Middleware
-app.use(bodyParser.json({ 
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}));
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Static files
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-app.use('/liff', express.static(path.join(__dirname, 'public/liff')));
-
-// Web view route for PC browsers
-app.get('/view', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/liff/view-web.html'));
-});
-
-// Import controllers
-const webhookController = require('./controllers/WebhookController');
-const uploadController = require('./controllers/UploadController');
-const lineService = require('./services/LineService');
-
-// Import API routes
-const apiRoutes = require('./routes/api');
-const botShareRoutes = require('./routes/botShare');
-
-// Setup routes
-app.post('/webhook', webhookController.handleWebhook);
-
-// API routes for LIFF
-app.use('/api', apiRoutes);
-app.use('/api', botShareRoutes);
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    service: 'RC_QC_Line',
-    version: '2.0.0'
-  });
-});
-
-// Add system monitoring endpoint
-app.get('/status', (req, res) => {
-  const stats = webhookController.getSystemStatistics();
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    statistics: stats
-  });
-});
-
-// Error handling middleware
-app.use(errorHandler);
-
-// Enhanced cleanup timer for pending uploads and expired states (every 5 minutes)
-setInterval(() => {
+// Get images by lot and date for LIFF
+router.get('/images/:lot/:date', async (req, res) => {
   try {
-    // Clean up pending uploads
-    const cleanedUploads = uploadController.cleanupPendingUploads();
-    if (cleanedUploads > 0) {
-      logger.info(`Cleaned up ${cleanedUploads} expired upload sessions`);
+    const { lot, date } = req.params;
+    
+    logger.info(`API Request - Lot: ${lot}, Date: ${date}`);
+    
+    // Validate parameters
+    if (!lot || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing lot number or date'
+      });
     }
     
-    // Clean up expired user states
-    const cleanedStates = lineService.cleanupExpiredStates();
-    if (cleanedStates > 0) {
-      logger.info(`Cleaned up ${cleanedStates} expired user states`);
-    }
+    // Get images
+    const result = await imageService.getImagesByLotAndDate(lot, date);
     
-    // Log system statistics periodically (every hour)
-    const currentMinute = new Date().getMinutes();
-    if (currentMinute === 0) { // Top of the hour
-      const stats = webhookController.getSystemStatistics();
-      logger.info('System Statistics:', stats);
-    }
+    logger.info(`API Response - Found ${result.images.length} images`);
+    
+    // Transform URLs to full URLs
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const imagesWithFullUrls = result.images.map(image => ({
+      ...image,
+      url: image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`,
+      thumbnailUrl: image.thumbnailUrl ? 
+        (image.thumbnailUrl.startsWith('http') ? image.thumbnailUrl : `${baseUrl}${image.thumbnailUrl}`) : 
+        (image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`)
+    }));
+    
+    res.json({
+      success: true,
+      lotNumber: result.lotNumber,
+      imageDate: result.imageDate,
+      images: imagesWithFullUrls,
+      count: imagesWithFullUrls.length
+    });
     
   } catch (error) {
-    logger.error('Error during cleanup:', error);
+    logger.error('Error fetching images for LIFF:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching images',
+      error: error.message
+    });
   }
-}, 5 * 60 * 1000); // 5 minutes
+});
 
-// System monitoring (every 30 minutes)
-setInterval(() => {
+// Get lot information
+router.get('/lots/:lot', async (req, res) => {
   try {
-    logger.info('Running system monitoring...');
+    const { lot } = req.params;
+    const lotModel = require('../models/LotModel');
     
-    // Get upload statistics for monitoring
-    const uploadStats = uploadController.getUploadStatistics();
-    if (uploadStats.totalPendingUploads > 0) {
-      logger.info('Current upload statistics:', uploadStats);
+    const lotInfo = await lotModel.getByLotNumber(lot);
+    
+    if (!lotInfo) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lot not found'
+      });
     }
     
-    // Get active states for monitoring
-    const activeStates = lineService.getActiveStates();
-    const stateCount = Object.keys(activeStates).length;
-    if (stateCount > 0) {
-      logger.info(`Active user states: ${stateCount}`);
-    }
+    // Get available dates for this lot
+    const datePickerService = require('../services/DatePickerService');
+    const availableDates = await datePickerService.getAvailableDatesForLot(lot);
+    
+    res.json({
+      success: true,
+      lot: lotInfo,
+      availableDates: availableDates
+    });
     
   } catch (error) {
-    logger.error('Error during system monitoring:', error);
+    logger.error('Error fetching lot info:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching lot information'
+    });
   }
-}, 30 * 60 * 1000); // 30 minutes
-
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Webhook URL: ${process.env.BASE_URL}/webhook`);
-  logger.info(`Health endpoint: ${process.env.BASE_URL}/health`);
-  logger.info(`Status endpoint: ${process.env.BASE_URL}/status`);
-  logger.info(`LIFF viewer: ${process.env.BASE_URL}/liff/view.html`);
-  logger.info(`Web viewer: ${process.env.BASE_URL}/view`);
-  logger.info('Note: For production, use HTTPS for webhook URL');
-  logger.info('Multi-chat support enabled');
-  logger.info('LIFF photo viewer enabled');
-  logger.info('PC browser support enabled');
-  
-  // Log all available endpoints
-  logger.info('\nAvailable endpoints:');
-  logger.info('- POST /webhook (LINE webhook)');
-  logger.info('- GET /health (Health check)');
-  logger.info('- GET /status (System status)');
-  logger.info('- GET /view (Web viewer for PC)');
-  logger.info('- GET /api/images/:lot/:date (Get images)');
-  logger.info('- GET /api/lots/:lot (Get lot info)');
-  logger.info('- POST /api/bot-share (Bot share images)');
-  logger.info('- GET /api/bot-share/health (Bot share health)');
-  logger.info('- Static /uploads/* (Image files)');
-  logger.info('- Static /liff/* (LIFF files)');
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (error) => {
-  logger.error('Unhandled Rejection:', error);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  
-  // Clean up resources
-  try {
-    const cleanedUploads = uploadController.cleanupPendingUploads();
-    const cleanedStates = lineService.cleanupExpiredStates();
-    logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
-  } catch (error) {
-    logger.error('Error during shutdown cleanup:', error);
-  }
-  
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  
-  // Clean up resources
-  try {
-    const cleanedUploads = uploadController.cleanupPendingUploads();
-    const cleanedStates = lineService.cleanupExpiredStates();
-    logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
-  } catch (error) {
-    logger.error('Error during shutdown cleanup:', error);
-  }
-  
-  process.exit(0);
-});
-
-module.exports = app;
+module.exports = router;
