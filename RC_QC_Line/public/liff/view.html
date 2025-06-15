@@ -588,19 +588,12 @@
             }
         }
         
-        // Share images using direct sendMessages
+        // Share images using multiple methods
         async function shareImages() {
             if (isSharing) return;
             isSharing = true;
             
             try {
-                // Check if in LINE app
-                if (!liff.isInClient()) {
-                    showToast('❌ ฟังก์ชันนี้ใช้ได้เฉพาะใน LINE เท่านั้น');
-                    isSharing = false;
-                    return;
-                }
-                
                 // Show loading
                 document.getElementById('shareLoading').style.display = 'flex';
                 document.getElementById('shareProgress').textContent = 'กำลังเตรียมรูปภาพ...';
@@ -618,52 +611,58 @@
                 
                 console.log('Sharing images:', imagesToShare);
                 
-                // Method 1: Try sendMessages first
+                // Method 1: Use LINE Share (opens LINE share dialog)
                 try {
-                    const messages = [];
-                    const maxImages = Math.min(imagesToShare.length, 5); // LIFF limit
+                    // Create share text with image URLs
+                    let shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป\n\n`;
                     
-                    // Add only images, no text
-                    for (let i = 0; i < maxImages; i++) {
-                        messages.push({
-                            type: 'image',
-                            originalContentUrl: imagesToShare[i].url,
-                            previewImageUrl: imagesToShare[i].url
-                        });
+                    // Add image URLs (max 5 for practicality)
+                    const maxUrls = Math.min(imagesToShare.length, 5);
+                    for (let i = 0; i < maxUrls; i++) {
+                        shareText += `รูปที่ ${i + 1}: ${imagesToShare[i].url}\n`;
                     }
                     
-                    console.log('Sending messages:', messages);
-                    
-                    // Send messages
-                    await liff.sendMessages(messages);
+                    if (imagesToShare.length > 5) {
+                        shareText += `\n... และอีก ${imagesToShare.length - 5} รูป`;
+                    }
                     
                     // Hide loading
                     document.getElementById('shareLoading').style.display = 'none';
                     
-                    showToast(`✅ ส่งรูป ${maxImages} รูปเรียบร้อยแล้ว`);
-                    
-                    if (imagesToShare.length > 5) {
+                    // Check if in LINE app
+                    if (liff.isInClient()) {
+                        // Use LINE's native share
+                        const encodedText = encodeURIComponent(shareText);
+                        const lineShareUrl = `https://line.me/R/msg/text/?${encodedText}`;
+                        
+                        // Open LINE share dialog
+                        window.location.href = lineShareUrl;
+                        
+                        showToast('📱 กำลังเปิดหน้าแชร์ LINE...\n\nเลือกห้องแชทที่ต้องการส่งได้เลย');
+                        
+                        // Don't close LIFF immediately to allow user to come back
                         setTimeout(() => {
-                            showToast(`📌 ส่งได้ 5 จาก ${imagesToShare.length} รูป\n(ข้อจำกัดของ LINE)`);
-                        }, 2000);
+                            if (selectMode) {
+                                toggleSelectMode();
+                            }
+                        }, 1000);
+                        
+                    } else {
+                        // Not in LINE app - copy to clipboard
+                        await navigator.clipboard.writeText(shareText);
+                        showToast('📋 คัดลอกข้อมูลรูปภาพแล้ว\n\nเปิด LINE แล้ววางในห้องแชทที่ต้องการ');
+                        
+                        // Try to open LINE app
+                        window.open(`https://line.me/R/`, '_blank');
                     }
                     
-                    // Reset select mode if active
-                    if (selectMode) {
-                        toggleSelectMode();
-                    }
+                } catch (shareError) {
+                    console.error('Share error:', shareError);
                     
-                    // Close LIFF after delay
-                    setTimeout(() => {
-                        liff.closeWindow();
-                    }, 3000);
-                    
-                } catch (sendError) {
-                    console.error('SendMessages error:', sendError);
-                    
-                    // Method 2: Try Bot Share API as fallback
+                    // Fallback: Try Bot Share
                     try {
-                        document.getElementById('shareProgress').textContent = 'กำลังส่งผ่านระบบ Bot...';
+                        document.getElementById('shareLoading').style.display = 'flex';
+                        document.getElementById('shareProgress').textContent = 'กำลังลองวิธีอื่น...';
                         
                         // Get user profile if not already loaded
                         if (!userProfile) {
@@ -690,43 +689,31 @@
                             })
                         });
                         
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
                         const result = await response.json();
-                        console.log('Bot share result:', result);
                         
                         // Hide loading
                         document.getElementById('shareLoading').style.display = 'none';
                         
                         if (result.success) {
-                            showToast(`✅ ส่งรูป ${result.count} รูปเรียบร้อยแล้ว\n\nกรุณาเช็คแชทของคุณ`);
+                            showToast(`✅ ส่งรูปไปยังแชทส่วนตัวแล้ว ${result.count} รูป\n\n💡 คุณสามารถ Forward ต่อไปห้องอื่นได้`);
                             
                             if (selectMode) {
                                 toggleSelectMode();
                             }
                             
                             setTimeout(() => {
-                                liff.closeWindow();
+                                showToast('📱 กลับไปที่แชทเพื่อ Forward รูปต่อ');
                             }, 3000);
                         } else {
                             throw new Error(result.message || 'Bot share failed');
                         }
                         
                     } catch (botError) {
-                        console.error('Bot share error:', botError);
+                        console.error('Bot error:', botError);
                         document.getElementById('shareLoading').style.display = 'none';
                         
-                        // Final fallback: Copy image URLs
-                        const imageUrls = imagesToShare.slice(0, 5).map(img => img.url).join('\n');
-                        
-                        try {
-                            await navigator.clipboard.writeText(imageUrls);
-                            showToast('📋 คัดลอก URL รูปภาพแล้ว\nวางในแชทที่ต้องการได้');
-                        } catch (clipboardError) {
-                            showToast(`❌ ไม่สามารถแชร์รูปได้\n${botError.message}`);
-                        }
+                        // Final fallback: Show manual instructions
+                        showToast('💡 วิธีแชร์รูปภาพ:\n\n1. กดค้างที่รูปภาพ\n2. เลือก "บันทึกรูปภาพ"\n3. ไปที่ห้องแชทที่ต้องการ\n4. ส่งรูปจากอัลบั้ม', 5000);
                     }
                 }
                 
