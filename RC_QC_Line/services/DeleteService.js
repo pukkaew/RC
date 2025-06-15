@@ -155,7 +155,7 @@ class DeleteService {
       
       // Build LIFF URL for delete interface
       const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE/liff/delete.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}&base_url=${encodeURIComponent(baseUrl)}`;
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?page=delete&lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}&base_url=${encodeURIComponent(baseUrl)}`;
       
       // Create flex message to open LIFF
       const flexMessage = {

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QC Photo System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00B900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="loading-spinner"></div>
+        <div>กำลังโหลด...</div>
+    </div>
+
+    <script>
+        // Router for different LIFF pages
+        function routeToPage() {
+            const params = new URLSearchParams(window.location.search);
+            const page = params.get('page');
+            
+            // Build new URL with all parameters
+            let targetUrl = '';
+            const baseUrl = window.location.origin;
+            
+            switch(page) {
+                case 'delete':
+                    targetUrl = `${baseUrl}/liff/delete.html${window.location.search}`;
+                    break;
+                case 'view':
+                default:
+                    targetUrl = `${baseUrl}/liff/view.html${window.location.search}`;
+                    break;
+            }
+            
+            // Redirect to target page
+            window.location.replace(targetUrl);
+        }
+        
+        // Route immediately
+        routeToPage();
+    </script>
+</body>
+</html>

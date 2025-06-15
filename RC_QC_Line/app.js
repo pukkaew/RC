@@ -37,6 +37,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/liff', express.static(path.join(__dirname, 'public/liff')));
 
+// LIFF root handler
+app.get('/', (req, res) => {
+  // Check if this is a LIFF request
+  const params = new URLSearchParams(req.query);
+  if (params.has('page') || params.has('lot')) {
+    res.sendFile(path.join(__dirname, 'public/liff/index.html'));
+  } else {
+    res.send('RC QC Line System');
+  }
+});
+
+// Web view route for PC browsers
+app.get('/view', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/liff/view-web.html'));
+});
+
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
@@ -44,12 +60,24 @@ const lineService = require('./services/LineService');
 
 // Import API routes
 const apiRoutes = require('./routes/api');
+const botShareRoutes = require('./routes/botShare');
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
 
 // API routes for LIFF
 app.use('/api', apiRoutes);
+app.use('/api', botShareRoutes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'RC_QC_Line',
+    version: '2.0.0'
+  });
+});
 
 // Add system monitoring endpoint
 app.get('/status', (req, res) => {
@@ -118,12 +146,28 @@ setInterval(() => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
-  logger.info(`Webhook URL: http://localhost:${PORT}/webhook`);
-  logger.info(`Status endpoint: http://localhost:${PORT}/status`);
-  logger.info(`LIFF viewer: http://localhost:${PORT}/liff/view.html`);
+  logger.info(`Webhook URL: ${process.env.BASE_URL}/webhook`);
+  logger.info(`Health endpoint: ${process.env.BASE_URL}/health`);
+  logger.info(`Status endpoint: ${process.env.BASE_URL}/status`);
+  logger.info(`LIFF viewer: ${process.env.BASE_URL}/liff/view.html`);
+  logger.info(`Web viewer: ${process.env.BASE_URL}/view`);
   logger.info('Note: For production, use HTTPS for webhook URL');
   logger.info('Multi-chat support enabled');
   logger.info('LIFF photo viewer enabled');
+  logger.info('PC browser support enabled');
+  
+  // Log all available endpoints
+  logger.info('\nAvailable endpoints:');
+  logger.info('- POST /webhook (LINE webhook)');
+  logger.info('- GET /health (Health check)');
+  logger.info('- GET /status (System status)');
+  logger.info('- GET /view (Web viewer for PC)');
+  logger.info('- GET /api/images/:lot/:date (Get images)');
+  logger.info('- GET /api/lots/:lot (Get lot info)');
+  logger.info('- POST /api/bot-share (Bot share images)');
+  logger.info('- GET /api/bot-share/health (Bot share health)');
+  logger.info('- Static /uploads/* (Image files)');
+  logger.info('- Static /liff/* (LIFF files)');
 });
 
 // Handle uncaught exceptions
