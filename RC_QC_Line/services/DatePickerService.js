@@ -212,9 +212,10 @@ class DatePickerService {
         type: "button",
         style: isToday ? "primary" : "secondary",
         action: {
-          type: "uri",
+          type: "postback",
           label: label,
-          uri: liffUrl
+          data: `action=${action}&lot=${lotNumber}&date=${dateObj.date}`,
+          displayText: `เลือกวันที่ ${dateObj.display}`
         },
         margin: "sm",
         height: "sm"
