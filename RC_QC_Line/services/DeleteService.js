@@ -140,7 +140,7 @@ class DeleteService {
     }
   }
 
-  // Create image selection for deletion - FIXED with simpler approach
+  // Create image selection for deletion
   async createImageDeleteSelector(lotNumber, date) {
     try {
       // Get images with delete options
@@ -153,187 +153,104 @@ class DeleteService {
         };
       }
       
-      const totalImages = result.images.length;
+      // Create a flex message with images and delete buttons
+      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
       
-      // If more than 6 images, use text list instead
-      if (totalImages > 6) {
-        return this.createTextDeleteList(lotNumber, date, result.images);
+      // IMPORTANT: Limit to 10 items for LINE Carousel
+      const totalImages = result.count;
+      const displayImages = result.images.slice(0, 10); // Maximum 10 for carousel
+      
+      // Create carousel items for each image
+      const carouselItems = displayImages.map((image, index) => {
+        const imageUrl = image.url.startsWith('http') 
+          ? image.url 
+          : `${baseUrl}${image.url}`;
+        
+        return {
+          type: "bubble",
+          hero: {
+            type: "image",
+            url: imageUrl,
+            size: "full",
+            aspectRatio: "1:1",
+            aspectMode: "cover"
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: `รูปที่ ${index + 1}/${totalImages}`,
+                weight: "bold",
+                size: "md"
+              },
+              {
+                type: "text",
+                text: `Lot: ${lotNumber}`,
+                size: "sm",
+                margin: "md"
+              },
+              {
+                type: "text",
+                text: `อัปโหลดเมื่อ: ${new Date(image.uploaded_at).toLocaleString('th-TH')}`,
+                size: "sm",
+                margin: "sm"
+              }
+            ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#FF0000",
+                action: {
+                  type: "postback",
+                  label: "ลบรูปภาพนี้",
+                  data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
+                  displayText: `เลือกลบรูปภาพที่ ${index + 1}`
+                }
+              }
+            ]
+          }
+        };
+      });
+      
+      // Create the carousel message
+      const carouselMessage = {
+        type: "flex",
+        altText: "เลือกรูปภาพที่ต้องการลบ",
+        contents: {
+          type: "carousel",
+          contents: carouselItems
+        }
+      };
+      
+      // If there are more than 10 images, add a note
+      if (totalImages > 10) {
+        return [
+          {
+            type: "text",
+            text: `⚠️ แสดงเฉพาะ 10 รูปแรกจากทั้งหมด ${totalImages} รูป\nหากต้องการลบรูปที่ 11-${totalImages} กรุณาลบรูปแรกๆ ก่อน`
+          },
+          carouselMessage
+        ];
       }
       
-      // Create simple flex message for 6 or fewer images
-      return this.createSimpleDeleteGrid(lotNumber, date, result.images);
+      return carouselMessage;
     } catch (error) {
       logger.error('Error creating image delete selector:', error);
       throw error;
     }
   }
 
-  // Create simple grid for 6 or fewer images
-  createSimpleDeleteGrid(lotNumber, date, images) {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    
-    // Create buttons for each image
-    const buttons = images.map((image, index) => ({
-      type: "button",
-      style: "secondary",
-      action: {
-        type: "postback",
-        label: `ลบรูปที่ ${index + 1}`,
-        data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-        displayText: `เลือกลบรูปที่ ${index + 1}`
-      },
-      margin: "sm"
-    }));
-    
-    return {
-      type: "flex",
-      altText: "เลือกรูปภาพที่ต้องการลบ",
-      contents: {
-        type: "bubble",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "เลือกรูปที่ต้องการลบ",
-              weight: "bold",
-              size: "lg"
-            },
-            {
-              type: "text",
-              text: `Lot: ${lotNumber}`,
-              size: "sm",
-              color: "#666666",
-              margin: "sm"
-            },
-            {
-              type: "text",
-              text: `วันที่: ${new Date(date).toLocaleDateString('th-TH')}`,
-              size: "sm",
-              color: "#666666"
-            },
-            {
-              type: "text",
-              text: `จำนวน: ${images.length} รูป`,
-              size: "sm",
-              color: "#666666"
-            }
-          ],
-          paddingAll: "15px",
-          backgroundColor: "#FFF0F0"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: buttons,
-          paddingAll: "10px"
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "กดปุ่มเพื่อเลือกรูปที่ต้องการลบ",
-              size: "xs",
-              color: "#999999",
-              align: "center"
-            }
-          ],
-          paddingAll: "10px"
-        }
-      }
-    };
-  }
-
-  // Create text list for many images
-  createTextDeleteList(lotNumber, date, images) {
-    let message = `🗑️ เลือกรูปที่ต้องการลบ\n`;
-    message += `📦 Lot: ${lotNumber}\n`;
-    message += `📅 วันที่: ${new Date(date).toLocaleDateString('th-TH')}\n`;
-    message += `🖼️ จำนวน: ${images.length} รูป\n\n`;
-    
-    // List first 9 images
-    const displayImages = images.slice(0, 9);
-    displayImages.forEach((image, index) => {
-      const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-      message += `${index + 1}. รูปที่ ${index + 1} (${uploadTime})\n`;
-    });
-    
-    if (images.length > 9) {
-      message += `\n... และอีก ${images.length - 9} รูป\n`;
-    }
-    
-    message += `\n💡 พิมพ์หมายเลขรูปที่ต้องการลบ (1-${images.length})`;
-    
-    // Store delete context for number input
-    const chatId = 'direct'; // You'll need to pass chatContext here
-    lineService.setUserState('waitingForDeleteNumber', {
-      images: images,
-      lotNumber: lotNumber,
-      date: date
-    }, chatId);
-    
-    return {
-      type: "text",
-      text: message,
-      quickReply: {
-        items: displayImages.slice(0, 13).map((image, index) => ({
-          type: "action",
-          action: {
-            type: "postback",
-            label: `${index + 1}`,
-            data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-            displayText: `ลบรูปที่ ${index + 1}`
-          }
-        }))
-      }
-    };
-  }
-
   // Delete an image
   async deleteImage(imageId) {
     try {
-      // Get image record
-      const query = `
-        SELECT * FROM Images
-        WHERE image_id = @imageId
-      `;
-      
-      const params = [
-        { name: 'imageId', type: require('mssql').Int, value: imageId }
-      ];
-      
-      const result = await require('./DatabaseService').executeQuery(query, params);
-      
-      if (!result.recordset || result.recordset.length === 0) {
-        throw new AppError('Image not found', 404);
-      }
-      
-      const image = result.recordset[0];
-      
-      // Delete file from disk
-      const fs = require('fs');
-      const path = require('path');
-      
-      try {
-        if (fs.existsSync(image.file_path)) {
-          fs.unlinkSync(image.file_path);
-          logger.info(`Deleted file: ${image.file_path}`);
-        }
-      } catch (fileError) {
-        logger.error('Error deleting file:', fileError);
-        // Continue even if file deletion fails
-      }
-      
-      // Update image status in database
-      await imageModel.delete(imageId);
-      
-      return true;
+      return await imageService.deleteImage(imageId);
     } catch (error) {
       logger.error('Error deleting image:', error);
       throw error;
