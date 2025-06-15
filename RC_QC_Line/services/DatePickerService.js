@@ -520,13 +520,13 @@ class DatePickerService {
     
     logger.info(`DatePicker: Creating date picker with ${availableDates.length} available dates`);
     
-    // Create date buttons
+    // Create date buttons with count
     const dateButtons = availableDates.map(dateObj => {
       // Add "(วันนี้)" for current date
       const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
       const label = isToday 
-        ? `${dateObj.display} (วันนี้)` 
-        : dateObj.display;
+        ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
+        : `${dateObj.display} - ${dateObj.count} รูป`;
       
       logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
       
@@ -544,29 +544,55 @@ class DatePickerService {
       };
     });
     
-    // Create the flex message
+    // Determine header text based on action
+    let headerText = "📸 ดูรูปภาพ QC";
+    let headerColor = "#00B900";
+    if (action === 'delete') {
+      headerText = "🗑️ ลบรูปภาพ QC";
+      headerColor = "#FF0000";
+    }
+    
+    // Create the flex message with enhanced design
     const flexMessage = {
       type: "flex",
       altText: "เลือกวันที่",
       contents: {
         type: "bubble",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: headerText,
+              weight: "bold",
+              size: "lg",
+              color: headerColor
+            }
+          ],
+          paddingAll: "15px"
+        },
         body: {
           type: "box",
           layout: "vertical",
           contents: [
             {
               type: "text",
-              text: `เลือกวันที่สำหรับ Lot: ${lotNumber}`,
+              text: `📦 Lot: ${lotNumber}`,
               weight: "bold",
               size: "lg",
               wrap: true
             },
             {
               type: "text",
-              text: "กรุณาเลือกวันที่ที่มีรูปภาพ",
+              text: "กดเลือกวันที่เพื่อเปิดดูรูปภาพทันที",
               size: "sm",
-              color: "#999999",
+              color: "#666666",
               margin: "md"
+            },
+            {
+              type: "separator",
+              margin: "lg"
             },
             {
               type: "box",
@@ -576,6 +602,20 @@ class DatePickerService {
               contents: dateButtons
             }
           ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "💡 กดวันที่เพื่อเปิดหน้าดูรูปภาพทันที",
+              size: "xs",
+              color: "#999999",
+              align: "center"
+            }
+          ],
+          paddingAll: "10px"
         }
       }
     };
