@@ -267,6 +267,18 @@
             margin-bottom: 10px;
         }
         
+        .error-details {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: left;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         /* Toast */
         .toast {
             position: fixed;
@@ -352,6 +364,7 @@
             <div class="error-icon">❌</div>
             <h2>เกิดข้อผิดพลาด</h2>
             <p id="errorMessage">ไม่สามารถโหลดรูปภาพได้</p>
+            <div class="error-details" id="errorDetails" style="display: none;"></div>
         </div>
     </div>
     
@@ -400,37 +413,55 @@
         let imageDate = '';
         let isSharing = false;
         let userProfile = null;
+        let baseUrl = '';
         
         // Initialize LIFF
         async function initializeLiff() {
             try {
+                console.log('=== LIFF Initialization Debug ===');
+                console.log('Starting LIFF init...');
+                
                 await liff.init({ liffId: '2007575196-NWaXrZVE' });
                 
-                // Check LIFF environment
-                console.log('LIFF initialized');
-                console.log('Is in client:', liff.isInClient());
-                console.log('LIFF version:', liff.getVersion());
+                console.log('LIFF initialized successfully');
+                console.log('LIFF environment:');
+                console.log('- Is in client:', liff.isInClient());
+                console.log('- Is logged in:', liff.isLoggedIn());
+                console.log('- LIFF version:', liff.getVersion());
+                console.log('- Language:', liff.getLanguage());
+                console.log('- OS:', liff.getOS());
                 
                 if (!liff.isLoggedIn()) {
+                    console.log('User not logged in, redirecting to login...');
                     liff.login();
                     return;
                 }
                 
-                // Get user profile
+                // Get user profile with error handling
                 try {
                     userProfile = await liff.getProfile();
-                    console.log('User profile:', userProfile);
+                    console.log('User profile loaded:', userProfile);
                 } catch (profileError) {
                     console.error('Error getting profile:', profileError);
+                    // Continue without profile
                 }
                 
-                // Get parameters from URL
+                // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
                 imageDate = params.get('date') || '';
+                baseUrl = params.get('base_url') || window.location.origin;
+                
+                console.log('Parameters:');
+                console.log('- Lot:', lotNumber);
+                console.log('- Date:', imageDate);
+                console.log('- Base URL:', baseUrl);
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่');
+                    showError('ไม่พบข้อมูล Lot หรือวันที่', {
+                        receivedParams: Object.fromEntries(params.entries()),
+                        url: window.location.href
+                    });
                     return;
                 }
                 
@@ -438,13 +469,27 @@
                 await loadImages();
                 
             } catch (error) {
-                console.error('LIFF initialization failed', error);
+                console.error('LIFF initialization failed:', error);
                 
-                // Check if it's a development mode error
-                if (error.code === 'INVALID_ARGUMENT' || error.message?.includes('developing')) {
-                    showError('⚠️ LIFF อยู่ในโหมดพัฒนา\n\nกรุณาติดต่อผู้ดูแลระบบเพื่อ:\n1. เปลี่ยนเป็น Published mode\n2. หรือเพิ่มสิทธิ์ Developer ให้คุณ');
+                // Handle specific LIFF errors
+                if (error.code === 'INIT_FAILED') {
+                    showError('ไม่สามารถเริ่มต้น LIFF ได้', {
+                        error: error.message,
+                        code: error.code,
+                        suggestion: 'ตรวจสอบการตั้งค่า LIFF ID และ Endpoint URL'
+                    });
+                } else if (error.message?.includes('404')) {
+                    showError('ไม่พบ LIFF App', {
+                        error: error.message,
+                        liffId: '2007575196-NWaXrZVE',
+                        suggestion: 'ตรวจสอบว่า LIFF App ยังคงใช้งานได้'
+                    });
                 } else {
-                    showError('ไม่สามารถเริ่มต้น LIFF ได้\n' + (error.message || ''));
+                    showError('เกิดข้อผิดพลาดในการเริ่มต้น LIFF', {
+                        error: error.message,
+                        code: error.code,
+                        stack: error.stack
+                    });
                 }
             }
         }
@@ -452,30 +497,36 @@
         // Load images from server
         async function loadImages() {
             try {
-                // Use the BASE_URL from query parameter or default
-                const params = new URLSearchParams(window.location.search);
-                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
+                console.log('Loading images...');
+                const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
+                console.log('API URL:', apiUrl);
                 
-                console.log('Loading images from:', `${baseUrl}/api/images/${lotNumber}/${imageDate}`);
-                
-                const response = await fetch(`${baseUrl}/api/images/${lotNumber}/${imageDate}`, {
+                const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
                 
+                console.log('API Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('API Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data);
+                console.log('API Response data:', data);
                 
                 images = data.images || [];
                 
                 if (images.length === 0) {
-                    showError(`ไม่พบรูปภาพ\n\n📦 Lot: ${lotNumber}\n📅 วันที่: ${new Date(imageDate).toLocaleDateString('th-TH')}\n\nกรุณาตรวจสอบ:\n• เลข Lot ถูกต้องหรือไม่\n• มีการอัปโหลดรูปภาพในวันนี้หรือไม่`);
+                    showError(`ไม่พบรูปภาพ`, {
+                        lot: lotNumber,
+                        date: imageDate,
+                        formattedDate: new Date(imageDate).toLocaleDateString('th-TH')
+                    });
                     return;
                 }
                 
@@ -490,14 +541,23 @@
                 document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
                 
+                console.log('Images loaded successfully:', images.length);
+                
             } catch (error) {
                 console.error('Error loading images:', error);
                 
-                // Check if it's a network error
-                if (error.message.includes('Failed to fetch')) {
-                    showError('ไม่สามารถเชื่อมต่อกับ Server ได้\n\nกรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    showError('ไม่สามารถเชื่อมต่อกับ Server ได้', {
+                        error: error.message,
+                        apiUrl: `${baseUrl}/api/images/${lotNumber}/${imageDate}`,
+                        suggestion: 'ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
+                    });
                 } else {
-                    showError(`เกิดข้อผิดพลาด\n\n${error.message}`);
+                    showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ', {
+                        error: error.message,
+                        lot: lotNumber,
+                        date: imageDate
+                    });
                 }
             }
         }
@@ -588,7 +648,7 @@
             }
         }
         
-        // Share images using multiple methods
+        // Share images using bot share API
         async function shareImages() {
             if (isSharing) return;
             isSharing = true;
@@ -602,125 +662,79 @@
                 let imagesToShare = [];
                 
                 if (selectMode && selectedImages.size > 0) {
-                    // Share selected images
                     imagesToShare = Array.from(selectedImages).map(index => images[index]);
                 } else {
-                    // Share all images
                     imagesToShare = images;
                 }
                 
-                console.log('Sharing images:', imagesToShare);
+                console.log('Sharing images:', imagesToShare.length);
                 
-                // Method 1: Use LINE Share (opens LINE share dialog)
-                try {
-                    // Create share text with image URLs
-                    let shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป\n\n`;
-                    
-                    // Add image URLs (max 5 for practicality)
-                    const maxUrls = Math.min(imagesToShare.length, 5);
-                    for (let i = 0; i < maxUrls; i++) {
-                        shareText += `รูปที่ ${i + 1}: ${imagesToShare[i].url}\n`;
-                    }
-                    
-                    if (imagesToShare.length > 5) {
-                        shareText += `\n... และอีก ${imagesToShare.length - 5} รูป`;
-                    }
-                    
-                    // Hide loading
-                    document.getElementById('shareLoading').style.display = 'none';
-                    
-                    // Check if in LINE app
-                    if (liff.isInClient()) {
-                        // Use LINE's native share
-                        const encodedText = encodeURIComponent(shareText);
-                        const lineShareUrl = `https://line.me/R/msg/text/?${encodedText}`;
-                        
-                        // Open LINE share dialog
-                        window.location.href = lineShareUrl;
-                        
-                        showToast('📱 กำลังเปิดหน้าแชร์ LINE...\n\nเลือกห้องแชทที่ต้องการส่งได้เลย');
-                        
-                        // Don't close LIFF immediately to allow user to come back
-                        setTimeout(() => {
-                            if (selectMode) {
-                                toggleSelectMode();
-                            }
-                        }, 1000);
-                        
-                    } else {
-                        // Not in LINE app - copy to clipboard
-                        await navigator.clipboard.writeText(shareText);
-                        showToast('📋 คัดลอกข้อมูลรูปภาพแล้ว\n\nเปิด LINE แล้ววางในห้องแชทที่ต้องการ');
-                        
-                        // Try to open LINE app
-                        window.open(`https://line.me/R/`, '_blank');
-                    }
-                    
-                } catch (shareError) {
-                    console.error('Share error:', shareError);
-                    
-                    // Fallback: Try Bot Share
+                // Get user ID
+                let userId = 'anonymous';
+                if (userProfile) {
+                    userId = userProfile.userId;
+                } else if (liff.isInClient()) {
                     try {
-                        document.getElementById('shareLoading').style.display = 'flex';
-                        document.getElementById('shareProgress').textContent = 'กำลังลองวิธีอื่น...';
-                        
-                        // Get user profile if not already loaded
-                        if (!userProfile) {
-                            try {
-                                userProfile = await liff.getProfile();
-                            } catch (profileError) {
-                                console.error('Cannot get profile:', profileError);
-                                throw new Error('ไม่สามารถระบุตัวตนผู้ใช้ได้');
-                            }
-                        }
-                        
-                        const imageIds = imagesToShare.map(img => img.image_id || null).filter(id => id !== null);
-                        
-                        const response = await fetch('https://line.ruxchai.co.th/api/bot-share', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                userId: userProfile.userId,
-                                lotNumber: lotNumber,
-                                imageDate: imageDate,
-                                imageIds: imageIds
-                            })
-                        });
-                        
-                        const result = await response.json();
-                        
-                        // Hide loading
-                        document.getElementById('shareLoading').style.display = 'none';
-                        
-                        if (result.success) {
-                            showToast(`✅ ส่งรูปไปยังแชทส่วนตัวแล้ว ${result.count} รูป\n\n💡 คุณสามารถ Forward ต่อไปห้องอื่นได้`);
-                            
-                            if (selectMode) {
-                                toggleSelectMode();
-                            }
-                            
-                            setTimeout(() => {
-                                showToast('📱 กลับไปที่แชทเพื่อ Forward รูปต่อ');
-                            }, 3000);
-                        } else {
-                            throw new Error(result.message || 'Bot share failed');
-                        }
-                        
-                    } catch (botError) {
-                        console.error('Bot error:', botError);
-                        document.getElementById('shareLoading').style.display = 'none';
-                        
-                        // Final fallback: Show manual instructions
-                        showToast('💡 วิธีแชร์รูปภาพ:\n\n1. กดค้างที่รูปภาพ\n2. เลือก "บันทึกรูปภาพ"\n3. ไปที่ห้องแชทที่ต้องการ\n4. ส่งรูปจากอัลบั้ม', 5000);
+                        const profile = await liff.getProfile();
+                        userId = profile.userId;
+                    } catch (e) {
+                        console.error('Cannot get user ID:', e);
                     }
                 }
                 
-            } catch (error) {
-                console.error('Error in share function:', error);
+                // Call bot share API
+                const imageIds = imagesToShare.map(img => img.image_id).filter(id => id);
+                
+                console.log('Calling bot share API...');
+                const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        lotNumber: lotNumber,
+                        imageDate: imageDate,
+                        imageIds: imageIds
+                    })
+                });
+                
+                console.log('Bot share response:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Bot share error:', errorText);
+                    throw new Error(`Failed to share: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Bot share result:', result);
+                
+                // Hide loading
                 document.getElementById('shareLoading').style.display = 'none';
-                showToast(`❌ เกิดข้อผิดพลาด\n${error.message || 'ไม่สามารถแชร์ได้'}`);
+                
+                if (result.success) {
+                    showToast(`✅ ส่งรูปไปยังแชทแล้ว ${result.count} รูป\n\n📱 กลับไปที่แชทเพื่อดูรูปภาพ`);
+                    
+                    if (selectMode) {
+                        toggleSelectMode();
+                    }
+                    
+                    // Close LIFF after delay if in LINE app
+                    if (liff.isInClient()) {
+                        setTimeout(() => {
+                            liff.closeWindow();
+                        }, 2000);
+                    }
+                } else {
+                    throw new Error(result.message || 'Share failed');
+                }
+                
+            } catch (error) {
+                console.error('Error sharing images:', error);
+                document.getElementById('shareLoading').style.display = 'none';
+                
+                showToast(`❌ เกิดข้อผิดพลาด\n${error.message}`, 4000);
             } finally {
                 isSharing = false;
             }
@@ -765,11 +779,17 @@
             modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
         }
         
-        // Show error
-        function showError(message) {
+        // Show error with details
+        function showError(message, details = null) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').innerHTML = message.replace(/\n/g, '<br>');
+            document.getElementById('errorMessage').textContent = message;
+            
+            if (details) {
+                const detailsEl = document.getElementById('errorDetails');
+                detailsEl.style.display = 'block';
+                detailsEl.innerHTML = '<pre>' + JSON.stringify(details, null, 2) + '</pre>';
+            }
         }
         
         // Show toast message

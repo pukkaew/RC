@@ -239,6 +239,18 @@
             margin-bottom: 10px;
         }
         
+        .error-details {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: left;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         /* Toast */
         .toast {
             position: fixed;
@@ -362,6 +374,7 @@
             <div class="error-icon">❌</div>
             <h2>เกิดข้อผิดพลาด</h2>
             <p id="errorMessage">ไม่สามารถโหลดรูปภาพได้</p>
+            <div class="error-details" id="errorDetails" style="display: none;"></div>
         </div>
     </div>
     
@@ -399,27 +412,54 @@
         let lotNumber = '';
         let imageDate = '';
         let isDeleting = false;
+        let userProfile = null;
+        let baseUrl = '';
         
         // Initialize LIFF
         async function initializeLiff() {
             try {
+                console.log('=== LIFF Delete Initialization ===');
+                console.log('Starting LIFF init...');
+                
                 await liff.init({ liffId: '2007575196-NWaXrZVE' });
                 
-                console.log('LIFF initialized');
-                console.log('Is in client:', liff.isInClient());
+                console.log('LIFF initialized successfully');
+                console.log('LIFF environment:');
+                console.log('- Is in client:', liff.isInClient());
+                console.log('- Is logged in:', liff.isLoggedIn());
+                console.log('- LIFF version:', liff.getVersion());
                 
                 if (!liff.isLoggedIn()) {
+                    console.log('User not logged in, redirecting to login...');
                     liff.login();
                     return;
                 }
                 
-                // Get parameters from URL
+                // Get user profile with error handling
+                try {
+                    userProfile = await liff.getProfile();
+                    console.log('User profile loaded:', userProfile);
+                } catch (profileError) {
+                    console.error('Error getting profile:', profileError);
+                    // Continue without profile
+                }
+                
+                // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
                 imageDate = params.get('date') || '';
+                baseUrl = params.get('base_url') || window.location.origin;
+                
+                console.log('Parameters:');
+                console.log('- Lot:', lotNumber);
+                console.log('- Date:', imageDate);
+                console.log('- Base URL:', baseUrl);
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่');
+                    showError('ไม่พบข้อมูล Lot หรือวันที่', {
+                        receivedParams: Object.fromEntries(params.entries()),
+                        url: window.location.href
+                    });
                     return;
                 }
                 
@@ -427,37 +467,64 @@
                 await loadImages();
                 
             } catch (error) {
-                console.error('LIFF initialization failed', error);
-                showError('ไม่สามารถเริ่มต้น LIFF ได้\n' + (error.message || ''));
+                console.error('LIFF initialization failed:', error);
+                
+                // Handle specific LIFF errors
+                if (error.code === 'INIT_FAILED') {
+                    showError('ไม่สามารถเริ่มต้น LIFF ได้', {
+                        error: error.message,
+                        code: error.code,
+                        suggestion: 'ตรวจสอบการตั้งค่า LIFF ID และ Endpoint URL'
+                    });
+                } else if (error.message?.includes('404')) {
+                    showError('ไม่พบ LIFF App', {
+                        error: error.message,
+                        liffId: '2007575196-NWaXrZVE',
+                        suggestion: 'ตรวจสอบว่า LIFF App ยังคงใช้งานได้'
+                    });
+                } else {
+                    showError('เกิดข้อผิดพลาดในการเริ่มต้น LIFF', {
+                        error: error.message,
+                        code: error.code,
+                        stack: error.stack
+                    });
+                }
             }
         }
         
         // Load images from server
         async function loadImages() {
             try {
-                const params = new URLSearchParams(window.location.search);
-                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
+                console.log('Loading images for deletion...');
+                const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
+                console.log('API URL:', apiUrl);
                 
-                console.log('Loading images from:', `${baseUrl}/api/images/${lotNumber}/${imageDate}`);
-                
-                const response = await fetch(`${baseUrl}/api/images/${lotNumber}/${imageDate}`, {
+                const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
                 
+                console.log('API Response status:', response.status);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('API Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data);
+                console.log('API Response data:', data);
                 
                 images = data.images || [];
                 
                 if (images.length === 0) {
-                    showError(`ไม่พบรูปภาพ\n\n📦 Lot: ${lotNumber}\n📅 วันที่: ${new Date(imageDate).toLocaleDateString('th-TH')}`);
+                    showError(`ไม่พบรูปภาพ`, {
+                        lot: lotNumber,
+                        date: imageDate,
+                        formattedDate: new Date(imageDate).toLocaleDateString('th-TH')
+                    });
                     return;
                 }
                 
@@ -472,9 +539,24 @@
                 document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
                 
+                console.log('Images loaded successfully:', images.length);
+                
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`เกิดข้อผิดพลาด\n\n${error.message}`);
+                
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    showError('ไม่สามารถเชื่อมต่อกับ Server ได้', {
+                        error: error.message,
+                        apiUrl: `${baseUrl}/api/images/${lotNumber}/${imageDate}`,
+                        suggestion: 'ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
+                    });
+                } else {
+                    showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ', {
+                        error: error.message,
+                        lot: lotNumber,
+                        date: imageDate
+                    });
+                }
             }
         }
         
@@ -630,30 +712,26 @@
                 // Get selected image IDs
                 const selectedImageIds = Array.from(selectedImages).map(index => images[index].image_id);
                 
-                // Get base URL
-                const params = new URLSearchParams(window.location.search);
-                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
-                
-                // For PC browser or if not in LINE app
+                // Get user ID
                 let userId = 'anonymous';
-                let accessToken = null;
-                
-                if (liff.isInClient()) {
+                if (userProfile) {
+                    userId = userProfile.userId;
+                } else if (liff.isInClient()) {
                     try {
                         const profile = await liff.getProfile();
                         userId = profile.userId;
-                        accessToken = liff.getAccessToken();
-                    } catch (profileError) {
-                        console.error('Cannot get profile:', profileError);
+                    } catch (e) {
+                        console.error('Cannot get user ID:', e);
                     }
                 }
+                
+                console.log('Deleting images:', selectedImageIds);
                 
                 // Send delete request
                 const response = await fetch(`${baseUrl}/api/images/delete`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         userId: userId,
@@ -663,11 +741,16 @@
                     })
                 });
                 
+                console.log('Delete response status:', response.status);
+                
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Delete error response:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const result = await response.json();
+                console.log('Delete result:', result);
                 
                 if (result.success) {
                     showToast(`✅ ลบรูปภาพเรียบร้อยแล้ว ${result.deletedCount} รูป`);
@@ -705,11 +788,17 @@
             }
         }
         
-        // Show error
-        function showError(message) {
+        // Show error with details
+        function showError(message, details = null) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').innerHTML = message.replace(/\n/g, '<br>');
+            document.getElementById('errorMessage').textContent = message;
+            
+            if (details) {
+                const detailsEl = document.getElementById('errorDetails');
+                detailsEl.style.display = 'block';
+                detailsEl.innerHTML = '<pre>' + JSON.stringify(details, null, 2) + '</pre>';
+            }
         }
         
         // Show toast message
