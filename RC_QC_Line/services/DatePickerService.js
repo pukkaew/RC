@@ -196,7 +196,7 @@ class DatePickerService {
         ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
         : `${dateObj.display} - ${dateObj.count} รูป`;
       
-      // Build LIFF URL with BASE_URL
+      // Build LIFF URL with parameters
       const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
       const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
       
@@ -310,6 +310,56 @@ class DatePickerService {
       return true;
     } catch (error) {
       logger.error('Error sending upload date picker:', error);
+      throw new AppError('Failed to send date picker', 500, { error: error.message });
+    }
+  }
+
+  // Send date picker for viewing images with album preview
+  async sendViewDatePickerWithAlbum(userId, lotNumber, chatContext = null, replyToken = null) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Create the date picker flex message with postback action (not direct LIFF)
+      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'view');
+      
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'view');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
+        }
+      }
+      
+      // Update user state to waiting for date selection
+      lineService.setUserState(userId, lineConfig.userStates.waitingForDate, {
+        lotNumber,
+        action: 'view'
+      }, chatId);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error sending view date picker with album:', error);
       throw new AppError('Failed to send date picker', 500, { error: error.message });
     }
   }

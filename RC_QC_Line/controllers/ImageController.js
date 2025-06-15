@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Updated with LIFF Support
+// Controller for image retrieval and viewing - Updated with Album Preview
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -58,9 +58,8 @@ class ImageController {
       
       logger.info(`ImageController: Lot validation passed, proceeding to DatePicker`);
       
-      // Show date picker with only dates that have images (NO CONFIRMATION MESSAGE)
-      // Pass replyToken to sendViewDatePicker so it can reply directly
-      await datePickerService.sendViewDatePicker(userId, trimmedLot, chatContext, replyToken);
+      // Show date picker with postback action (not direct LIFF)
+      await datePickerService.sendViewDatePickerWithAlbum(userId, trimmedLot, chatContext, replyToken);
       
     } catch (error) {
       logger.error('Error processing Lot number for viewing:', error);
@@ -73,7 +72,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and automatically open LIFF
+  // Process date selection and show album preview
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
@@ -93,48 +92,11 @@ class ImageController {
         return;
       }
       
-      // Build LIFF URL with parameters
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
+      // Build album preview message
+      const albumMessage = this.buildAlbumPreviewMessage(lotNumber, date, result.images);
       
-      // Create message with automatic LIFF opening
-      const messages = [
-        {
-          type: "text",
-          text: `📸 พบรูปภาพ ${result.images.length} รูป\n📦 Lot: ${lotNumber}\n📅 วันที่: ${new Date(date).toLocaleDateString('th-TH')}\n\n🔄 กำลังเปิดหน้าดูรูปภาพ...`
-        },
-        {
-          type: "flex",
-          altText: "เปิดดูรูปภาพ",
-          contents: {
-            type: "bubble",
-            body: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "button",
-                  action: {
-                    type: "uri",
-                    uri: liffUrl
-                  },
-                  height: "sm",
-                  style: "link",
-                  gravity: "center"
-                }
-              ],
-              height: "50px",
-              backgroundColor: "#FFFFFF",
-              action: {
-                type: "uri",
-                uri: liffUrl
-              }
-            }
-          }
-        }
-      ];
-      
-      // Send messages with auto-opening LIFF
-      await lineService.replyMessage(replyToken, messages);
+      // Send album preview
+      await lineService.replyMessage(replyToken, albumMessage);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -147,157 +109,148 @@ class ImageController {
     }
   }
 
-  // Build LIFF viewer message (not used anymore but kept for compatibility)
-  buildLiffViewerMessage(lotNumber, date, imageCount, liffUrl) {
+  // Build album preview message with thumbnails
+  buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
+    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+    
+    // Limit preview images to 9 for 3x3 grid
+    const previewImages = images.slice(0, 9);
+    const remainingCount = Math.max(0, images.length - 9);
+    
+    // Create image boxes for preview
+    const imageBoxes = previewImages.map((image, index) => {
+      const imageUrl = image.url.startsWith('http') 
+        ? image.url 
+        : `${baseUrl}${image.url}`;
+      
+      return {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "image",
+            url: imageUrl,
+            size: "full",
+            aspectMode: "cover",
+            aspectRatio: "1:1"
+          }
+        ],
+        cornerRadius: "5px",
+        margin: "2px"
+      };
+    });
+    
+    // Fill empty slots if less than 9 images
+    while (imageBoxes.length < 9) {
+      imageBoxes.push({
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [],
+            backgroundColor: "#F0F0F0"
+          }
+        ],
+        cornerRadius: "5px",
+        margin: "2px"
+      });
+    }
+    
+    // Create 3x3 grid
+    const rows = [];
+    for (let i = 0; i < 9; i += 3) {
+      rows.push({
+        type: "box",
+        layout: "horizontal",
+        contents: imageBoxes.slice(i, i + 3),
+        spacing: "xs"
+      });
+    }
+    
+    // Build LIFF URL
+    const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
     
     return {
       type: "flex",
-      altText: `ดูรูปภาพ ${imageCount} รูป - Lot: ${lotNumber}`,
+      altText: `อัลบั้มรูปภาพ - Lot: ${lotNumber}`,
       contents: {
         type: "bubble",
-        hero: {
+        size: "mega",
+        header: {
           type: "box",
           layout: "vertical",
           contents: [
+            {
+              type: "text",
+              text: "📸 อัลบั้มรูปภาพ QC",
+              size: "xl",
+              weight: "bold",
+              color: "#00B900"
+            },
             {
               type: "box",
               layout: "horizontal",
               contents: [
                 {
                   type: "text",
-                  text: "📸",
-                  size: "4xl",
-                  flex: 0,
-                  align: "center"
+                  text: `📦 Lot: ${lotNumber}`,
+                  size: "sm",
+                  color: "#666666",
+                  flex: 0
                 },
                 {
-                  type: "box",
-                  layout: "vertical",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "Photo Viewer",
-                      size: "xl",
-                      weight: "bold",
-                      color: "#00B900"
-                    },
-                    {
-                      type: "text",
-                      text: "ดูและแชร์รูปภาพ QC",
-                      size: "sm",
-                      color: "#666666"
-                    }
-                  ],
-                  margin: "lg",
-                  flex: 1
+                  type: "text",
+                  text: `📅 ${formattedDate}`,
+                  size: "sm",
+                  color: "#666666",
+                  align: "end",
+                  flex: 0
                 }
               ],
-              paddingAll: "20px",
-              backgroundColor: "#F0FFF0"
+              margin: "sm"
+            },
+            {
+              type: "text",
+              text: `🖼️ ทั้งหมด ${images.length} รูป`,
+              size: "md",
+              weight: "bold",
+              color: "#333333",
+              margin: "xs"
             }
-          ]
+          ],
+          paddingAll: "15px",
+          backgroundColor: "#F8FFF8"
         },
         body: {
           type: "box",
           layout: "vertical",
           contents: [
             {
+              type: "box",
+              layout: "vertical",
+              contents: rows,
+              backgroundColor: "#FFFFFF",
+              cornerRadius: "8px",
+              paddingAll: "5px"
+            },
+            remainingCount > 0 ? {
               type: "text",
-              text: `พบรูปภาพ ${imageCount} รูป`,
-              size: "lg",
-              weight: "bold",
-              color: "#00B900",
-              align: "center"
-            },
-            {
+              text: `...และอีก ${remainingCount} รูป`,
+              size: "sm",
+              color: "#999999",
+              align: "center",
+              margin: "md"
+            } : {
               type: "box",
               layout: "vertical",
-              margin: "lg",
-              spacing: "sm",
-              contents: [
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "📦 Lot:",
-                      flex: 0,
-                      color: "#666666"
-                    },
-                    {
-                      type: "text",
-                      text: lotNumber,
-                      flex: 1,
-                      weight: "bold",
-                      align: "end"
-                    }
-                  ]
-                },
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "📅 วันที่:",
-                      flex: 0,
-                      color: "#666666"
-                    },
-                    {
-                      type: "text",
-                      text: formattedDate,
-                      flex: 1,
-                      weight: "bold",
-                      align: "end"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              type: "separator",
-              margin: "lg"
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              margin: "lg",
-              contents: [
-                {
-                  type: "text",
-                  text: "✨ คุณสมบัติ",
-                  weight: "bold",
-                  color: "#333333",
-                  size: "sm"
-                },
-                {
-                  type: "text",
-                  text: "• ดูรูปภาพทั้งหมดในรูปแบบ Grid",
-                  size: "xs",
-                  color: "#666666",
-                  margin: "sm",
-                  wrap: true
-                },
-                {
-                  type: "text",
-                  text: "• เลือกและแชร์รูปที่ต้องการ",
-                  size: "xs",
-                  color: "#666666",
-                  wrap: true
-                },
-                {
-                  type: "text",
-                  text: "• ดูรูปแบบเต็มจอได้",
-                  size: "xs",
-                  color: "#666666",
-                  wrap: true
-                }
-              ]
+              contents: []
             }
           ],
-          paddingAll: "20px"
+          paddingAll: "10px",
+          backgroundColor: "#FAFAFA"
         },
         footer: {
           type: "box",
@@ -310,21 +263,35 @@ class ImageController {
               height: "md",
               action: {
                 type: "uri",
-                label: "🖼️ เปิดดูรูปภาพ",
+                label: "🔍 ดูรูปภาพทั้งหมด",
                 uri: liffUrl
               },
               color: "#00B900"
             },
             {
-              type: "text",
-              text: "กดปุ่มด้านบนเพื่อเปิดหน้าดูรูปภาพ",
-              size: "xs",
-              color: "#999999",
-              align: "center",
-              margin: "sm"
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "💡 กดปุ่มด้านบนเพื่อดูรูปภาพขนาดเต็ม",
+                  size: "xs",
+                  color: "#999999",
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: "และเลือกแชร์รูปที่ต้องการ",
+                  size: "xs",
+                  color: "#999999",
+                  align: "center"
+                }
+              ],
+              margin: "sm",
+              spacing: "none"
             }
           ],
-          paddingAll: "20px"
+          paddingAll: "15px"
         }
       }
     };
