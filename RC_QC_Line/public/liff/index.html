@@ -117,9 +117,40 @@
             const params = {};
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Get all parameters
+            // Method 1: Check for LIFF state parameters
+            const liffState = urlParams.get('liff.state');
+            if (liffState) {
+                console.log('Found liff.state:', liffState);
+                try {
+                    // Decode and parse the state
+                    const decodedState = decodeURIComponent(liffState);
+                    console.log('Decoded liff.state:', decodedState);
+                    
+                    // Parse query string format
+                    const stateParams = new URLSearchParams(decodedState);
+                    for (const [key, value] of stateParams.entries()) {
+                        params[key] = value;
+                    }
+                } catch (e) {
+                    console.error('Error parsing liff.state:', e);
+                }
+            }
+            
+            // Method 2: Direct parameters (override state if present)
             for (const [key, value] of urlParams.entries()) {
-                params[key] = value;
+                if (!key.startsWith('liff.') && key !== 'code' && key !== 'state') {
+                    params[key] = value;
+                }
+            }
+            
+            // Method 3: Check hash
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                for (const [key, value] of hashParams.entries()) {
+                    if (!params[key]) {
+                        params[key] = value;
+                    }
+                }
             }
             
             console.log('Extracted parameters:', params);

@@ -434,9 +434,7 @@ class WebhookController {
         // Reset upload mode after completion
         lineService.setUploadInfo(userId, null, chatContext.chatId);
       } else if (action === lineConfig.userActions.view) {
-        // This should not happen anymore - we open LIFF directly
-        logger.warn('Unexpected postback for view action - should open LIFF directly');
-        // Fallback to old behavior
+        // Forward to image controller
         await imageController.processDateSelection(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'delete') {
         // Forward to delete controller for showing delete options

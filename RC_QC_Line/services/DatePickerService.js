@@ -1,4 +1,4 @@
-// Service for date picker functionality with Direct LIFF Opening
+// Service for date picker functionality with Album Preview
 const lineService = require('./LineService');
 const lineConfig = require('../config/line');
 const dateFormatter = require('../utils/DateFormatter');
@@ -69,13 +69,13 @@ class DatePickerService {
     }
   }
 
-  // Send date picker for viewing images with DIRECT LIFF opening (no PC support)
-  async sendViewDatePickerWithDirectLiff(userId, lotNumber, chatContext = null, replyToken = null) {
+  // Send date picker for viewing images with album preview
+  async sendViewDatePickerWithAlbum(userId, lotNumber, chatContext = null, replyToken = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
       
-      // Create the date picker flex message with direct LIFF links
-      const flexMessage = await this.createViewDatePickerFlexMessageDirectLiff(lotNumber, 'view');
+      // Create the date picker flex message with postback action (not direct LIFF)
+      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'view');
       
       // Enhanced error handling for group chats
       try {
@@ -94,7 +94,7 @@ class DatePickerService {
         
         // Fallback: If flex message fails in group, send text message
         if (chatContext?.isGroupChat) {
-          const fallbackMessage = await this.createTextDatePickerWithLiffFallback(lotNumber, 'view');
+          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'view');
           
           if (replyToken) {
             await lineService.replyMessage(replyToken, fallbackMessage);
@@ -106,161 +106,17 @@ class DatePickerService {
         }
       }
       
-      // Clear user state since we're opening LIFF directly
-      lineService.clearUserState(userId, chatId);
+      // Update user state to waiting for date selection
+      lineService.setUserState(userId, lineConfig.userStates.waitingForDate, {
+        lotNumber,
+        action: 'view'
+      }, chatId);
       
       return true;
     } catch (error) {
-      logger.error('Error sending view date picker with direct LIFF:', error);
+      logger.error('Error sending view date picker with album:', error);
       throw new AppError('Failed to send date picker', 500, { error: error.message });
     }
-  }
-
-  // Create date picker flex message with DIRECT LIFF opening (no PC support message)
-  async createViewDatePickerFlexMessageDirectLiff(lotNumber, action = 'view') {
-    logger.info(`DatePicker: Creating ${action} date picker with direct LIFF for Lot: ${lotNumber}`);
-    
-    // Get dates that have images for this lot
-    const availableDates = await this.getAvailableDatesForLot(lotNumber);
-    
-    if (availableDates.length === 0) {
-      logger.warn(`DatePicker: No available dates found for Lot: ${lotNumber}`);
-      
-      // No images found for this lot
-      return {
-        type: "flex",
-        altText: "ไม่พบรูปภาพ",
-        contents: {
-          type: "bubble",
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}`,
-                weight: "bold",
-                size: "md",
-                wrap: true
-              },
-              {
-                type: "text",
-                text: "กรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน",
-                size: "sm",
-                color: "#999999",
-                margin: "md",
-                wrap: true
-              }
-            ]
-          },
-          footer: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                action: {
-                  type: "message",
-                  label: "ดูรูปภาพ Lot อื่น",
-                  text: "#view"
-                }
-              }
-            ]
-          }
-        }
-      };
-    }
-    
-    logger.info(`DatePicker: Creating date picker with ${availableDates.length} available dates`);
-    
-    // Create date buttons that open LIFF directly
-    const dateButtons = availableDates.map(dateObj => {
-      // Add "(วันนี้)" for current date
-      const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
-      const label = isToday 
-        ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
-        : `${dateObj.display} - ${dateObj.count} รูป`;
-      
-      // Build LIFF URL with parameters
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
-      
-      logger.info(`DatePicker: LIFF URL = ${liffUrl}`);
-      
-      return {
-        type: "button",
-        style: isToday ? "primary" : "secondary",
-        action: {
-          type: "uri",
-          label: label,
-          uri: liffUrl
-        },
-        margin: "sm",
-        height: "sm"
-      };
-    });
-    
-    // Create the flex message
-    const flexMessage = {
-      type: "flex",
-      altText: "เลือกวันที่เพื่อดูรูปภาพ",
-      contents: {
-        type: "bubble",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "📸 ดูรูปภาพ QC",
-              weight: "bold",
-              size: "lg",
-              color: "#00B900"
-            }
-          ],
-          paddingAll: "15px"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `📦 Lot: ${lotNumber}`,
-              weight: "bold",
-              size: "lg",
-              wrap: true
-            },
-            {
-              type: "text",
-              text: "กดเลือกวันที่เพื่อดูรูปภาพทันที",
-              size: "sm",
-              color: "#666666",
-              margin: "md"
-            },
-            {
-              type: "separator",
-              margin: "lg"
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              margin: "lg",
-              spacing: "sm",
-              contents: dateButtons
-            }
-          ]
-        }
-      }
-    };
-    
-    return flexMessage;
-  }
-
-  // Send date picker for viewing images with album preview (OLD METHOD - NOT USED)
-  async sendViewDatePickerWithAlbum(userId, lotNumber, chatContext = null, replyToken = null) {
-    // Forward to direct LIFF method
-    return this.sendViewDatePickerWithDirectLiff(userId, lotNumber, chatContext, replyToken);
   }
 
   // Send date picker for uploads
@@ -296,7 +152,7 @@ class DatePickerService {
     try {
       const chatId = chatContext?.chatId || 'direct';
       
-      // Create the date picker flex message with delete action (original behavior)
+      // Create the date picker flex message with delete action
       const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'delete');
       
       // Enhanced error handling for group chats
@@ -403,7 +259,7 @@ class DatePickerService {
     return flexMessage;
   }
 
-  // Create original date picker flex message for non-view actions
+  // Create date picker flex message with postback actions
   async createViewDatePickerFlexMessage(lotNumber, action = 'view') {
     logger.info(`DatePicker: Creating ${action} date picker for Lot: ${lotNumber}`);
     
@@ -550,43 +406,7 @@ class DatePickerService {
     return flexMessage;
   }
 
-  // Create text-based date picker fallback for groups with LIFF
-  async createTextDatePickerWithLiffFallback(lotNumber, action = 'view') {
-    const availableDates = await this.getAvailableDatesForLot(lotNumber);
-    
-    if (availableDates.length === 0) {
-      return {
-        type: 'text',
-        text: `ไม่พบรูปภาพสำหรับ Lot: ${lotNumber}\nกรุณาตรวจสอบเลข Lot หรืออัปโหลดรูปภาพก่อน`
-      };
-    }
-    
-    // Create text message with LIFF links
-    let message = `📸 ดูรูปภาพ QC\n📦 Lot: ${lotNumber}\n\nกดลิงก์ด้านล่างเพื่อดูรูปภาพ:\n\n`;
-    
-    availableDates.forEach(dateObj => {
-      const isToday = dateObj.date === this.dateFormatter.getCurrentDate();
-      const label = isToday 
-        ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
-        : `${dateObj.display} - ${dateObj.count} รูป`;
-      
-      // Create proper LIFF URL
-      const params = new URLSearchParams({
-        lot: lotNumber,
-        date: dateObj.date
-      });
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?${params.toString()}`;
-      
-      message += `${label}\n${liffUrl}\n\n`;
-    });
-    
-    return {
-      type: 'text',
-      text: message.trim()
-    };
-  }
-
-  // Create text-based date picker fallback for groups (original)
+  // Create text-based date picker fallback for groups
   async createTextDatePickerFallback(lotNumber, action = 'view') {
     const availableDates = await this.getAvailableDatesForLot(lotNumber);
     
