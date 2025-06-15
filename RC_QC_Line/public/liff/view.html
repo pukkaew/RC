@@ -569,9 +569,11 @@
                 };
                 
                 try {
-                    // Send request to bot share API
+                    // Send request to bot share API - try both endpoints
                     const baseUrl = new URLSearchParams(window.location.search).get('base_url') || 'https://line.ruxchai.co.th';
-                    const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    
+                    // Try primary endpoint first
+                    let response = await fetch(`${baseUrl}/api/bot-share`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -579,6 +581,23 @@
                         },
                         body: JSON.stringify(requestData)
                     });
+                    
+                    // If primary fails, try direct endpoint
+                    if (!response.ok && response.status === 404) {
+                        console.log('Primary endpoint failed, trying direct endpoint...');
+                        response = await fetch(`${baseUrl}/api/bot-share-direct`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${accessToken}`
+                            },
+                            body: JSON.stringify(requestData)
+                        });
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                     
                     const result = await response.json();
                     

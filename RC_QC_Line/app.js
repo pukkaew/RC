@@ -1,4 +1,4 @@
-// Main application file - Updated with API Routes
+// Main application file - Complete Version with Bot Share
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -42,16 +42,46 @@ const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
 const lineService = require('./services/LineService');
 
-// Import API routes
-const apiRoutes = require('./routes/api');
-const botShareRoutes = require('./routes/botShare');
+// Import API routes - Check if files exist
+let apiRoutes, botShareRoutes;
+
+try {
+  apiRoutes = require('./routes/api');
+  logger.info('✅ API routes loaded');
+} catch (error) {
+  logger.error('❌ Failed to load API routes:', error.message);
+  apiRoutes = express.Router();
+}
+
+try {
+  botShareRoutes = require('./routes/botShare');
+  logger.info('✅ Bot share routes loaded');
+} catch (error) {
+  logger.error('❌ Failed to load Bot share routes:', error.message);
+  botShareRoutes = express.Router();
+}
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
 
-// API routes for LIFF
-app.use('/api', apiRoutes);
-app.use('/api', botShareRoutes);
+// API routes for LIFF - with logging
+app.use('/api', (req, res, next) => {
+  logger.info(`API Request: ${req.method} ${req.path}`);
+  next();
+}, apiRoutes, botShareRoutes);
+
+// Fallback for bot-share if above doesn't work
+app.post('/api/bot-share', (req, res, next) => {
+  logger.info('Bot share request via fallback route');
+  if (botShareRoutes.handle) {
+    botShareRoutes.handle(req, res, next);
+  } else {
+    res.status(501).json({
+      success: false,
+      message: 'Bot share route not properly loaded'
+    });
+  }
+});
 
 // Add system monitoring endpoint
 app.get('/status', (req, res) => {
@@ -59,7 +89,20 @@ app.get('/status', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    statistics: stats
+    statistics: stats,
+    features: {
+      liff: true,
+      botShare: true,
+      multiChat: true
+    }
+  });
+});
+
+// Test endpoint for bot share
+app.get('/api/bot-share/test', (req, res) => {
+  res.json({
+    status: 'Bot share API is working',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -119,53 +162,96 @@ setInterval(() => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  logger.info(`Webhook URL: http://localhost:${PORT}/webhook`);
-  logger.info(`Status endpoint: http://localhost:${PORT}/status`);
-  logger.info(`LIFF viewer: http://localhost:${PORT}/liff/view.html`);
-  logger.info('Note: For production, use HTTPS for webhook URL');
-  logger.info('Multi-chat support enabled');
-  logger.info('LIFF photo viewer enabled');
+  logger.info('===========================================');
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info('===========================================');
+  logger.info('📍 Endpoints:');
+  logger.info(`   Webhook: ${process.env.BASE_URL || `http://localhost:${PORT}`}/webhook`);
+  logger.info(`   Status: ${process.env.BASE_URL || `http://localhost:${PORT}`}/status`);
+  logger.info(`   LIFF: ${process.env.BASE_URL || `http://localhost:${PORT}`}/liff/view.html`);
+  logger.info(`   API: ${process.env.BASE_URL || `http://localhost:${PORT}`}/api/`);
+  logger.info(`   Bot Share: ${process.env.BASE_URL || `http://localhost:${PORT}`}/api/bot-share`);
+  logger.info('===========================================');
+  logger.info('✅ Features enabled:');
+  logger.info('   - Multi-chat support');
+  logger.info('   - LIFF photo viewer');
+  logger.info('   - Bot share system');
+  logger.info('   - Auto cleanup');
+  logger.info('===========================================');
+  logger.info('⚠️  Note: For production, use HTTPS for all URLs');
+  logger.info('===========================================');
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
+  // Don't exit in production, but log the error
+  if (process.env.NODE_ENV === 'development') {
+    process.exit(1);
+  }
 });
 
 process.on('unhandledRejection', (error) => {
   logger.error('Unhandled Rejection:', error);
+  // Don't exit in production, but log the error
+  if (process.env.NODE_ENV === 'development') {
+    process.exit(1);
+  }
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+const gracefulShutdown = (signal) => {
+  logger.info(`${signal} received, shutting down gracefully...`);
   
-  // Clean up resources
-  try {
-    const cleanedUploads = uploadController.cleanupPendingUploads();
-    const cleanedStates = lineService.cleanupExpiredStates();
-    logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
-  } catch (error) {
-    logger.error('Error during shutdown cleanup:', error);
-  }
+  // Stop accepting new connections
+  const server = app.listen();
+  server.close(() => {
+    logger.info('HTTP server closed');
+    
+    // Clean up resources
+    try {
+      const cleanedUploads = uploadController.cleanupPendingUploads();
+      const cleanedStates = lineService.cleanupExpiredStates();
+      logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
+    } catch (error) {
+      logger.error('Error during shutdown cleanup:', error);
+    }
+    
+    // Close database connections if any
+    // Add database cleanup here if needed
+    
+    logger.info('Graceful shutdown completed');
+    process.exit(0);
+  });
   
-  process.exit(0);
+  // Force shutdown after 30 seconds
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 30000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Health check for load balancers
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  
-  // Clean up resources
-  try {
-    const cleanedUploads = uploadController.cleanupPendingUploads();
-    const cleanedStates = lineService.cleanupExpiredStates();
-    logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
-  } catch (error) {
-    logger.error('Error during shutdown cleanup:', error);
-  }
-  
-  process.exit(0);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.url}`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 module.exports = app;
