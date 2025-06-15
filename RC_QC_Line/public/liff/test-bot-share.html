@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Bot Share API</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        button {
+            background: #00B900;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 ทดสอบ Bot Share API</h1>
+    
+    <h2>1. ทดสอบ Health Check</h2>
+    <button onclick="testHealth()">Test Health</button>
+    
+    <h2>2. ทดสอบ Bot Share</h2>
+    <input type="text" id="userId" placeholder="User ID (เช่น U944dd605dd72df5a658e775bc0eaef6e)" value="U944dd605dd72df5a658e775bc0eaef6e">
+    <input type="text" id="lotNumber" placeholder="Lot Number" value="1122">
+    <input type="text" id="imageDate" placeholder="Date (YYYY-MM-DD)" value="2025-06-15">
+    <button onclick="testBotShare()">Test Bot Share</button>
+    
+    <div id="result" class="result" style="display:none;"></div>
+    
+    <script>
+        const baseUrl = 'https://line.ruxchai.co.th';
+        
+        function showResult(title, data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<strong>${title}</strong>\n${JSON.stringify(data, null, 2)}`;
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${baseUrl}/api/bot-share/health`);
+                const data = await response.json();
+                showResult('Health Check Result:', data);
+            } catch (error) {
+                showResult('Error:', { message: error.message });
+            }
+        }
+        
+        async function testBotShare() {
+            try {
+                const userId = document.getElementById('userId').value;
+                const lotNumber = document.getElementById('lotNumber').value;
+                const imageDate = document.getElementById('imageDate').value;
+                
+                if (!userId || !lotNumber || !imageDate) {
+                    alert('กรุณากรอกข้อมูลให้ครบ');
+                    return;
+                }
+                
+                showResult('Sending request...', { userId, lotNumber, imageDate });
+                
+                const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        lotNumber: lotNumber,
+                        imageDate: imageDate,
+                        imageIds: [],
+                        accessToken: 'test-token'
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('Bot Share Result:', {
+                    status: response.status,
+                    response: data
+                });
+                
+            } catch (error) {
+                showResult('Error:', { 
+                    message: error.message,
+                    stack: error.stack 
+                });
+            }
+        }
+    </script>
+</body>
+</html>
