@@ -70,6 +70,32 @@
             padding: 15px;
         }
         
+        /* Responsive for larger screens */
+        @media (min-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            
+            .image-item img {
+                height: 150px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .image-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 15px;
+                max-width: 1000px;
+            }
+            
+            .image-item img {
+                height: 180px;
+            }
+        }
+        
         .image-item {
             position: relative;
             background: white;
@@ -91,7 +117,7 @@
         
         .image-item img {
             width: 100%;
-            aspect-ratio: 1/1;
+            height: 120px;
             object-fit: cover;
             display: block;
         }
@@ -409,7 +435,8 @@
         // Load images from server
         async function loadImages() {
             try {
-                const baseUrl = 'https://line.ruxchai.co.th';
+                const params = new URLSearchParams(window.location.search);
+                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
                 
                 console.log('Loading images from:', `${baseUrl}/api/images/${lotNumber}/${imageDate}`);
                 
@@ -603,40 +630,69 @@
                 // Get selected image IDs
                 const selectedImageIds = Array.from(selectedImages).map(index => images[index].image_id);
                 
-                // Get user profile and access token
-                const profile = await liff.getProfile();
-                const accessToken = liff.getAccessToken();
+                // Get base URL
+                const params = new URLSearchParams(window.location.search);
+                const baseUrl = params.get('base_url') || 'https://line.ruxchai.co.th';
+                
+                // For PC browser or if not in LINE app
+                let userId = 'anonymous';
+                let accessToken = null;
+                
+                if (liff.isInClient()) {
+                    try {
+                        const profile = await liff.getProfile();
+                        userId = profile.userId;
+                        accessToken = liff.getAccessToken();
+                    } catch (profileError) {
+                        console.error('Cannot get profile:', profileError);
+                    }
+                }
                 
                 // Send delete request
-                const baseUrl = 'https://line.ruxchai.co.th';
                 const response = await fetch(`${baseUrl}/api/images/delete`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
                     },
                     body: JSON.stringify({
-                        userId: profile.userId,
+                        userId: userId,
                         imageIds: selectedImageIds,
                         lotNumber: lotNumber,
                         imageDate: imageDate
                     })
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Send message back to chat
-                    await liff.sendMessages([{
-                        type: 'text',
-                        text: `✅ ลบรูปภาพเรียบร้อยแล้ว\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🗑️ จำนวน: ${selectedImageIds.length} รูป`
-                    }]);
+                    showToast(`✅ ลบรูปภาพเรียบร้อยแล้ว ${result.deletedCount} รูป`);
                     
-                    showToast('ลบรูปภาพเรียบร้อยแล้ว');
-                    
-                    // Close LIFF after 1 second
-                    setTimeout(() => {
-                        liff.closeWindow();
-                    }, 1000);
+                    // Send message back to chat if in LINE
+                    if (liff.isInClient()) {
+                        try {
+                            await liff.sendMessages([{
+                                type: 'text',
+                                text: `✅ ลบรูปภาพเรียบร้อยแล้ว\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🗑️ จำนวน: ${result.deletedCount} รูป`
+                            }]);
+                        } catch (sendError) {
+                            console.error('Cannot send message:', sendError);
+                        }
+                        
+                        // Close LIFF after 1 second
+                        setTimeout(() => {
+                            liff.closeWindow();
+                        }, 1000);
+                    } else {
+                        // Reload page for PC
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
                     
                 } else {
                     throw new Error(result.message || 'Failed to delete images');
@@ -644,7 +700,7 @@
                 
             } catch (error) {
                 console.error('Error deleting images:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการลบรูปภาพ');
+                showToast('❌ เกิดข้อผิดพลาดในการลบรูปภาพ: ' + error.message);
                 isDeleting = false;
             }
         }
