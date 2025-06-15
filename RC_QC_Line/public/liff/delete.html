@@ -414,35 +414,23 @@
         let isDeleting = false;
         let userProfile = null;
         let baseUrl = '';
+        let isLiffEnvironment = false;
+        let isPCBrowser = false;
         
-        // Initialize LIFF
-        async function initializeLiff() {
+        // Check if running in PC browser
+        function checkPCBrowser() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            isPCBrowser = !(/android|iphone|ipad|ipod/.test(userAgent));
+            return isPCBrowser;
+        }
+        
+        // Initialize (with PC support)
+        async function initialize() {
             try {
-                console.log('=== LIFF Delete Initialization ===');
-                console.log('Starting LIFF init...');
+                console.log('=== Delete Page Initialization ===');
                 
-                await liff.init({ liffId: '2007575196-NWaXrZVE' });
-                
-                console.log('LIFF initialized successfully');
-                console.log('LIFF environment:');
-                console.log('- Is in client:', liff.isInClient());
-                console.log('- Is logged in:', liff.isLoggedIn());
-                console.log('- LIFF version:', liff.getVersion());
-                
-                if (!liff.isLoggedIn()) {
-                    console.log('User not logged in, redirecting to login...');
-                    liff.login();
-                    return;
-                }
-                
-                // Get user profile with error handling
-                try {
-                    userProfile = await liff.getProfile();
-                    console.log('User profile loaded:', userProfile);
-                } catch (profileError) {
-                    console.error('Error getting profile:', profileError);
-                    // Continue without profile
-                }
+                // Check if PC browser
+                checkPCBrowser();
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -450,44 +438,52 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
-                console.log('Parameters:');
-                console.log('- Lot:', lotNumber);
-                console.log('- Date:', imageDate);
-                console.log('- Base URL:', baseUrl);
+                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่', {
-                        receivedParams: Object.fromEntries(params.entries()),
-                        url: window.location.href
-                    });
+                    showError('ไม่พบข้อมูล Lot หรือวันที่');
                     return;
                 }
                 
-                // Load images
+                // Try LIFF init only if not PC and LIFF SDK is available
+                if (!isPCBrowser && typeof liff !== 'undefined') {
+                    try {
+                        await initializeLiff();
+                        isLiffEnvironment = true;
+                    } catch (liffError) {
+                        console.warn('LIFF init failed, continuing without LIFF:', liffError);
+                        isLiffEnvironment = false;
+                    }
+                } else {
+                    console.log('Skipping LIFF init for PC browser');
+                    isLiffEnvironment = false;
+                }
+                
+                // Load images regardless of LIFF status
                 await loadImages();
                 
             } catch (error) {
-                console.error('LIFF initialization failed:', error);
-                
-                // Handle specific LIFF errors
-                if (error.code === 'INIT_FAILED') {
-                    showError('ไม่สามารถเริ่มต้น LIFF ได้', {
-                        error: error.message,
-                        code: error.code,
-                        suggestion: 'ตรวจสอบการตั้งค่า LIFF ID และ Endpoint URL'
-                    });
-                } else if (error.message?.includes('404')) {
-                    showError('ไม่พบ LIFF App', {
-                        error: error.message,
-                        liffId: '2007575196-NWaXrZVE',
-                        suggestion: 'ตรวจสอบว่า LIFF App ยังคงใช้งานได้'
-                    });
-                } else {
-                    showError('เกิดข้อผิดพลาดในการเริ่มต้น LIFF', {
-                        error: error.message,
-                        code: error.code,
-                        stack: error.stack
-                    });
+                console.error('Initialization failed:', error);
+                showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
+            }
+        }
+        
+        // Initialize LIFF (only for mobile)
+        async function initializeLiff() {
+            console.log('Initializing LIFF...');
+            
+            await liff.init({ liffId: '2007575196-NWaXrZVE' });
+            
+            console.log('LIFF initialized');
+            console.log('- Is in client:', liff.isInClient());
+            console.log('- Is logged in:', liff.isLoggedIn());
+            
+            if (liff.isInClient() && liff.isLoggedIn()) {
+                try {
+                    userProfile = await liff.getProfile();
+                    console.log('User profile:', userProfile);
+                } catch (profileError) {
+                    console.warn('Cannot get profile:', profileError);
                 }
             }
         }
@@ -511,7 +507,7 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('API Error response:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
@@ -679,10 +675,15 @@
         
         // Cancel delete
         function cancelDelete() {
-            if (liff.isInClient()) {
+            if (isLiffEnvironment && liff.isInClient()) {
                 liff.closeWindow();
             } else {
-                window.close();
+                // For PC browser, go back or close
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.close();
+                }
             }
         }
         
@@ -716,7 +717,7 @@
                 let userId = 'anonymous';
                 if (userProfile) {
                     userId = userProfile.userId;
-                } else if (liff.isInClient()) {
+                } else if (isLiffEnvironment && liff.isInClient()) {
                     try {
                         const profile = await liff.getProfile();
                         userId = profile.userId;
@@ -756,7 +757,7 @@
                     showToast(`✅ ลบรูปภาพเรียบร้อยแล้ว ${result.deletedCount} รูป`);
                     
                     // Send message back to chat if in LINE
-                    if (liff.isInClient()) {
+                    if (isLiffEnvironment && liff.isInClient()) {
                         try {
                             await liff.sendMessages([{
                                 type: 'text',
@@ -819,7 +820,7 @@
         }
         
         // Initialize on load
-        window.addEventListener('load', initializeLiff);
+        window.addEventListener('load', initialize);
     </script>
 </body>
 </html>

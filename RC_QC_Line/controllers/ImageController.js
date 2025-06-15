@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Updated with Album Preview and PC Support
+// Controller for image retrieval and viewing - Direct LIFF Opening
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -58,8 +58,8 @@ class ImageController {
       
       logger.info(`ImageController: Lot validation passed, proceeding to DatePicker`);
       
-      // Show date picker with postback action (not direct LIFF)
-      await datePickerService.sendViewDatePickerWithAlbum(userId, trimmedLot, chatContext, replyToken);
+      // Show date picker with direct LIFF opening (no PC support message)
+      await datePickerService.sendViewDatePickerWithDirectLiff(userId, trimmedLot, chatContext, replyToken);
       
     } catch (error) {
       logger.error('Error processing Lot number for viewing:', error);
@@ -72,31 +72,75 @@ class ImageController {
     }
   }
 
-  // Process date selection and show album preview
+  // Process date selection - NOT USED anymore (direct LIFF opening)
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
       
-      // Get images to check if they exist
-      const result = await imageService.getImagesByLotAndDate(lotNumber, date);
+      // This should not be called anymore as we open LIFF directly
+      logger.warn('processDateSelection called but should use direct LIFF opening');
       
       // Reset user state
       lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
       
-      // Check if images were found
-      if (!result.images || result.images.length === 0) {
-        await lineService.replyMessage(
-          replyToken,
-          lineMessageBuilder.buildNoImagesFoundMessage(lotNumber, date)
-        );
-        return;
-      }
+      // Build LIFF URL and open directly
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
       
-      // Build album preview message with PC support
-      const messages = this.buildAlbumPreviewWithPCSupport(lotNumber, date, result.images);
+      const message = {
+        type: "flex",
+        altText: `📸 ดูรูปภาพ - Lot: ${lotNumber}`,
+        contents: {
+          type: "bubble",
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "📸 กำลังเปิดหน้าดูรูปภาพ...",
+                weight: "bold",
+                size: "md",
+                color: "#00B900"
+              },
+              {
+                type: "text",
+                text: `📦 Lot: ${lotNumber}`,
+                size: "sm",
+                color: "#666666",
+                margin: "sm"
+              },
+              {
+                type: "text",
+                text: `📅 ${new Date(date).toLocaleDateString('th-TH')}`,
+                size: "sm",
+                color: "#666666",
+                margin: "sm"
+              }
+            ],
+            paddingAll: "20px"
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                action: {
+                  type: "uri",
+                  label: "🔍 ดูรูปภาพ",
+                  uri: liffUrl
+                },
+                color: "#00B900"
+              }
+            ],
+            paddingAll: "10px"
+          }
+        }
+      };
       
-      // Send album preview
-      await lineService.replyMessage(replyToken, messages);
+      // Send message
+      await lineService.replyMessage(replyToken, message);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -109,282 +153,7 @@ class ImageController {
     }
   }
 
-  // Build album preview with PC support
-  buildAlbumPreviewWithPCSupport(lotNumber, date, images) {
-    const messages = [];
-    
-    // First message: Album preview
-    messages.push(this.buildAlbumPreviewMessage(lotNumber, date, images));
-    
-    // Second message: PC support options
-    messages.push(this.buildPCSupportMessage(lotNumber, date, images));
-    
-    return messages;
-  }
-
-  // Build PC support message
-  buildPCSupportMessage(lotNumber, date, images) {
-    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-    const webViewUrl = `${baseUrl}/liff/view.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
-    
-    return {
-      type: "flex",
-      altText: "ตัวเลือกสำหรับ PC",
-      contents: {
-        type: "bubble",
-        size: "kilo",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "💻 ใช้งานบน PC?",
-              weight: "bold",
-              size: "md",
-              color: "#666666"
-            },
-            {
-              type: "text",
-              text: "LIFF ไม่รองรับบน LINE PC\nกรุณาเลือกวิธีการดูรูปภาพ:",
-              size: "sm",
-              color: "#999999",
-              margin: "sm",
-              wrap: true
-            }
-          ],
-          paddingAll: "15px"
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          spacing: "sm",
-          contents: [
-            {
-              type: "button",
-              style: "secondary",
-              height: "sm",
-              action: {
-                type: "postback",
-                label: "📱 ส่งรูปมาที่แชท",
-                data: `action=send_to_chat&lot=${lotNumber}&date=${date}`,
-                displayText: "ส่งรูปภาพมาที่แชท"
-              }
-            },
-            {
-              type: "button",
-              style: "link",
-              height: "sm",
-              action: {
-                type: "uri",
-                label: "🌐 เปิดในเว็บเบราว์เซอร์",
-                uri: webViewUrl
-              }
-            },
-            {
-              type: "text",
-              text: "📱 หรือสแกน QR Code ด้วยมือถือ",
-              size: "xs",
-              color: "#999999",
-              align: "center",
-              margin: "md"
-            }
-          ],
-          paddingAll: "10px"
-        }
-      }
-    };
-  }
-
-  // Build album preview message with thumbnails
-  buildAlbumPreviewMessage(lotNumber, date, images) {
-    const formattedDate = new Date(date).toLocaleDateString('th-TH');
-    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-    
-    // Limit preview images to 9 for 3x3 grid
-    const previewImages = images.slice(0, 9);
-    const remainingCount = Math.max(0, images.length - 9);
-    
-    // Create image boxes for preview
-    const imageBoxes = previewImages.map((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "image",
-            url: imageUrl,
-            size: "full",
-            aspectMode: "cover",
-            aspectRatio: "1:1"
-          }
-        ],
-        cornerRadius: "5px",
-        margin: "2px"
-      };
-    });
-    
-    // Fill empty slots if less than 9 images
-    while (imageBoxes.length < 9) {
-      imageBoxes.push({
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "box",
-            layout: "vertical",
-            contents: [],
-            backgroundColor: "#F0F0F0"
-          }
-        ],
-        cornerRadius: "5px",
-        margin: "2px"
-      });
-    }
-    
-    // Create 3x3 grid
-    const rows = [];
-    for (let i = 0; i < 9; i += 3) {
-      rows.push({
-        type: "box",
-        layout: "horizontal",
-        contents: imageBoxes.slice(i, i + 3),
-        spacing: "xs"
-      });
-    }
-    
-    // Build LIFF URL
-    const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
-    
-    return {
-      type: "flex",
-      altText: `อัลบั้มรูปภาพ - Lot: ${lotNumber}`,
-      contents: {
-        type: "bubble",
-        size: "mega",
-        header: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "📸 อัลบั้มรูปภาพ QC",
-              size: "xl",
-              weight: "bold",
-              color: "#00B900"
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                {
-                  type: "text",
-                  text: `📦 Lot: ${lotNumber}`,
-                  size: "sm",
-                  color: "#666666",
-                  flex: 0
-                },
-                {
-                  type: "text",
-                  text: `📅 ${formattedDate}`,
-                  size: "sm",
-                  color: "#666666",
-                  align: "end",
-                  flex: 0
-                }
-              ],
-              margin: "sm"
-            },
-            {
-              type: "text",
-              text: `🖼️ ทั้งหมด ${images.length} รูป`,
-              size: "md",
-              weight: "bold",
-              color: "#333333",
-              margin: "xs"
-            }
-          ],
-          paddingAll: "15px",
-          backgroundColor: "#F8FFF8"
-        },
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "box",
-              layout: "vertical",
-              contents: rows,
-              backgroundColor: "#FFFFFF",
-              cornerRadius: "8px",
-              paddingAll: "5px"
-            },
-            remainingCount > 0 ? {
-              type: "text",
-              text: `...และอีก ${remainingCount} รูป`,
-              size: "sm",
-              color: "#999999",
-              align: "center",
-              margin: "md"
-            } : {
-              type: "box",
-              layout: "vertical",
-              contents: []
-            }
-          ],
-          paddingAll: "10px",
-          backgroundColor: "#FAFAFA"
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          spacing: "sm",
-          contents: [
-            {
-              type: "button",
-              style: "primary",
-              height: "md",
-              action: {
-                type: "uri",
-                label: "🔍 ดูรูปภาพทั้งหมด",
-                uri: liffUrl
-              },
-              color: "#00B900"
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: "💡 กดปุ่มด้านบนเพื่อดูรูปภาพขนาดเต็ม",
-                  size: "xs",
-                  color: "#999999",
-                  align: "center"
-                },
-                {
-                  type: "text",
-                  text: "และเลือกแชร์รูปที่ต้องการ",
-                  size: "xs",
-                  color: "#999999",
-                  align: "center"
-                }
-              ],
-              margin: "sm",
-              spacing: "none"
-            }
-          ],
-          paddingAll: "15px"
-        }
-      }
-    };
-  }
-
-  // Handle sending images to chat for PC users
+  // Handle sending images to chat for PC users - REMOVED PC SUPPORT MESSAGE
   async handleSendToChat(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       // Get images

@@ -58,10 +58,6 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .success {
-            color: #00B900;
-            margin-top: 20px;
-        }
         .info {
             background: #e3f2fd;
             padding: 15px;
@@ -91,15 +87,10 @@
     </div>
 
     <script>
-        // Enhanced debug logging
-        console.log('=== LIFF Router Starting ===');
-        console.log('Timestamp:', new Date().toISOString());
+        // Debug logging
+        console.log('=== LIFF Router Starting (No-Auth Version) ===');
         console.log('Current URL:', window.location.href);
-        console.log('Origin:', window.location.origin);
-        console.log('Pathname:', window.location.pathname);
-        console.log('Search:', window.location.search);
-        console.log('Hash:', window.location.hash);
-        console.log('User Agent:', navigator.userAgent);
+        console.log('Search params:', window.location.search);
         
         // Function to show info
         function showInfo(message) {
@@ -117,257 +108,96 @@
             if (details) {
                 const detailsEl = document.getElementById('errorDetails');
                 detailsEl.style.display = 'block';
-                if (typeof details === 'object') {
-                    detailsEl.textContent = JSON.stringify(details, null, 2);
-                } else {
-                    detailsEl.textContent = details;
-                }
+                detailsEl.textContent = typeof details === 'object' ? JSON.stringify(details, null, 2) : details;
             }
         }
         
-        // Function to extract parameters from various sources
+        // Extract parameters
         function extractParameters() {
             const params = {};
+            const urlParams = new URLSearchParams(window.location.search);
             
-            try {
-                // Method 1: Direct query parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                console.log('URL Search Params:', window.location.search);
-                
-                // Method 2: Check for OAuth callback parameters
-                const code = urlParams.get('code');
-                const state = urlParams.get('state');
-                
-                if (code && state) {
-                    console.log('OAuth callback detected - code:', code, 'state:', state);
-                    
-                    // Try to extract original parameters from state
-                    try {
-                        // State might contain the original parameters
-                        if (state.includes('lot=') || state.includes('date=')) {
-                            const stateParams = new URLSearchParams(state);
-                            for (const [key, value] of stateParams.entries()) {
-                                params[key] = value;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error parsing state:', e);
-                    }
-                }
-                
-                // Method 3: Check for LIFF state parameter
-                const liffState = urlParams.get('liff.state');
-                if (liffState) {
-                    console.log('Found liff.state:', liffState);
-                    try {
-                        const decodedState = decodeURIComponent(liffState);
-                        console.log('Decoded liff.state:', decodedState);
-                        
-                        const cleanState = decodedState.startsWith('?') ? decodedState.substring(1) : decodedState;
-                        const stateParams = new URLSearchParams(cleanState);
-                        
-                        for (const [key, value] of stateParams.entries()) {
-                            params[key] = value;
-                        }
-                    } catch (e) {
-                        console.error('Error parsing liff.state:', e);
-                    }
-                }
-                
-                // Method 4: Direct URL parameters (override liff.state if present)
-                for (const [key, value] of urlParams.entries()) {
-                    if (key !== 'liff.state' && key !== 'liff.referrer' && key !== 'code' && key !== 'state' && key !== 'liffClientId' && key !== 'liffRedirectUri') {
-                        params[key] = value;
-                    }
-                }
-                
-                // Method 5: Check hash parameters
-                if (window.location.hash && window.location.hash.length > 1) {
-                    console.log('Found hash:', window.location.hash);
-                    try {
-                        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                        for (const [key, value] of hashParams.entries()) {
-                            if (!params[key]) {
-                                params[key] = value;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error parsing hash:', e);
-                    }
-                }
-                
-                // Method 6: Check localStorage for saved parameters (fallback for OAuth flow)
-                const savedParams = localStorage.getItem('liff_params');
-                if (savedParams && Object.keys(params).length === 0) {
-                    try {
-                        const parsed = JSON.parse(savedParams);
-                        console.log('Found saved params:', parsed);
-                        Object.assign(params, parsed);
-                    } catch (e) {
-                        console.error('Error parsing saved params:', e);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Error extracting parameters:', error);
+            // Get all parameters
+            for (const [key, value] of urlParams.entries()) {
+                params[key] = value;
             }
             
             console.log('Extracted parameters:', params);
             return params;
         }
         
-        // Function to handle OAuth callback
-        function handleOAuthCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const state = urlParams.get('state');
-            
-            if (code && state) {
-                console.log('Handling OAuth callback...');
-                
-                // Try to get original parameters from localStorage
-                const savedParams = localStorage.getItem('liff_params');
-                if (savedParams) {
-                    try {
-                        const params = JSON.parse(savedParams);
-                        console.log('Restoring saved parameters:', params);
-                        
-                        // Clear the saved params
-                        localStorage.removeItem('liff_params');
-                        
-                        // Redirect to the same page with original parameters
-                        const cleanParams = new URLSearchParams({
-                            lot: params.lot,
-                            date: params.date,
-                            page: params.page || 'view'
-                        });
-                        
-                        const newUrl = `${window.location.origin}${window.location.pathname}?${cleanParams.toString()}`;
-                        console.log('Redirecting to:', newUrl);
-                        
-                        window.location.replace(newUrl);
-                        return true;
-                    } catch (e) {
-                        console.error('Error processing saved params:', e);
-                    }
-                }
-            }
-            
-            return false;
-        }
-        
-        // Router for different LIFF pages
+        // Route to appropriate page
         function routeToPage() {
             try {
-                console.log('Starting route process...');
-                
-                // First check if this is an OAuth callback
-                if (handleOAuthCallback()) {
-                    return;
-                }
-                
-                // Extract parameters
                 const params = extractParameters();
                 
-                // Save parameters to localStorage before any redirect (for OAuth flow)
-                if (params.lot && params.date) {
-                    localStorage.setItem('liff_params', JSON.stringify(params));
-                }
-                
-                // Check if we have minimum required data
-                const page = params.page || 'view'; // default to view
+                // Get main parameters
                 const lot = params.lot;
                 const date = params.date;
+                const page = params.page || 'view';
                 
-                console.log('Routing parameters:');
-                console.log('- Page:', page);
-                console.log('- Lot:', lot);
-                console.log('- Date:', date);
+                console.log('Routing - Page:', page, 'Lot:', lot, 'Date:', date);
                 
-                // If no parameters at all, show a friendly message
-                if (!lot && !date) {
+                // Check if we have required parameters
+                if (!lot || !date) {
+                    // Check if this is from a postback with parameters in different format
+                    const action = params.action;
+                    if (action === 'view' || action === 'delete') {
+                        // Parameters might be in different keys
+                        const lotParam = params.lotNumber || params.lot_number || lot;
+                        const dateParam = params.imageDate || params.image_date || date;
+                        
+                        if (lotParam && dateParam) {
+                            // Redirect with clean parameters
+                            const targetFile = action === 'delete' ? 'delete.html' : 'view.html';
+                            const cleanParams = new URLSearchParams({
+                                lot: lotParam,
+                                date: dateParam,
+                                base_url: window.location.origin
+                            });
+                            window.location.replace(`${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`);
+                            return;
+                        }
+                    }
+                    
                     showInfo('ยินดีต้อนรับสู่ระบบดูรูปภาพ QC\n\nกรุณาเข้าใช้งานผ่านการเลือกวันที่จากเมนูในแชท');
                     return;
                 }
                 
-                // Validate required parameters
-                if (!lot || !date) {
-                    showError('ข้อมูลไม่ครบถ้วน', {
-                        error: 'Missing required parameters',
-                        receivedParams: params,
-                        requiredParams: ['lot', 'date'],
-                        url: window.location.href
-                    });
-                    return;
-                }
-                
-                // Determine target file based on page parameter
-                let targetFile = 'view.html'; // default
-                
+                // Determine target file
+                let targetFile = 'view.html';
                 if (page === 'delete') {
                     targetFile = 'delete.html';
                 }
                 
-                // Build the target URL with clean parameters
+                // Build clean URL
                 const cleanParams = new URLSearchParams({
                     lot: lot,
                     date: date,
-                    page: page,
                     base_url: window.location.origin
                 });
                 
-                const targetPath = `${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`;
+                const targetUrl = `${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`;
+                console.log('Redirecting to:', targetUrl);
                 
-                console.log('Target URL:', targetPath);
                 showInfo(`กำลังเปิดหน้า ${page === 'delete' ? 'ลบรูปภาพ' : 'ดูรูปภาพ'}...`);
                 
-                // Redirect after a short delay
+                // Redirect
                 setTimeout(() => {
-                    console.log('Redirecting to:', targetPath);
-                    window.location.replace(targetPath);
+                    window.location.replace(targetUrl);
                 }, 500);
                 
             } catch (error) {
                 console.error('Router error:', error);
                 showError('เกิดข้อผิดพลาดในการเปิดหน้า', {
                     error: error.message,
-                    stack: error.stack,
                     url: window.location.href
                 });
             }
         }
         
-        // Add error handler for debugging
-        window.addEventListener('error', (event) => {
-            console.error('Window error:', event);
-            showError('JavaScript Error', {
-                message: event.error?.message || event.message,
-                filename: event.filename,
-                line: event.lineno,
-                column: event.colno
-            });
-        });
-        
-        // Add unhandled promise rejection handler
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event);
-            showError('Unhandled Promise Rejection', {
-                reason: event.reason
-            });
-        });
-        
-        // Check if we're running in LIFF or normal browser
-        if (window.location.search || window.location.hash) {
-            // We have parameters, try to route
-            console.log('Parameters detected, routing...');
-            
-            // Small delay for LIFF to initialize properly
-            setTimeout(routeToPage, 100);
-        } else {
-            // No parameters
-            console.log('No parameters detected');
-            showInfo('ยินดีต้อนรับสู่ระบบดูรูปภาพ QC\n\nกรุณาเข้าใช้งานผ่านการเลือกวันที่จากเมนูในแชท');
-        }
+        // Start routing
+        routeToPage();
     </script>
 </body>
 </html>

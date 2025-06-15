@@ -70,6 +70,16 @@
             padding: 3px;
         }
         
+        @media (min-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+                padding: 15px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+        }
+        
         .image-item {
             position: relative;
             padding-bottom: 100%;
@@ -308,6 +318,16 @@
             }
         }
         
+        /* PC Mode Notice */
+        .pc-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
         /* Share Loading Modal */
         .share-loading {
             display: none;
@@ -346,6 +366,11 @@
     <div class="header">
         <h1>📸 รูปภาพ QC</h1>
         <div class="info" id="headerInfo">กำลังโหลด...</div>
+    </div>
+    
+    <!-- PC Notice -->
+    <div class="pc-notice" id="pcNotice" style="display: none;">
+        💻 คุณกำลังใช้งานผ่าน PC Browser - การแชร์รูปภาพจะถูกดาวน์โหลดแทน
     </div>
     
     <!-- Content -->
@@ -414,37 +439,28 @@
         let isSharing = false;
         let userProfile = null;
         let baseUrl = '';
+        let isLiffEnvironment = false;
+        let isPCBrowser = false;
         
-        // Initialize LIFF
-        async function initializeLiff() {
+        // Check if running in PC browser
+        function checkPCBrowser() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            isPCBrowser = !(/android|iphone|ipad|ipod/.test(userAgent));
+            
+            if (isPCBrowser) {
+                document.getElementById('pcNotice').style.display = 'block';
+            }
+            
+            return isPCBrowser;
+        }
+        
+        // Initialize (with PC support)
+        async function initialize() {
             try {
-                console.log('=== LIFF Initialization Debug ===');
-                console.log('Starting LIFF init...');
+                console.log('=== Initialization ===');
                 
-                await liff.init({ liffId: '2007575196-NWaXrZVE' });
-                
-                console.log('LIFF initialized successfully');
-                console.log('LIFF environment:');
-                console.log('- Is in client:', liff.isInClient());
-                console.log('- Is logged in:', liff.isLoggedIn());
-                console.log('- LIFF version:', liff.getVersion());
-                console.log('- Language:', liff.getLanguage());
-                console.log('- OS:', liff.getOS());
-                
-                if (!liff.isLoggedIn()) {
-                    console.log('User not logged in, redirecting to login...');
-                    liff.login();
-                    return;
-                }
-                
-                // Get user profile with error handling
-                try {
-                    userProfile = await liff.getProfile();
-                    console.log('User profile loaded:', userProfile);
-                } catch (profileError) {
-                    console.error('Error getting profile:', profileError);
-                    // Continue without profile
-                }
+                // Check if PC browser
+                checkPCBrowser();
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -452,44 +468,52 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
-                console.log('Parameters:');
-                console.log('- Lot:', lotNumber);
-                console.log('- Date:', imageDate);
-                console.log('- Base URL:', baseUrl);
+                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่', {
-                        receivedParams: Object.fromEntries(params.entries()),
-                        url: window.location.href
-                    });
+                    showError('ไม่พบข้อมูล Lot หรือวันที่');
                     return;
                 }
                 
-                // Load images
+                // Try LIFF init only if not PC and LIFF SDK is available
+                if (!isPCBrowser && typeof liff !== 'undefined') {
+                    try {
+                        await initializeLiff();
+                        isLiffEnvironment = true;
+                    } catch (liffError) {
+                        console.warn('LIFF init failed, continuing without LIFF:', liffError);
+                        isLiffEnvironment = false;
+                    }
+                } else {
+                    console.log('Skipping LIFF init for PC browser');
+                    isLiffEnvironment = false;
+                }
+                
+                // Load images regardless of LIFF status
                 await loadImages();
                 
             } catch (error) {
-                console.error('LIFF initialization failed:', error);
-                
-                // Handle specific LIFF errors
-                if (error.code === 'INIT_FAILED') {
-                    showError('ไม่สามารถเริ่มต้น LIFF ได้', {
-                        error: error.message,
-                        code: error.code,
-                        suggestion: 'ตรวจสอบการตั้งค่า LIFF ID และ Endpoint URL'
-                    });
-                } else if (error.message?.includes('404')) {
-                    showError('ไม่พบ LIFF App', {
-                        error: error.message,
-                        liffId: '2007575196-NWaXrZVE',
-                        suggestion: 'ตรวจสอบว่า LIFF App ยังคงใช้งานได้'
-                    });
-                } else {
-                    showError('เกิดข้อผิดพลาดในการเริ่มต้น LIFF', {
-                        error: error.message,
-                        code: error.code,
-                        stack: error.stack
-                    });
+                console.error('Initialization failed:', error);
+                showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
+            }
+        }
+        
+        // Initialize LIFF (only for mobile)
+        async function initializeLiff() {
+            console.log('Initializing LIFF...');
+            
+            await liff.init({ liffId: '2007575196-NWaXrZVE' });
+            
+            console.log('LIFF initialized');
+            console.log('- Is in client:', liff.isInClient());
+            console.log('- Is logged in:', liff.isLoggedIn());
+            
+            if (liff.isInClient() && liff.isLoggedIn()) {
+                try {
+                    userProfile = await liff.getProfile();
+                    console.log('User profile:', userProfile);
+                } catch (profileError) {
+                    console.warn('Cannot get profile:', profileError);
                 }
             }
         }
@@ -499,41 +523,25 @@
             try {
                 console.log('Loading images...');
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
-                console.log('API URL:', apiUrl);
                 
-                const response = await fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                console.log('API Response status:', response.status);
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API Error response:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('API Response data:', data);
+                console.log('Loaded', data.images?.length || 0, 'images');
                 
                 images = data.images || [];
                 
                 if (images.length === 0) {
-                    showError(`ไม่พบรูปภาพ`, {
-                        lot: lotNumber,
-                        date: imageDate,
-                        formattedDate: new Date(imageDate).toLocaleDateString('th-TH')
-                    });
+                    showError('ไม่พบรูปภาพ');
                     return;
                 }
                 
-                // Update header
+                // Update UI
                 updateHeader();
-                
-                // Render images
                 renderImages();
                 
                 // Show content
@@ -541,24 +549,14 @@
                 document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
                 
-                console.log('Images loaded successfully:', images.length);
+                // Update share button text for PC
+                if (isPCBrowser) {
+                    document.getElementById('shareBtn').innerHTML = '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>';
+                }
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    showError('ไม่สามารถเชื่อมต่อกับ Server ได้', {
-                        error: error.message,
-                        apiUrl: `${baseUrl}/api/images/${lotNumber}/${imageDate}`,
-                        suggestion: 'ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
-                    });
-                } else {
-                    showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ', {
-                        error: error.message,
-                        lot: lotNumber,
-                        date: imageDate
-                    });
-                }
+                showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ', error.message);
             }
         }
         
@@ -613,13 +611,17 @@
             if (selectMode) {
                 grid.classList.add('select-mode');
                 selectBtn.innerHTML = '<span>❌</span><span>ยกเลิก</span>';
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
+                shareBtn.innerHTML = isPCBrowser ? 
+                    '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>' : 
+                    '<span>📤</span><span>แชร์ที่เลือก</span>';
                 shareBtn.disabled = true;
-                showToast('เลือกรูปที่ต้องการแชร์');
+                showToast('เลือกรูปที่ต้องการ');
             } else {
                 grid.classList.remove('select-mode');
                 selectBtn.innerHTML = '<span>📌</span><span>เลือกรูป</span>';
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ทั้งหมด</span>';
+                shareBtn.innerHTML = isPCBrowser ?
+                    '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>' :
+                    '<span>📤</span><span>แชร์ทั้งหมด</span>';
                 shareBtn.disabled = false;
                 renderImages();
             }
@@ -641,51 +643,90 @@
             const shareBtn = document.getElementById('shareBtn');
             if (selectedImages.size > 0) {
                 shareBtn.disabled = false;
-                shareBtn.innerHTML = `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
+                shareBtn.innerHTML = isPCBrowser ?
+                    `<span>💾</span><span>ดาวน์โหลด ${selectedImages.size} รูป</span>` :
+                    `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
             } else {
                 shareBtn.disabled = true;
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
+                shareBtn.innerHTML = isPCBrowser ?
+                    '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>' :
+                    '<span>📤</span><span>แชร์ที่เลือก</span>';
             }
         }
         
-        // Share images using bot share API
+        // Share/Download images
         async function shareImages() {
+            if (isPCBrowser) {
+                // Download for PC
+                await downloadImages();
+            } else if (isLiffEnvironment) {
+                // Share via bot for LIFF
+                await shareViaBot();
+            } else {
+                // Fallback - download
+                await downloadImages();
+            }
+        }
+        
+        // Download images (for PC)
+        async function downloadImages() {
+            try {
+                let imagesToDownload = [];
+                
+                if (selectMode && selectedImages.size > 0) {
+                    imagesToDownload = Array.from(selectedImages).map(index => images[index]);
+                } else {
+                    imagesToDownload = images;
+                }
+                
+                showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+                
+                // Create download links
+                for (let i = 0; i < imagesToDownload.length; i++) {
+                    const image = imagesToDownload[i];
+                    const link = document.createElement('a');
+                    link.href = image.url;
+                    link.download = `QC_${lotNumber}_${i + 1}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Delay between downloads
+                    if (i < imagesToDownload.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                }
+                
+                showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูป เสร็จสิ้น`);
+                
+                if (selectMode) {
+                    toggleSelectMode();
+                }
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
+            }
+        }
+        
+        // Share via bot (for LIFF)
+        async function shareViaBot() {
             if (isSharing) return;
             isSharing = true;
             
             try {
-                // Show loading
                 document.getElementById('shareLoading').style.display = 'flex';
-                document.getElementById('shareProgress').textContent = 'กำลังเตรียมรูปภาพ...';
                 
-                // Prepare images to share
                 let imagesToShare = [];
-                
                 if (selectMode && selectedImages.size > 0) {
                     imagesToShare = Array.from(selectedImages).map(index => images[index]);
                 } else {
                     imagesToShare = images;
                 }
                 
-                console.log('Sharing images:', imagesToShare.length);
-                
-                // Get user ID
-                let userId = 'anonymous';
-                if (userProfile) {
-                    userId = userProfile.userId;
-                } else if (liff.isInClient()) {
-                    try {
-                        const profile = await liff.getProfile();
-                        userId = profile.userId;
-                    } catch (e) {
-                        console.error('Cannot get user ID:', e);
-                    }
-                }
-                
-                // Call bot share API
+                const userId = userProfile?.userId || 'anonymous';
                 const imageIds = imagesToShare.map(img => img.image_id).filter(id => id);
                 
-                console.log('Calling bot share API...');
                 const response = await fetch(`${baseUrl}/api/bot-share`, {
                     method: 'POST',
                     headers: {
@@ -699,42 +740,29 @@
                     })
                 });
                 
-                console.log('Bot share response:', response.status);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Bot share error:', errorText);
-                    throw new Error(`Failed to share: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                console.log('Bot share result:', result);
-                
-                // Hide loading
                 document.getElementById('shareLoading').style.display = 'none';
                 
-                if (result.success) {
-                    showToast(`✅ ส่งรูปไปยังแชทแล้ว ${result.count} รูป\n\n📱 กลับไปที่แชทเพื่อดูรูปภาพ`);
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast(`✅ ส่งรูปไปยังแชทแล้ว ${result.count} รูป`);
                     
                     if (selectMode) {
                         toggleSelectMode();
                     }
                     
-                    // Close LIFF after delay if in LINE app
                     if (liff.isInClient()) {
                         setTimeout(() => {
                             liff.closeWindow();
                         }, 2000);
                     }
                 } else {
-                    throw new Error(result.message || 'Share failed');
+                    throw new Error('Share failed');
                 }
                 
             } catch (error) {
-                console.error('Error sharing images:', error);
+                console.error('Share error:', error);
                 document.getElementById('shareLoading').style.display = 'none';
-                
-                showToast(`❌ เกิดข้อผิดพลาด\n${error.message}`, 4000);
+                showToast('❌ เกิดข้อผิดพลาด');
             } finally {
                 isSharing = false;
             }
@@ -751,7 +779,6 @@
             modalCounter.textContent = `${index + 1} / ${images.length}`;
             modal.style.display = 'block';
             
-            // Prevent body scroll
             document.body.style.overflow = 'hidden';
         }
         
@@ -779,7 +806,7 @@
             modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
         }
         
-        // Show error with details
+        // Show error
         function showError(message, details = null) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'block';
@@ -788,11 +815,11 @@
             if (details) {
                 const detailsEl = document.getElementById('errorDetails');
                 detailsEl.style.display = 'block';
-                detailsEl.innerHTML = '<pre>' + JSON.stringify(details, null, 2) + '</pre>';
+                detailsEl.textContent = typeof details === 'string' ? details : JSON.stringify(details, null, 2);
             }
         }
         
-        // Show toast message
+        // Show toast
         function showToast(message, duration = 3000) {
             const existingToast = document.querySelector('.toast');
             if (existingToast) {
@@ -813,14 +840,14 @@
         document.getElementById('selectBtn').addEventListener('click', toggleSelectMode);
         document.getElementById('shareBtn').addEventListener('click', shareImages);
         
-        // Close modal on background click
+        // Modal events
         document.getElementById('imageModal').addEventListener('click', (e) => {
             if (e.target.id === 'imageModal') {
                 closeModal();
             }
         });
         
-        // Keyboard navigation in modal
+        // Keyboard navigation
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('imageModal');
             if (modal.style.display === 'block') {
@@ -835,7 +862,7 @@
         });
         
         // Initialize on load
-        window.addEventListener('load', initializeLiff);
+        window.addEventListener('load', initialize);
     </script>
 </body>
 </html>

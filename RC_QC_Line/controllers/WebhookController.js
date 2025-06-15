@@ -434,7 +434,9 @@ class WebhookController {
         // Reset upload mode after completion
         lineService.setUploadInfo(userId, null, chatContext.chatId);
       } else if (action === lineConfig.userActions.view) {
-        // Forward to image controller (direct to processDateSelection)
+        // This should not happen anymore - we open LIFF directly
+        logger.warn('Unexpected postback for view action - should open LIFF directly');
+        // Fallback to old behavior
         await imageController.processDateSelection(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'delete') {
         // Forward to delete controller for showing delete options
@@ -451,8 +453,8 @@ class WebhookController {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'send_to_chat') {
-        // Handle sending images to chat for PC users
-        await imageController.handleSendToChat(userId, lotNumber, date, replyToken, chatContext);
+        // This action is deprecated - we now open LIFF directly
+        logger.warn('Deprecated action: send_to_chat');
       } else if (action === 'carousel_share') {
         // Handle carousel sharing
         await this.handleCarouselSharing(userId, params, replyToken, chatContext);

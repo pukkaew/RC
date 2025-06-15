@@ -1,6 +1,6 @@
 // Service for date picker functionality with Direct LIFF Opening
 const lineService = require('./LineService');
-const lineConfig = require('../config/line'); // Added missing import
+const lineConfig = require('../config/line');
 const dateFormatter = require('../utils/DateFormatter');
 const logger = require('../utils/Logger');
 const { AppError } = require('../utils/ErrorHandler');
@@ -69,71 +69,56 @@ class DatePickerService {
     }
   }
 
-  // Create date picker flex message for uploads (current date only)
-  async createUploadDatePickerFlexMessage(lotNumber) {
-    // Get current date only
-    const today = new Date();
-    const currentDate = {
-      date: this.dateFormatter.formatISODate(today),
-      display: this.dateFormatter.formatDisplayDate(today),
-      thai: this.dateFormatter.formatThaiDate(today)
-    };
-    
-    // Create the flex message with only current date
-    const flexMessage = {
-      type: "flex",
-      altText: "เลือกวันที่",
-      contents: {
-        type: "bubble",
-        body: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: `เลือกวันที่สำหรับ Lot: ${lotNumber}`,
-              weight: "bold",
-              size: "lg",
-              wrap: true
-            },
-            {
-              type: "text",
-              text: "กรุณาเลือกวันที่ที่ต้องการ",
-              size: "sm",
-              color: "#999999",
-              margin: "md"
-            },
-            {
-              type: "box",
-              layout: "vertical",
-              margin: "lg",
-              spacing: "sm",
-              contents: [
-                {
-                  type: "button",
-                  style: "primary",
-                  action: {
-                    type: "postback",
-                    label: currentDate.display + " (วันนี้)",
-                    data: `action=upload&lot=${lotNumber}&date=${currentDate.date}`,
-                    displayText: `เลือกวันที่ ${currentDate.display} (วันนี้)`
-                  },
-                  margin: "sm",
-                  height: "sm"
-                }
-              ]
-            }
-          ]
+  // Send date picker for viewing images with DIRECT LIFF opening (no PC support)
+  async sendViewDatePickerWithDirectLiff(userId, lotNumber, chatContext = null, replyToken = null) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Create the date picker flex message with direct LIFF links
+      const flexMessage = await this.createViewDatePickerFlexMessageDirectLiff(lotNumber, 'view');
+      
+      // Enhanced error handling for group chats
+      try {
+        // Send the message - use replyToken if provided, otherwise use push
+        if (replyToken) {
+          await lineService.replyMessage(replyToken, flexMessage);
+        } else {
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, flexMessage);
+          }
+        }
+      } catch (sendError) {
+        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
+        
+        // Fallback: If flex message fails in group, send text message
+        if (chatContext?.isGroupChat) {
+          const fallbackMessage = await this.createTextDatePickerWithLiffFallback(lotNumber, 'view');
+          
+          if (replyToken) {
+            await lineService.replyMessage(replyToken, fallbackMessage);
+          } else {
+            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
+          }
+        } else {
+          throw sendError; // Re-throw for direct chats
         }
       }
-    };
-    
-    return flexMessage;
+      
+      // Clear user state since we're opening LIFF directly
+      lineService.clearUserState(userId, chatId);
+      
+      return true;
+    } catch (error) {
+      logger.error('Error sending view date picker with direct LIFF:', error);
+      throw new AppError('Failed to send date picker', 500, { error: error.message });
+    }
   }
 
-  // Create date picker flex message with direct LIFF opening
-  async createViewDatePickerFlexMessageWithLiff(lotNumber, action = 'view') {
-    logger.info(`DatePicker: Creating ${action} date picker with LIFF for Lot: ${lotNumber}`);
+  // Create date picker flex message with DIRECT LIFF opening (no PC support message)
+  async createViewDatePickerFlexMessageDirectLiff(lotNumber, action = 'view') {
+    logger.info(`DatePicker: Creating ${action} date picker with direct LIFF for Lot: ${lotNumber}`);
     
     // Get dates that have images for this lot
     const availableDates = await this.getAvailableDatesForLot(lotNumber);
@@ -197,21 +182,18 @@ class DatePickerService {
         ? `${dateObj.display} (วันนี้) - ${dateObj.count} รูป` 
         : `${dateObj.display} - ${dateObj.count} รูป`;
       
-      // Build LIFF URL with parameters - use simple format
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${lotNumber}&date=${dateObj.date}`;
+      // Build LIFF URL with parameters
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(dateObj.date)}`;
       
       logger.info(`DatePicker: LIFF URL = ${liffUrl}`);
-      
-      logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
       
       return {
         type: "button",
         style: isToday ? "primary" : "secondary",
         action: {
-          type: "postback",
+          type: "uri",
           label: label,
-          data: `action=${action}&lot=${lotNumber}&date=${dateObj.date}`,
-          displayText: `เลือกวันที่ ${dateObj.display}`
+          uri: liffUrl
         },
         margin: "sm",
         height: "sm"
@@ -251,7 +233,7 @@ class DatePickerService {
             },
             {
               type: "text",
-              text: "กดเลือกวันที่เพื่อเปิดดูรูปภาพทันที",
+              text: "กดเลือกวันที่เพื่อดูรูปภาพทันที",
               size: "sm",
               color: "#666666",
               margin: "md"
@@ -268,25 +250,17 @@ class DatePickerService {
               contents: dateButtons
             }
           ]
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "💡 กดวันที่เพื่อเปิดหน้าดูรูปภาพทันที",
-              size: "xs",
-              color: "#999999",
-              align: "center"
-            }
-          ],
-          paddingAll: "10px"
         }
       }
     };
     
     return flexMessage;
+  }
+
+  // Send date picker for viewing images with album preview (OLD METHOD - NOT USED)
+  async sendViewDatePickerWithAlbum(userId, lotNumber, chatContext = null, replyToken = null) {
+    // Forward to direct LIFF method
+    return this.sendViewDatePickerWithDirectLiff(userId, lotNumber, chatContext, replyToken);
   }
 
   // Send date picker for uploads
@@ -317,103 +291,6 @@ class DatePickerService {
     }
   }
 
-  // Send date picker for viewing images with album preview
-  async sendViewDatePickerWithAlbum(userId, lotNumber, chatContext = null, replyToken = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Create the date picker flex message with postback action (not direct LIFF)
-      const flexMessage = await this.createViewDatePickerFlexMessage(lotNumber, 'view');
-      
-      // Enhanced error handling for group chats
-      try {
-        // Send the message - use replyToken if provided, otherwise use push
-        if (replyToken) {
-          await lineService.replyMessage(replyToken, flexMessage);
-        } else {
-          if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
-          } else {
-            await lineService.pushMessage(userId, flexMessage);
-          }
-        }
-      } catch (sendError) {
-        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
-        
-        // Fallback: If flex message fails in group, send text message
-        if (chatContext?.isGroupChat) {
-          const fallbackMessage = await this.createTextDatePickerFallback(lotNumber, 'view');
-          
-          if (replyToken) {
-            await lineService.replyMessage(replyToken, fallbackMessage);
-          } else {
-            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
-          }
-        } else {
-          throw sendError; // Re-throw for direct chats
-        }
-      }
-      
-      // Update user state to waiting for date selection
-      lineService.setUserState(userId, lineConfig.userStates.waitingForDate, {
-        lotNumber,
-        action: 'view'
-      }, chatId);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error sending view date picker with album:', error);
-      throw new AppError('Failed to send date picker', 500, { error: error.message });
-    }
-  }
-
-  // Send date picker for viewing images with direct LIFF opening
-  async sendViewDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Create the date picker flex message with LIFF links
-      const flexMessage = await this.createViewDatePickerFlexMessageWithLiff(lotNumber, 'view');
-      
-      // Enhanced error handling for group chats
-      try {
-        // Send the message - use replyToken if provided, otherwise use push
-        if (replyToken) {
-          await lineService.replyMessage(replyToken, flexMessage);
-        } else {
-          if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatId, flexMessage, chatContext.chatType);
-          } else {
-            await lineService.pushMessage(userId, flexMessage);
-          }
-        }
-      } catch (sendError) {
-        logger.error(`Error sending date picker to ${chatContext?.isGroupChat ? 'group' : 'direct'} chat:`, sendError);
-        
-        // Fallback: If flex message fails in group, send text message
-        if (chatContext?.isGroupChat) {
-          const fallbackMessage = await this.createTextDatePickerWithLiffFallback(lotNumber, 'view');
-          
-          if (replyToken) {
-            await lineService.replyMessage(replyToken, fallbackMessage);
-          } else {
-            await lineService.pushMessageToChat(chatId, fallbackMessage, chatContext.chatType);
-          }
-        } else {
-          throw sendError; // Re-throw for direct chats
-        }
-      }
-      
-      // Clear user state since we're opening LIFF directly
-      lineService.clearUserState(userId, chatId);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error sending view date picker:', error);
-      throw new AppError('Failed to send date picker', 500, { error: error.message });
-    }
-  }
-  
   // Send date picker for deleting images
   async sendDeleteDatePicker(userId, lotNumber, chatContext = null, replyToken = null) {
     try {
@@ -462,6 +339,68 @@ class DatePickerService {
       logger.error('Error sending delete date picker:', error);
       throw new AppError('Failed to send date picker', 500, { error: error.message });
     }
+  }
+
+  // Create date picker flex message for uploads (current date only)
+  async createUploadDatePickerFlexMessage(lotNumber) {
+    // Get current date only
+    const today = new Date();
+    const currentDate = {
+      date: this.dateFormatter.formatISODate(today),
+      display: this.dateFormatter.formatDisplayDate(today),
+      thai: this.dateFormatter.formatThaiDate(today)
+    };
+    
+    // Create the flex message with only current date
+    const flexMessage = {
+      type: "flex",
+      altText: "เลือกวันที่",
+      contents: {
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: `เลือกวันที่สำหรับ Lot: ${lotNumber}`,
+              weight: "bold",
+              size: "lg",
+              wrap: true
+            },
+            {
+              type: "text",
+              text: "กรุณาเลือกวันที่ที่ต้องการ",
+              size: "sm",
+              color: "#999999",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "lg",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "button",
+                  style: "primary",
+                  action: {
+                    type: "postback",
+                    label: currentDate.display + " (วันนี้)",
+                    data: `action=upload&lot=${lotNumber}&date=${currentDate.date}`,
+                    displayText: `เลือกวันที่ ${currentDate.display} (วันนี้)`
+                  },
+                  margin: "sm",
+                  height: "sm"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    };
+    
+    return flexMessage;
   }
 
   // Create original date picker flex message for non-view actions
@@ -587,7 +526,7 @@ class DatePickerService {
             },
             {
               type: "text",
-              text: "กดเลือกวันที่เพื่อเปิดดูรูปภาพทันที",
+              text: "กรุณาเลือกวันที่ที่ต้องการ",
               size: "sm",
               color: "#666666",
               margin: "md"
@@ -604,20 +543,6 @@ class DatePickerService {
               contents: dateButtons
             }
           ]
-        },
-        footer: {
-          type: "box",
-          layout: "vertical",
-          contents: [
-            {
-              type: "text",
-              text: "💡 กดวันที่เพื่อเปิดหน้าดูรูปภาพทันที",
-              size: "xs",
-              color: "#999999",
-              align: "center"
-            }
-          ],
-          paddingAll: "10px"
         }
       }
     };
