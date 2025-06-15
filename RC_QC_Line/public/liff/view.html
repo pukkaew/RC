@@ -360,6 +360,11 @@
             try {
                 await liff.init({ liffId: '2007575196-NWaXrZVE' });
                 
+                // Check LIFF environment
+                console.log('LIFF initialized');
+                console.log('Is in client:', liff.isInClient());
+                console.log('LIFF version:', liff.getVersion());
+                
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
@@ -529,7 +534,7 @@
             }
         }
         
-        // Share images
+        // Share images - Simplified version
         async function shareImages() {
             try {
                 let imagesToShare = [];
@@ -542,30 +547,39 @@
                     imagesToShare = images;
                 }
                 
-                // Check if LIFF is opened in LINE app
+                // Check if in LINE app
                 if (!liff.isInClient()) {
-                    showToast('กรุณาเปิดใน LINE App เพื่อแชร์รูปภาพ');
+                    // Not in LINE app - copy link instead
+                    const shareUrl = `${window.location.href}`;
                     
-                    // Alternative: Copy link to clipboard
-                    const shareUrl = `${window.location.origin}/liff/view.html?lot=${lotNumber}&date=${imageDate}`;
-                    if (navigator.clipboard) {
+                    try {
                         await navigator.clipboard.writeText(shareUrl);
-                        showToast('คัดลอก Link แล้ว สามารถวางใน LINE ได้');
+                        showToast('📋 คัดลอก Link แล้ว\nสามารถวางในแชท LINE ได้');
+                    } catch (e) {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = shareUrl;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        showToast('📋 คัดลอก Link แล้ว');
                     }
                     return;
                 }
                 
-                // Prepare messages
+                // Prepare messages for sending
                 const messages = [];
                 
                 // Add header message
                 messages.push({
                     type: 'text',
-                    text: `📸 แชร์รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป`
+                    text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป`
                 });
                 
-                // Add images (max 5 per batch due to LINE limitation)
-                for (let i = 0; i < Math.min(imagesToShare.length, 5); i++) {
+                // Add images (max 5 due to LINE limitation)
+                const maxImages = Math.min(imagesToShare.length, 5);
+                for (let i = 0; i < maxImages; i++) {
                     messages.push({
                         type: 'image',
                         originalContentUrl: imagesToShare[i].url,
@@ -573,44 +587,45 @@
                     });
                 }
                 
-                // Try to use shareTargetPicker
+                // Send messages to current chat
                 try {
-                    const result = await liff.shareTargetPicker(messages);
+                    await liff.sendMessages(messages);
                     
-                    if (result) {
-                        showToast('แชร์รูปภาพสำเร็จ');
-                        
-                        // If more than 5 images, notify user
-                        if (imagesToShare.length > 5) {
-                            setTimeout(() => {
-                                showToast(`แชร์ไป 5 จาก ${imagesToShare.length} รูป (ข้อจำกัดของ LINE)`);
-                            }, 2000);
-                        }
-                        
-                        // Reset select mode
-                        if (selectMode) {
-                            toggleSelectMode();
-                        }
-                    }
-                } catch (shareError) {
-                    console.error('ShareTargetPicker error:', shareError);
+                    showToast('✅ ส่งรูปภาพสำเร็จ');
                     
-                    // Fallback: Send to current chat
-                    if (liff.isApiAvailable('sendMessages')) {
-                        await liff.sendMessages(messages);
-                        showToast('ส่งรูปภาพไปยังแชทปัจจุบันแล้ว');
-                        
-                        // Close LIFF after sending
+                    if (imagesToShare.length > 5) {
                         setTimeout(() => {
-                            liff.closeWindow();
+                            showToast(`📌 ส่งได้ 5 จาก ${imagesToShare.length} รูป\n(ข้อจำกัดของ LINE)`);
                         }, 2000);
+                    }
+                    
+                    // Close LIFF after success
+                    setTimeout(() => {
+                        liff.closeWindow();
+                    }, 3000);
+                    
+                } catch (error) {
+                    console.error('Send message error:', error);
+                    
+                    // If send fails, try alternative method
+                    const shareText = `📸 ดูรูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🔗 ${window.location.href}`;
+                    
+                    // Use LINE's native share if available
+                    if (window.LineIt) {
+                        window.LineIt.share({
+                            url: window.location.href,
+                            text: shareText
+                        });
                     } else {
-                        showToast('ไม่สามารถแชร์รูปภาพได้ กรุณาตรวจสอบ Permission');
+                        // Copy link as fallback
+                        await navigator.clipboard.writeText(shareText);
+                        showToast('📋 คัดลอกข้อความและ Link แล้ว\nสามารถวางในแชทได้');
                     }
                 }
+                
             } catch (error) {
-                console.error('Error sharing images:', error);
-                showToast(`ไม่สามารถแชร์รูปภาพได้: ${error.message}`);
+                console.error('Error in share function:', error);
+                showToast(`❌ เกิดข้อผิดพลาด\n${error.message || 'ไม่สามารถแชร์ได้'}`);
             }
         }
         
