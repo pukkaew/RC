@@ -199,12 +199,21 @@ class DatePickerService {
       
       // Build LIFF URL with parameters
       const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-      // Create proper LIFF URL with parameters
-      const params = new URLSearchParams({
-        lot: lotNumber,
-        date: dateObj.date
-      });
-      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?${params.toString()}`;
+      
+      // Method 1: Try URL without parameters first
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE`;
+      
+      // Method 2: With simple parameters (comment out method 1 and uncomment this to test)
+      // const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${lotNumber}&date=${dateObj.date}`;
+      
+      // Method 3: With encoded parameters (comment out above and uncomment this to test)
+      // const params = new URLSearchParams({
+      //   lot: lotNumber,
+      //   date: dateObj.date
+      // });
+      // const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?${params.toString()}`;
+      
+      logger.info(`DatePicker: LIFF URL = ${liffUrl}`);
       
       logger.info(`DatePicker: Adding date button: ${label} (${dateObj.date})`);
       
