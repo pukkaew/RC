@@ -52,6 +52,56 @@ router.get('/images/:lot/:date', async (req, res) => {
   }
 });
 
+// Delete multiple images
+router.post('/images/delete', async (req, res) => {
+  try {
+    const { userId, imageIds, lotNumber, imageDate } = req.body;
+    
+    logger.info(`Delete request - User: ${userId}, Images: ${imageIds.length}, Lot: ${lotNumber}`);
+    
+    // Validate parameters
+    if (!userId || !imageIds || imageIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters'
+      });
+    }
+    
+    // Delete each image
+    const deleteService = require('../services/DeleteService');
+    let deletedCount = 0;
+    const errors = [];
+    
+    for (const imageId of imageIds) {
+      try {
+        await deleteService.deleteImage(imageId);
+        deletedCount++;
+        logger.info(`Deleted image ID: ${imageId}`);
+      } catch (error) {
+        logger.error(`Error deleting image ${imageId}:`, error);
+        errors.push({ imageId, error: error.message });
+      }
+    }
+    
+    logger.info(`Delete completed - Deleted: ${deletedCount}/${imageIds.length}`);
+    
+    res.json({
+      success: true,
+      deletedCount,
+      totalRequested: imageIds.length,
+      errors
+    });
+    
+  } catch (error) {
+    logger.error('Error in batch delete:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting images',
+      error: error.message
+    });
+  }
+});
+
 // Get lot information
 router.get('/lots/:lot', async (req, res) => {
   try {

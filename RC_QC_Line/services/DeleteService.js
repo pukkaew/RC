@@ -140,10 +140,10 @@ class DeleteService {
     }
   }
 
-  // Create image selection for deletion
+  // Create image selection using LIFF
   async createImageDeleteSelector(lotNumber, date) {
     try {
-      // Get images with delete options
+      // Get images to check if they exist
       const result = await this.getImagesWithDeleteOptions(lotNumber, date);
       
       if (!result.hasImages) {
@@ -153,27 +153,30 @@ class DeleteService {
         };
       }
       
-      // Create a flex message with images and delete buttons
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+      // Build LIFF URL for delete interface
+      const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+      const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE/liff/delete.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}&base_url=${encodeURIComponent(baseUrl)}`;
       
-      // IMPORTANT: Limit to 10 items for LINE Carousel
-      const totalImages = result.count;
-      const displayImages = result.images.slice(0, 10); // Maximum 10 for carousel
-      
-      // Create carousel items for each image
-      const carouselItems = displayImages.map((image, index) => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return {
+      // Create flex message to open LIFF
+      const flexMessage = {
+        type: "flex",
+        altText: `ลบรูปภาพ - Lot: ${lotNumber}`,
+        contents: {
           type: "bubble",
-          hero: {
-            type: "image",
-            url: imageUrl,
-            size: "full",
-            aspectRatio: "1:1",
-            aspectMode: "cover"
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "🗑️ ลบรูปภาพ QC",
+                size: "xl",
+                weight: "bold",
+                color: "#FF0000"
+              }
+            ],
+            paddingAll: "15px",
+            backgroundColor: "#FFF0F0"
           },
           body: {
             type: "box",
@@ -181,66 +184,72 @@ class DeleteService {
             contents: [
               {
                 type: "text",
-                text: `รูปที่ ${index + 1}/${totalImages}`,
-                weight: "bold",
-                size: "md"
-              },
-              {
-                type: "text",
-                text: `Lot: ${lotNumber}`,
-                size: "sm",
-                margin: "md"
-              },
-              {
-                type: "text",
-                text: `อัปโหลดเมื่อ: ${new Date(image.uploaded_at).toLocaleString('th-TH')}`,
-                size: "sm",
+                text: `📦 Lot: ${lotNumber}`,
+                size: "md",
+                color: "#333333",
                 margin: "sm"
+              },
+              {
+                type: "text",
+                text: `📅 วันที่: ${new Date(date).toLocaleDateString('th-TH')}`,
+                size: "md",
+                color: "#333333",
+                margin: "sm"
+              },
+              {
+                type: "text",
+                text: `🖼️ จำนวน: ${result.count} รูป`,
+                size: "md",
+                weight: "bold",
+                color: "#FF0000",
+                margin: "sm"
+              },
+              {
+                type: "separator",
+                margin: "lg"
+              },
+              {
+                type: "text",
+                text: "กดปุ่มด้านล่างเพื่อเลือกรูปที่ต้องการลบ",
+                size: "sm",
+                color: "#666666",
+                margin: "lg",
+                wrap: true
               }
-            ]
+            ],
+            paddingAll: "20px"
           },
           footer: {
             type: "box",
             layout: "vertical",
+            spacing: "sm",
             contents: [
               {
                 type: "button",
                 style: "primary",
-                color: "#FF0000",
+                height: "md",
                 action: {
-                  type: "postback",
-                  label: "ลบรูปภาพนี้",
-                  data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-                  displayText: `เลือกลบรูปภาพที่ ${index + 1}`
-                }
+                  type: "uri",
+                  label: "🗑️ เลือกรูปที่จะลบ",
+                  uri: liffUrl
+                },
+                color: "#FF0000"
+              },
+              {
+                type: "text",
+                text: "💡 สามารถเลือกลบหลายรูปพร้อมกันได้",
+                size: "xs",
+                color: "#999999",
+                align: "center",
+                margin: "sm"
               }
-            ]
+            ],
+            paddingAll: "15px"
           }
-        };
-      });
-      
-      // Create the carousel message
-      const carouselMessage = {
-        type: "flex",
-        altText: "เลือกรูปภาพที่ต้องการลบ",
-        contents: {
-          type: "carousel",
-          contents: carouselItems
         }
       };
       
-      // If there are more than 10 images, add a note
-      if (totalImages > 10) {
-        return [
-          {
-            type: "text",
-            text: `⚠️ แสดงเฉพาะ 10 รูปแรกจากทั้งหมด ${totalImages} รูป\nหากต้องการลบรูปที่ 11-${totalImages} กรุณาลบรูปแรกๆ ก่อน`
-          },
-          carouselMessage
-        ];
-      }
-      
-      return carouselMessage;
+      return flexMessage;
     } catch (error) {
       logger.error('Error creating image delete selector:', error);
       throw error;
