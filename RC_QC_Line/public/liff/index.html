@@ -33,40 +33,80 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .error {
+            text-align: center;
+            color: #FF0000;
+        }
     </style>
 </head>
 <body>
-    <div class="loading">
+    <div class="loading" id="loading">
         <div class="loading-spinner"></div>
         <div>กำลังโหลด...</div>
     </div>
+    
+    <div class="error" id="error" style="display: none;">
+        <h2>เกิดข้อผิดพลาด</h2>
+        <p id="errorMessage"></p>
+    </div>
 
     <script>
+        // Debug logging
+        console.log('LIFF Router loaded');
+        console.log('Current URL:', window.location.href);
+        console.log('Search params:', window.location.search);
+        
         // Router for different LIFF pages
         function routeToPage() {
-            const params = new URLSearchParams(window.location.search);
-            const page = params.get('page');
-            
-            // Build new URL with all parameters
-            let targetUrl = '';
-            const baseUrl = window.location.origin;
-            
-            switch(page) {
-                case 'delete':
-                    targetUrl = `${baseUrl}/liff/delete.html${window.location.search}`;
-                    break;
-                case 'view':
-                default:
-                    targetUrl = `${baseUrl}/liff/view.html${window.location.search}`;
-                    break;
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const page = params.get('page');
+                const lot = params.get('lot');
+                const date = params.get('date');
+                
+                console.log('Page parameter:', page);
+                console.log('Lot:', lot);
+                console.log('Date:', date);
+                
+                // Check if we have required parameters
+                if (!lot || !date) {
+                    showError('ไม่พบข้อมูล Lot หรือวันที่');
+                    return;
+                }
+                
+                // Build target URL based on page parameter
+                let targetFile = 'view.html'; // default
+                
+                if (page === 'delete') {
+                    targetFile = 'delete.html';
+                }
+                
+                // Build the target URL preserving all parameters
+                const targetUrl = `/liff/${targetFile}${window.location.search}`;
+                
+                console.log('Redirecting to:', targetUrl);
+                
+                // Redirect to target page
+                window.location.replace(targetUrl);
+                
+            } catch (error) {
+                console.error('Router error:', error);
+                showError('เกิดข้อผิดพลาดในการเปิดหน้า: ' + error.message);
             }
-            
-            // Redirect to target page
-            window.location.replace(targetUrl);
         }
         
-        // Route immediately
-        routeToPage();
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+        
+        // Route immediately when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', routeToPage);
+        } else {
+            routeToPage();
+        }
     </script>
 </body>
 </html>
