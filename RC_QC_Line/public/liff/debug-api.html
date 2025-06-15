@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug API Response</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; background: #f0f0f0; }
+        button { padding: 10px; margin: 5px; }
+        pre { background: #333; color: #fff; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug API Response</h1>
+    
+    <div class="test">
+        <h2>1. Test Direct API Access</h2>
+        <button onclick="testDirectAPI()">Test /api/bot-share</button>
+        <button onclick="testAPIHealth()">Test /api/bot-share/health</button>
+        <button onclick="testAPITest()">Test /api/bot-share/test</button>
+    </div>
+    
+    <div class="test">
+        <h2>2. Test Other Endpoints</h2>
+        <button onclick="testStatus()">Test /status</button>
+        <button onclick="testHealth()">Test /health</button>
+        <button onclick="testAPI()">Test /api/images/1122/2025-06-15</button>
+    </div>
+    
+    <div class="test">
+        <h2>3. Raw Response</h2>
+        <button onclick="getRawResponse()">Get Raw Response</button>
+    </div>
+    
+    <h2>Results:</h2>
+    <pre id="result"></pre>
+    
+    <script>
+        const baseUrl = 'https://line.ruxchai.co.th';
+        const resultEl = document.getElementById('result');
+        
+        function log(message) {
+            resultEl.textContent += message + '\n\n';
+        }
+        
+        async function testDirectAPI() {
+            try {
+                log('Testing POST /api/bot-share...');
+                const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                log(`Status: ${response.status}`);
+                log(`Content-Type: ${contentType}`);
+                
+                const text = await response.text();
+                log(`Response: ${text.substring(0, 200)}...`);
+                
+                // Try to parse as JSON
+                try {
+                    const json = JSON.parse(text);
+                    log('Parsed JSON: ' + JSON.stringify(json, null, 2));
+                } catch (e) {
+                    log('Not valid JSON - might be HTML');
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testAPIHealth() {
+            try {
+                log('Testing GET /api/bot-share/health...');
+                const response = await fetch(`${baseUrl}/api/bot-share/health`);
+                const text = await response.text();
+                log(`Status: ${response.status}`);
+                log(`Response: ${text}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testAPITest() {
+            try {
+                log('Testing GET /api/bot-share/test...');
+                const response = await fetch(`${baseUrl}/api/bot-share/test`);
+                const text = await response.text();
+                log(`Status: ${response.status}`);
+                log(`Response: ${text}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testStatus() {
+            try {
+                log('Testing GET /status...');
+                const response = await fetch(`${baseUrl}/status`);
+                const json = await response.json();
+                log(`Status: ${response.status}`);
+                log(`Response: ${JSON.stringify(json, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testHealth() {
+            try {
+                log('Testing GET /health...');
+                const response = await fetch(`${baseUrl}/health`);
+                const json = await response.json();
+                log(`Status: ${response.status}`);
+                log(`Response: ${JSON.stringify(json, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function testAPI() {
+            try {
+                log('Testing GET /api/images/1122/2025-06-15...');
+                const response = await fetch(`${baseUrl}/api/images/1122/2025-06-15`);
+                const json = await response.json();
+                log(`Status: ${response.status}`);
+                log(`Response: ${JSON.stringify(json, null, 2).substring(0, 500)}...`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+        
+        async function getRawResponse() {
+            try {
+                log('Getting raw response from /api/bot-share...');
+                const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                const text = await response.text();
+                
+                // Show full headers
+                log('Response Headers:');
+                response.headers.forEach((value, key) => {
+                    log(`  ${key}: ${value}`);
+                });
+                
+                // Show raw text
+                log('\nRaw Response Text:');
+                log(text);
+                
+                // Check if it's HTML
+                if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                    log('\n⚠️ Response is HTML, not JSON!');
+                    
+                    // Extract title if possible
+                    const titleMatch = text.match(/<title>(.*?)<\/title>/);
+                    if (titleMatch) {
+                        log(`Page Title: ${titleMatch[1]}`);
+                    }
+                }
+                
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
