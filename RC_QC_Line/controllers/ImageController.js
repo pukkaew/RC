@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Direct Send Implementation
+// Controller for image retrieval and viewing - Updated with Album Preview and PC Support
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -72,7 +72,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and send images directly to chat
+  // Process date selection and show album preview
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
@@ -92,8 +92,11 @@ class ImageController {
         return;
       }
       
-      // Send images directly to chat
-      await this.sendImagesToChat(userId, result, replyToken);
+      // Build album preview message with PC support
+      const messages = this.buildAlbumPreviewWithPCSupport(lotNumber, date, result.images);
+      
+      // Send album preview
+      await lineService.replyMessage(replyToken, messages);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -106,82 +109,94 @@ class ImageController {
     }
   }
 
-  // Send images directly to chat
-  async sendImagesToChat(userId, result, replyToken) {
-    try {
-      const { lotNumber, imageDate, images } = result;
-      const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
-      const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-      
-      // Create messages array
-      const messages = [];
-      
-      // Header message
-      messages.push({
-        type: 'text',
-        text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${formattedDate}\n🖼️ จำนวน ${images.length} รูป`
-      });
-      
-      // Convert images to LINE image messages (max 4 images per reply due to LINE limit of 5 messages)
-      const imageMessages = images.slice(0, 4).map(image => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return {
-          type: 'image',
-          originalContentUrl: imageUrl,
-          previewImageUrl: imageUrl
-        };
-      });
-      
-      messages.push(...imageMessages);
-      
-      // Send first batch with reply token
-      await lineService.replyMessage(replyToken, messages);
-      
-      // Send remaining images if any (using push messages)
-      if (images.length > 4) {
-        // Wait a bit before sending more
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        for (let i = 4; i < images.length; i += 5) {
-          const batch = images.slice(i, i + 5).map(image => {
-            const imageUrl = image.url.startsWith('http') 
-              ? image.url 
-              : `${baseUrl}${image.url}`;
-            
-            return {
-              type: 'image',
-              originalContentUrl: imageUrl,
-              previewImageUrl: imageUrl
-            };
-          });
-          
-          await lineService.pushMessage(userId, batch);
-          
-          // Small delay between batches
-          if (i + 5 < images.length) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-        
-        // Send completion message
-        await lineService.pushMessage(userId, {
-          type: 'text',
-          text: `✅ แสดงรูปภาพทั้งหมด ${images.length} รูป เรียบร้อยแล้ว\n\n💡 Tip: คุณสามารถ:\n• กดที่รูปเพื่อดูขนาดเต็ม\n• กดค้างแล้วเลือก "บันทึก" เพื่อเก็บรูป\n• กดค้างแล้วเลือก "ส่งต่อ" เพื่อแชร์ต่อ`
-        });
-      }
-      
-      logger.info(`Sent ${images.length} images for Lot: ${lotNumber}, Date: ${imageDate}`);
-      
-    } catch (error) {
-      logger.error('Error sending images to chat:', error);
-      throw error;
-    }
+  // Build album preview with PC support
+  buildAlbumPreviewWithPCSupport(lotNumber, date, images) {
+    const messages = [];
+    
+    // First message: Album preview
+    messages.push(this.buildAlbumPreviewMessage(lotNumber, date, images));
+    
+    // Second message: PC support options
+    messages.push(this.buildPCSupportMessage(lotNumber, date, images));
+    
+    return messages;
   }
 
-  // Build album preview message (kept for compatibility)
+  // Build PC support message
+  buildPCSupportMessage(lotNumber, date, images) {
+    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+    const webViewUrl = `${baseUrl}/liff/view.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
+    
+    return {
+      type: "flex",
+      altText: "ตัวเลือกสำหรับ PC",
+      contents: {
+        type: "bubble",
+        size: "kilo",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "💻 ใช้งานบน PC?",
+              weight: "bold",
+              size: "md",
+              color: "#666666"
+            },
+            {
+              type: "text",
+              text: "LIFF ไม่รองรับบน LINE PC\nกรุณาเลือกวิธีการดูรูปภาพ:",
+              size: "sm",
+              color: "#999999",
+              margin: "sm",
+              wrap: true
+            }
+          ],
+          paddingAll: "15px"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
+              type: "button",
+              style: "secondary",
+              height: "sm",
+              action: {
+                type: "postback",
+                label: "📱 ส่งรูปมาที่แชท",
+                data: `action=send_to_chat&lot=${lotNumber}&date=${date}`,
+                displayText: "ส่งรูปภาพมาที่แชท"
+              }
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "🌐 เปิดในเว็บเบราว์เซอร์",
+                uri: webViewUrl
+              }
+            },
+            {
+              type: "text",
+              text: "📱 หรือสแกน QR Code ด้วยมือถือ",
+              size: "xs",
+              color: "#999999",
+              align: "center",
+              margin: "md"
+            }
+          ],
+          paddingAll: "10px"
+        }
+      }
+    };
+  }
+
+  // Build album preview message with thumbnails
   buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
@@ -241,6 +256,9 @@ class ImageController {
         spacing: "xs"
       });
     }
+    
+    // Build LIFF URL
+    const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
     
     return {
       type: "flex",
@@ -327,11 +345,37 @@ class ImageController {
           spacing: "sm",
           contents: [
             {
-              type: "text",
-              text: "รูปภาพถูกส่งมาในแชทแล้ว",
-              size: "sm",
-              color: "#666666",
-              align: "center"
+              type: "button",
+              style: "primary",
+              height: "md",
+              action: {
+                type: "uri",
+                label: "🔍 ดูรูปภาพทั้งหมด",
+                uri: liffUrl
+              },
+              color: "#00B900"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "💡 กดปุ่มด้านบนเพื่อดูรูปภาพขนาดเต็ม",
+                  size: "xs",
+                  color: "#999999",
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: "และเลือกแชร์รูปที่ต้องการ",
+                  size: "xs",
+                  color: "#999999",
+                  align: "center"
+                }
+              ],
+              margin: "sm",
+              spacing: "none"
             }
           ],
           paddingAll: "15px"
@@ -354,8 +398,25 @@ class ImageController {
         return;
       }
       
-      // Send images directly
-      await this.sendImagesToChat(userId, result, replyToken);
+      // Build messages for sending images
+      const messages = lineMessageBuilder.buildImageViewMessages(result);
+      
+      // Send images (max 5 per reply)
+      const firstBatch = messages.slice(0, 5);
+      await lineService.replyMessage(replyToken, firstBatch);
+      
+      // Send remaining messages if any
+      if (messages.length > 5) {
+        for (let i = 5; i < messages.length; i += 5) {
+          const batch = messages.slice(i, i + 5);
+          await lineService.pushMessage(userId, batch);
+          
+          // Small delay between batches
+          if (i + 5 < messages.length) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+      }
       
     } catch (error) {
       logger.error('Error sending images to chat:', error);
