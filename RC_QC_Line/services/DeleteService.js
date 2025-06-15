@@ -140,7 +140,7 @@ class DeleteService {
     }
   }
 
-  // Create image selection for deletion - FIXED: Limit carousel to 10 items
+  // Create image selection for deletion - FIXED with simpler approach
   async createImageDeleteSelector(lotNumber, date) {
     try {
       // Get images with delete options
@@ -153,193 +153,71 @@ class DeleteService {
         };
       }
       
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
       const totalImages = result.images.length;
       
-      // If more than 10 images, use grid view instead of carousel
-      if (totalImages > 10) {
-        return this.createDeleteGridMessage(lotNumber, date, result.images);
+      // If more than 6 images, use text list instead
+      if (totalImages > 6) {
+        return this.createTextDeleteList(lotNumber, date, result.images);
       }
       
-      // Create carousel for 10 or fewer images
-      const carouselItems = result.images.map((image, index) => {
-        const imageUrl = image.url.startsWith('http') 
-          ? image.url 
-          : `${baseUrl}${image.url}`;
-        
-        return {
-          type: "bubble",
-          hero: {
-            type: "image",
-            url: imageUrl,
-            size: "full",
-            aspectRatio: "1:1",
-            aspectMode: "cover"
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `รูปที่ ${index + 1}/${totalImages}`,
-                weight: "bold",
-                size: "md"
-              },
-              {
-                type: "text",
-                text: `Lot: ${lotNumber}`,
-                size: "sm",
-                margin: "md"
-              },
-              {
-                type: "text",
-                text: `อัปโหลดเมื่อ: ${new Date(image.uploaded_at).toLocaleString('th-TH')}`,
-                size: "sm",
-                margin: "sm"
-              }
-            ]
-          },
-          footer: {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: "#FF0000",
-                action: {
-                  type: "postback",
-                  label: "ลบรูปภาพนี้",
-                  data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-                  displayText: `เลือกลบรูปภาพที่ ${index + 1}`
-                }
-              }
-            ]
-          }
-        };
-      });
-      
-      // Create the carousel message
-      const carouselMessage = {
-        type: "flex",
-        altText: "เลือกรูปภาพที่ต้องการลบ",
-        contents: {
-          type: "carousel",
-          contents: carouselItems
-        }
-      };
-      
-      return carouselMessage;
+      // Create simple flex message for 6 or fewer images
+      return this.createSimpleDeleteGrid(lotNumber, date, result.images);
     } catch (error) {
       logger.error('Error creating image delete selector:', error);
       throw error;
     }
   }
 
-  // Create grid view for more than 10 images
-  createDeleteGridMessage(lotNumber, date, images) {
+  // Create simple grid for 6 or fewer images
+  createSimpleDeleteGrid(lotNumber, date, images) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    const formattedDate = new Date(date).toLocaleDateString('th-TH');
     
-    // Show first 9 images in a 3x3 grid
-    const displayImages = images.slice(0, 9);
-    const remainingCount = Math.max(0, images.length - 9);
-    
-    // Create image boxes
-    const imageBoxes = displayImages.map((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "image",
-            url: imageUrl,
-            aspectRatio: "1:1",
-            aspectMode: "cover",
-            size: "full",
-            action: {
-              type: "postback",
-              data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
-              displayText: `เลือกลบรูปที่ ${index + 1}`
-            }
-          },
-          {
-            type: "text",
-            text: `${index + 1}`,
-            size: "xs",
-            color: "#FFFFFF",
-            backgroundColor: "#FF0000",
-            position: "absolute",
-            offsetTop: "5px",
-            offsetStart: "5px",
-            paddingAll: "3px"
-          }
-        ],
-        flex: 1,
-        margin: "xs",
-        cornerRadius: "5px"
-      };
-    });
-    
-    // Fill empty slots
-    while (imageBoxes.length < 9) {
-      imageBoxes.push({
-        type: "box",
-        layout: "vertical",
-        contents: [],
-        backgroundColor: "#F0F0F0",
-        flex: 1,
-        margin: "xs",
-        cornerRadius: "5px"
-      });
-    }
-    
-    // Create 3x3 grid
-    const rows = [];
-    for (let i = 0; i < 9; i += 3) {
-      rows.push({
-        type: "box",
-        layout: "horizontal",
-        contents: imageBoxes.slice(i, i + 3),
-        spacing: "xs"
-      });
-    }
+    // Create buttons for each image
+    const buttons = images.map((image, index) => ({
+      type: "button",
+      style: "secondary",
+      action: {
+        type: "postback",
+        label: `ลบรูปที่ ${index + 1}`,
+        data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
+        displayText: `เลือกลบรูปที่ ${index + 1}`
+      },
+      margin: "sm"
+    }));
     
     return {
       type: "flex",
       altText: "เลือกรูปภาพที่ต้องการลบ",
       contents: {
         type: "bubble",
-        size: "mega",
         header: {
           type: "box",
           layout: "vertical",
           contents: [
             {
               type: "text",
-              text: "🗑️ เลือกรูปที่จะลบ",
+              text: "เลือกรูปที่ต้องการลบ",
               weight: "bold",
-              size: "lg",
-              color: "#FF0000"
+              size: "lg"
             },
             {
               type: "text",
-              text: `📦 Lot: ${lotNumber} | 📅 ${formattedDate}`,
+              text: `Lot: ${lotNumber}`,
               size: "sm",
               color: "#666666",
-              margin: "xs"
+              margin: "sm"
             },
             {
               type: "text",
-              text: `🖼️ ทั้งหมด ${images.length} รูป (แสดง 9 รูปแรก)`,
+              text: `วันที่: ${new Date(date).toLocaleDateString('th-TH')}`,
               size: "sm",
-              color: "#999999",
-              margin: "xs"
+              color: "#666666"
+            },
+            {
+              type: "text",
+              text: `จำนวน: ${images.length} รูป`,
+              size: "sm",
+              color: "#666666"
             }
           ],
           paddingAll: "15px",
@@ -348,21 +226,7 @@ class DeleteService {
         body: {
           type: "box",
           layout: "vertical",
-          contents: [
-            ...rows,
-            remainingCount > 0 ? {
-              type: "text",
-              text: `และอีก ${remainingCount} รูป - กดที่รูปเพื่อเลือกลบ`,
-              size: "sm",
-              color: "#666666",
-              align: "center",
-              margin: "lg"
-            } : {
-              type: "box",
-              layout: "vertical",
-              contents: []
-            }
-          ],
+          contents: buttons,
           paddingAll: "10px"
         },
         footer: {
@@ -371,14 +235,7 @@ class DeleteService {
           contents: [
             {
               type: "text",
-              text: "💡 แตะที่รูปภาพเพื่อเลือกลบ",
-              size: "xs",
-              color: "#999999",
-              align: "center"
-            },
-            {
-              type: "text",
-              text: "หรือพิมพ์หมายเลขรูปที่ต้องการลบ",
+              text: "กดปุ่มเพื่อเลือกรูปที่ต้องการลบ",
               size: "xs",
               color: "#999999",
               align: "center"
@@ -386,6 +243,54 @@ class DeleteService {
           ],
           paddingAll: "10px"
         }
+      }
+    };
+  }
+
+  // Create text list for many images
+  createTextDeleteList(lotNumber, date, images) {
+    let message = `🗑️ เลือกรูปที่ต้องการลบ\n`;
+    message += `📦 Lot: ${lotNumber}\n`;
+    message += `📅 วันที่: ${new Date(date).toLocaleDateString('th-TH')}\n`;
+    message += `🖼️ จำนวน: ${images.length} รูป\n\n`;
+    
+    // List first 9 images
+    const displayImages = images.slice(0, 9);
+    displayImages.forEach((image, index) => {
+      const uploadTime = new Date(image.uploaded_at).toLocaleTimeString('th-TH', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      message += `${index + 1}. รูปที่ ${index + 1} (${uploadTime})\n`;
+    });
+    
+    if (images.length > 9) {
+      message += `\n... และอีก ${images.length - 9} รูป\n`;
+    }
+    
+    message += `\n💡 พิมพ์หมายเลขรูปที่ต้องการลบ (1-${images.length})`;
+    
+    // Store delete context for number input
+    const chatId = 'direct'; // You'll need to pass chatContext here
+    lineService.setUserState('waitingForDeleteNumber', {
+      images: images,
+      lotNumber: lotNumber,
+      date: date
+    }, chatId);
+    
+    return {
+      type: "text",
+      text: message,
+      quickReply: {
+        items: displayImages.slice(0, 13).map((image, index) => ({
+          type: "action",
+          action: {
+            type: "postback",
+            label: `${index + 1}`,
+            data: `action=delete_image&image_id=${image.image_id}&lot=${lotNumber}&date=${date}`,
+            displayText: `ลบรูปที่ ${index + 1}`
+          }
+        }))
       }
     };
   }
@@ -412,7 +317,18 @@ class DeleteService {
       const image = result.recordset[0];
       
       // Delete file from disk
-      await this.imageCompressor.deleteImage(image.file_path);
+      const fs = require('fs');
+      const path = require('path');
+      
+      try {
+        if (fs.existsSync(image.file_path)) {
+          fs.unlinkSync(image.file_path);
+          logger.info(`Deleted file: ${image.file_path}`);
+        }
+      } catch (fileError) {
+        logger.error('Error deleting file:', fileError);
+        // Continue even if file deletion fails
+      }
       
       // Update image status in database
       await imageModel.delete(imageId);
