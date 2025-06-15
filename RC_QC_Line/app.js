@@ -43,7 +43,7 @@ const uploadController = require('./controllers/UploadController');
 const lineService = require('./services/LineService');
 
 // Import API routes - Check if files exist
-let apiRoutes, botShareRoutes;
+let apiRoutes, botShareRoutes, shareRoutes;
 
 try {
   apiRoutes = require('./routes/api');
@@ -61,6 +61,14 @@ try {
   botShareRoutes = express.Router();
 }
 
+try {
+  shareRoutes = require('./routes/share');
+  logger.info('✅ Share routes loaded');
+} catch (error) {
+  logger.error('❌ Failed to load Share routes:', error.message);
+  shareRoutes = express.Router();
+}
+
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
 
@@ -68,20 +76,10 @@ app.post('/webhook', webhookController.handleWebhook);
 app.use('/api', (req, res, next) => {
   logger.info(`API Request: ${req.method} ${req.path}`);
   next();
-}, apiRoutes, botShareRoutes);
+}, apiRoutes, botShareRoutes, shareRoutes);
 
-// Fallback for bot-share if above doesn't work
-app.post('/api/bot-share', (req, res, next) => {
-  logger.info('Bot share request via fallback route');
-  if (botShareRoutes.handle) {
-    botShareRoutes.handle(req, res, next);
-  } else {
-    res.status(501).json({
-      success: false,
-      message: 'Bot share route not properly loaded'
-    });
-  }
-});
+// Share page route
+app.use('/', shareRoutes);
 
 // Add system monitoring endpoint
 app.get('/status', (req, res) => {
