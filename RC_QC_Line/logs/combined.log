@@ -2240,3 +2240,42 @@
 {"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
 {"level":"info","message":"Found 2 images for lot 1122 on date 2025-06-15","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
 {"level":"info","message":"API Response - Found 2 images","service":"rc-qc-line","timestamp":"2025-06-15 09:17:35"}
+{"level":"info","message":"SIGINT received, shutting down gracefully","service":"rc-qc-line","timestamp":"2025-06-16 03:02:56"}
+{"level":"info","message":"Server running on port 3000","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Webhook URL: https://line.ruxchai.co.th/webhook","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Health endpoint: https://line.ruxchai.co.th/health","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Status endpoint: https://line.ruxchai.co.th/status","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"LIFF viewer: https://line.ruxchai.co.th/liff/view.html","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Web viewer: https://line.ruxchai.co.th/view","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Note: For production, use HTTPS for webhook URL","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Multi-chat support enabled","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"LIFF photo viewer enabled","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"PC browser support enabled","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"\nAvailable endpoints:","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- POST /webhook (LINE webhook)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /health (Health check)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /status (System status)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /view (Web viewer for PC)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /api/images/:lot/:date (Get images)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /api/lots/:lot (Get lot info)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- POST /api/bot-share (Bot share images)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- GET /api/bot-share/health (Bot share health)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- Static /uploads/* (Image files)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"- Static /liff/* (LIFF files)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:26"}
+{"level":"info","message":"Database pool not available, initializing...","service":"rc-qc-line","timestamp":"2025-06-16 03:03:32"}
+{"level":"info","message":"Creating database connection pool...","service":"rc-qc-line","timestamp":"2025-06-16 03:03:32"}
+{"level":"info","message":"Database connection pool initialized successfully","service":"rc-qc-line","timestamp":"2025-06-16 03:03:32"}
+{"level":"info","message":"User registered/updated: Montri Pukkaew (U944dd605dd72df5a658e775bc0eaef6e)","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"ImageController: Processing Lot number: \"1122\"","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"ImageController: Trimmed Lot number: \"1122\"","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"ImageController: Lot validation passed, proceeding to DatePicker","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: Creating view date picker with direct LIFF for Lot: 1122","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: Getting available dates for Lot: 1122","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: Found Lot 1122 with ID: 14","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: Found 2 distinct dates with images for Lot 1122","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: - 2025-06-15: 2 images","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: - 2025-06-13: 3 images","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: Creating date picker with 2 available dates","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: LIFF URL = https://liff.line.me/2007575196-NWaXrZVE?lot=1122&date=2025-06-15","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"DatePicker: LIFF URL = https://liff.line.me/2007575196-NWaXrZVE?lot=1122&date=2025-06-13","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
+{"level":"info","message":"User state cleared: U944dd605dd72df5a658e775bc0eaef6e:direct","service":"rc-qc-line","timestamp":"2025-06-16 03:03:33"}
