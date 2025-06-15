@@ -44,12 +44,14 @@ const lineService = require('./services/LineService');
 
 // Import API routes
 const apiRoutes = require('./routes/api');
+const botShareRoutes = require('./routes/botShare');
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
 
 // API routes for LIFF
 app.use('/api', apiRoutes);
+app.use('/api', botShareRoutes);
 
 // Add system monitoring endpoint
 app.get('/status', (req, res) => {
