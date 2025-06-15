@@ -542,6 +542,19 @@
                     imagesToShare = images;
                 }
                 
+                // Check if LIFF is opened in LINE app
+                if (!liff.isInClient()) {
+                    showToast('กรุณาเปิดใน LINE App เพื่อแชร์รูปภาพ');
+                    
+                    // Alternative: Copy link to clipboard
+                    const shareUrl = `${window.location.origin}/liff/view.html?lot=${lotNumber}&date=${imageDate}`;
+                    if (navigator.clipboard) {
+                        await navigator.clipboard.writeText(shareUrl);
+                        showToast('คัดลอก Link แล้ว สามารถวางใน LINE ได้');
+                    }
+                    return;
+                }
+                
                 // Prepare messages
                 const messages = [];
                 
@@ -560,27 +573,44 @@
                     });
                 }
                 
-                // Use LIFF ShareTargetPicker
-                const result = await liff.shareTargetPicker(messages);
-                
-                if (result) {
-                    showToast('แชร์รูปภาพสำเร็จ');
+                // Try to use shareTargetPicker
+                try {
+                    const result = await liff.shareTargetPicker(messages);
                     
-                    // If more than 5 images, notify user
-                    if (imagesToShare.length > 5) {
-                        setTimeout(() => {
-                            showToast(`แชร์ไป 5 จาก ${imagesToShare.length} รูป (ข้อจำกัดของ LINE)`);
-                        }, 2000);
+                    if (result) {
+                        showToast('แชร์รูปภาพสำเร็จ');
+                        
+                        // If more than 5 images, notify user
+                        if (imagesToShare.length > 5) {
+                            setTimeout(() => {
+                                showToast(`แชร์ไป 5 จาก ${imagesToShare.length} รูป (ข้อจำกัดของ LINE)`);
+                            }, 2000);
+                        }
+                        
+                        // Reset select mode
+                        if (selectMode) {
+                            toggleSelectMode();
+                        }
                     }
+                } catch (shareError) {
+                    console.error('ShareTargetPicker error:', shareError);
                     
-                    // Reset select mode
-                    if (selectMode) {
-                        toggleSelectMode();
+                    // Fallback: Send to current chat
+                    if (liff.isApiAvailable('sendMessages')) {
+                        await liff.sendMessages(messages);
+                        showToast('ส่งรูปภาพไปยังแชทปัจจุบันแล้ว');
+                        
+                        // Close LIFF after sending
+                        setTimeout(() => {
+                            liff.closeWindow();
+                        }, 2000);
+                    } else {
+                        showToast('ไม่สามารถแชร์รูปภาพได้ กรุณาตรวจสอบ Permission');
                     }
                 }
             } catch (error) {
                 console.error('Error sharing images:', error);
-                showToast('ไม่สามารถแชร์รูปภาพได้');
+                showToast(`ไม่สามารถแชร์รูปภาพได้: ${error.message}`);
             }
         }
         
