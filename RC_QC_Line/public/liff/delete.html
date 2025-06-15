@@ -339,6 +339,16 @@
             background: #FF0000;
             color: white;
         }
+        
+        /* No Auth Notice */
+        .no-auth-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -346,6 +356,11 @@
     <div class="header">
         <h1>🗑️ ลบรูปภาพ QC</h1>
         <div class="info" id="headerInfo">กำลังโหลด...</div>
+    </div>
+    
+    <!-- No Auth Notice -->
+    <div class="no-auth-notice">
+        💡 โหมดลบรูปภาพ - ไม่ต้องเข้าสู่ระบบ
     </div>
     
     <!-- Select All Button -->
@@ -402,9 +417,6 @@
         </div>
     </div>
     
-    <!-- LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    
     <script>
         // Global variables
         let images = [];
@@ -412,25 +424,12 @@
         let lotNumber = '';
         let imageDate = '';
         let isDeleting = false;
-        let userProfile = null;
         let baseUrl = '';
-        let isLiffEnvironment = false;
-        let isPCBrowser = false;
         
-        // Check if running in PC browser
-        function checkPCBrowser() {
-            const userAgent = navigator.userAgent.toLowerCase();
-            isPCBrowser = !(/android|iphone|ipad|ipod/.test(userAgent));
-            return isPCBrowser;
-        }
-        
-        // Initialize (with PC support)
+        // Initialize (No Authentication Version)
         async function initialize() {
             try {
-                console.log('=== Delete Page Initialization ===');
-                
-                // Check if PC browser
-                checkPCBrowser();
+                console.log('=== No-Auth Delete Page Initialization ===');
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -445,46 +444,12 @@
                     return;
                 }
                 
-                // Try LIFF init only if not PC and LIFF SDK is available
-                if (!isPCBrowser && typeof liff !== 'undefined') {
-                    try {
-                        await initializeLiff();
-                        isLiffEnvironment = true;
-                    } catch (liffError) {
-                        console.warn('LIFF init failed, continuing without LIFF:', liffError);
-                        isLiffEnvironment = false;
-                    }
-                } else {
-                    console.log('Skipping LIFF init for PC browser');
-                    isLiffEnvironment = false;
-                }
-                
-                // Load images regardless of LIFF status
+                // Load images directly without authentication
                 await loadImages();
                 
             } catch (error) {
                 console.error('Initialization failed:', error);
                 showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
-            }
-        }
-        
-        // Initialize LIFF (only for mobile)
-        async function initializeLiff() {
-            console.log('Initializing LIFF...');
-            
-            await liff.init({ liffId: '2007575196-NWaXrZVE' });
-            
-            console.log('LIFF initialized');
-            console.log('- Is in client:', liff.isInClient());
-            console.log('- Is logged in:', liff.isLoggedIn());
-            
-            if (liff.isInClient() && liff.isLoggedIn()) {
-                try {
-                    userProfile = await liff.getProfile();
-                    console.log('User profile:', userProfile);
-                } catch (profileError) {
-                    console.warn('Cannot get profile:', profileError);
-                }
             }
         }
         
@@ -675,15 +640,11 @@
         
         // Cancel delete
         function cancelDelete() {
-            if (isLiffEnvironment && liff.isInClient()) {
-                liff.closeWindow();
+            // Simply close the page or go back
+            if (window.history.length > 1) {
+                window.history.back();
             } else {
-                // For PC browser, go back or close
-                if (window.history.length > 1) {
-                    window.history.back();
-                } else {
-                    window.close();
-                }
+                window.close();
             }
         }
         
@@ -701,7 +662,7 @@
             document.getElementById('confirmModal').style.display = 'none';
         }
         
-        // Execute delete
+        // Execute delete (No-Auth version)
         async function executeDelete() {
             if (isDeleting) return;
             isDeleting = true;
@@ -713,29 +674,16 @@
                 // Get selected image IDs
                 const selectedImageIds = Array.from(selectedImages).map(index => images[index].image_id);
                 
-                // Get user ID
-                let userId = 'anonymous';
-                if (userProfile) {
-                    userId = userProfile.userId;
-                } else if (isLiffEnvironment && liff.isInClient()) {
-                    try {
-                        const profile = await liff.getProfile();
-                        userId = profile.userId;
-                    } catch (e) {
-                        console.error('Cannot get user ID:', e);
-                    }
-                }
-                
                 console.log('Deleting images:', selectedImageIds);
                 
-                // Send delete request
+                // Send delete request with anonymous user
                 const response = await fetch(`${baseUrl}/api/images/delete`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        userId: userId,
+                        userId: 'anonymous', // Use anonymous for no-auth
                         imageIds: selectedImageIds,
                         lotNumber: lotNumber,
                         imageDate: imageDate
@@ -756,27 +704,10 @@
                 if (result.success) {
                     showToast(`✅ ลบรูปภาพเรียบร้อยแล้ว ${result.deletedCount} รูป`);
                     
-                    // Send message back to chat if in LINE
-                    if (isLiffEnvironment && liff.isInClient()) {
-                        try {
-                            await liff.sendMessages([{
-                                type: 'text',
-                                text: `✅ ลบรูปภาพเรียบร้อยแล้ว\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🗑️ จำนวน: ${result.deletedCount} รูป`
-                            }]);
-                        } catch (sendError) {
-                            console.error('Cannot send message:', sendError);
-                        }
-                        
-                        // Close LIFF after 1 second
-                        setTimeout(() => {
-                            liff.closeWindow();
-                        }, 1000);
-                    } else {
-                        // Reload page for PC
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    }
+                    // Reload page after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                     
                 } else {
                     throw new Error(result.message || 'Failed to delete images');

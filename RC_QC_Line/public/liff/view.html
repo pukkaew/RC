@@ -318,46 +318,14 @@
             }
         }
         
-        /* PC Mode Notice */
-        .pc-notice {
+        /* No Auth Notice */
+        .no-auth-notice {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
             color: #856404;
             padding: 10px;
             text-align: center;
-            font-size: 14px;
-        }
-        
-        /* Share Loading Modal */
-        .share-loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 3000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .share-loading-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        
-        .share-loading-spinner {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #00B900;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -368,9 +336,9 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- PC Notice -->
-    <div class="pc-notice" id="pcNotice" style="display: none;">
-        💻 คุณกำลังใช้งานผ่าน PC Browser - การแชร์รูปภาพจะถูกดาวน์โหลดแทน
+    <!-- No Auth Notice -->
+    <div class="no-auth-notice">
+        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
     </div>
     
     <!-- Content -->
@@ -400,8 +368,8 @@
             <span>เลือกรูป</span>
         </button>
         <button class="btn btn-primary" id="shareBtn">
-            <span>📤</span>
-            <span>แชร์ทั้งหมด</span>
+            <span>💾</span>
+            <span>ดาวน์โหลด</span>
         </button>
     </div>
     
@@ -416,18 +384,6 @@
         </div>
     </div>
     
-    <!-- Share Loading Modal -->
-    <div class="share-loading" id="shareLoading">
-        <div class="share-loading-content">
-            <div class="share-loading-spinner"></div>
-            <h3>กำลังส่งรูปภาพ...</h3>
-            <p id="shareProgress">กรุณารอสักครู่</p>
-        </div>
-    </div>
-    
-    <!-- LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    
     <script>
         // Global variables
         let images = [];
@@ -436,31 +392,12 @@
         let currentModalIndex = 0;
         let lotNumber = '';
         let imageDate = '';
-        let isSharing = false;
-        let userProfile = null;
         let baseUrl = '';
-        let isLiffEnvironment = false;
-        let isPCBrowser = false;
         
-        // Check if running in PC browser
-        function checkPCBrowser() {
-            const userAgent = navigator.userAgent.toLowerCase();
-            isPCBrowser = !(/android|iphone|ipad|ipod/.test(userAgent));
-            
-            if (isPCBrowser) {
-                document.getElementById('pcNotice').style.display = 'block';
-            }
-            
-            return isPCBrowser;
-        }
-        
-        // Initialize (with PC support)
+        // Initialize (No Authentication Version)
         async function initialize() {
             try {
-                console.log('=== Initialization ===');
-                
-                // Check if PC browser
-                checkPCBrowser();
+                console.log('=== No-Auth Initialization ===');
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -475,46 +412,12 @@
                     return;
                 }
                 
-                // Try LIFF init only if not PC and LIFF SDK is available
-                if (!isPCBrowser && typeof liff !== 'undefined') {
-                    try {
-                        await initializeLiff();
-                        isLiffEnvironment = true;
-                    } catch (liffError) {
-                        console.warn('LIFF init failed, continuing without LIFF:', liffError);
-                        isLiffEnvironment = false;
-                    }
-                } else {
-                    console.log('Skipping LIFF init for PC browser');
-                    isLiffEnvironment = false;
-                }
-                
-                // Load images regardless of LIFF status
+                // Load images directly without authentication
                 await loadImages();
                 
             } catch (error) {
                 console.error('Initialization failed:', error);
                 showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
-            }
-        }
-        
-        // Initialize LIFF (only for mobile)
-        async function initializeLiff() {
-            console.log('Initializing LIFF...');
-            
-            await liff.init({ liffId: '2007575196-NWaXrZVE' });
-            
-            console.log('LIFF initialized');
-            console.log('- Is in client:', liff.isInClient());
-            console.log('- Is logged in:', liff.isLoggedIn());
-            
-            if (liff.isInClient() && liff.isLoggedIn()) {
-                try {
-                    userProfile = await liff.getProfile();
-                    console.log('User profile:', userProfile);
-                } catch (profileError) {
-                    console.warn('Cannot get profile:', profileError);
-                }
             }
         }
         
@@ -548,11 +451,6 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
-                
-                // Update share button text for PC
-                if (isPCBrowser) {
-                    document.getElementById('shareBtn').innerHTML = '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>';
-                }
                 
             } catch (error) {
                 console.error('Error loading images:', error);
@@ -611,17 +509,13 @@
             if (selectMode) {
                 grid.classList.add('select-mode');
                 selectBtn.innerHTML = '<span>❌</span><span>ยกเลิก</span>';
-                shareBtn.innerHTML = isPCBrowser ? 
-                    '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>' : 
-                    '<span>📤</span><span>แชร์ที่เลือก</span>';
+                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
                 shareBtn.disabled = true;
                 showToast('เลือกรูปที่ต้องการ');
             } else {
                 grid.classList.remove('select-mode');
                 selectBtn.innerHTML = '<span>📌</span><span>เลือกรูป</span>';
-                shareBtn.innerHTML = isPCBrowser ?
-                    '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>' :
-                    '<span>📤</span><span>แชร์ทั้งหมด</span>';
+                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>';
                 shareBtn.disabled = false;
                 renderImages();
             }
@@ -643,32 +537,14 @@
             const shareBtn = document.getElementById('shareBtn');
             if (selectedImages.size > 0) {
                 shareBtn.disabled = false;
-                shareBtn.innerHTML = isPCBrowser ?
-                    `<span>💾</span><span>ดาวน์โหลด ${selectedImages.size} รูป</span>` :
-                    `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
+                shareBtn.innerHTML = `<span>💾</span><span>ดาวน์โหลด ${selectedImages.size} รูป</span>`;
             } else {
                 shareBtn.disabled = true;
-                shareBtn.innerHTML = isPCBrowser ?
-                    '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>' :
-                    '<span>📤</span><span>แชร์ที่เลือก</span>';
+                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
             }
         }
         
-        // Share/Download images
-        async function shareImages() {
-            if (isPCBrowser) {
-                // Download for PC
-                await downloadImages();
-            } else if (isLiffEnvironment) {
-                // Share via bot for LIFF
-                await shareViaBot();
-            } else {
-                // Fallback - download
-                await downloadImages();
-            }
-        }
-        
-        // Download images (for PC)
+        // Download images
         async function downloadImages() {
             try {
                 let imagesToDownload = [];
@@ -706,65 +582,6 @@
             } catch (error) {
                 console.error('Download error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
-            }
-        }
-        
-        // Share via bot (for LIFF)
-        async function shareViaBot() {
-            if (isSharing) return;
-            isSharing = true;
-            
-            try {
-                document.getElementById('shareLoading').style.display = 'flex';
-                
-                let imagesToShare = [];
-                if (selectMode && selectedImages.size > 0) {
-                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
-                } else {
-                    imagesToShare = images;
-                }
-                
-                const userId = userProfile?.userId || 'anonymous';
-                const imageIds = imagesToShare.map(img => img.image_id).filter(id => id);
-                
-                const response = await fetch(`${baseUrl}/api/bot-share`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: userId,
-                        lotNumber: lotNumber,
-                        imageDate: imageDate,
-                        imageIds: imageIds
-                    })
-                });
-                
-                document.getElementById('shareLoading').style.display = 'none';
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    showToast(`✅ ส่งรูปไปยังแชทแล้ว ${result.count} รูป`);
-                    
-                    if (selectMode) {
-                        toggleSelectMode();
-                    }
-                    
-                    if (liff.isInClient()) {
-                        setTimeout(() => {
-                            liff.closeWindow();
-                        }, 2000);
-                    }
-                } else {
-                    throw new Error('Share failed');
-                }
-                
-            } catch (error) {
-                console.error('Share error:', error);
-                document.getElementById('shareLoading').style.display = 'none';
-                showToast('❌ เกิดข้อผิดพลาด');
-            } finally {
-                isSharing = false;
             }
         }
         
@@ -838,7 +655,7 @@
         
         // Event listeners
         document.getElementById('selectBtn').addEventListener('click', toggleSelectMode);
-        document.getElementById('shareBtn').addEventListener('click', shareImages);
+        document.getElementById('shareBtn').addEventListener('click', downloadImages);
         
         // Modal events
         document.getElementById('imageModal').addEventListener('click', (e) => {
