@@ -9,12 +9,16 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: #f5f5f5;
             padding-bottom: 60px;
+            overflow-x: hidden;
         }
         
         /* Header */
@@ -193,7 +197,7 @@
             z-index: 1;
         }
         
-        /* Modal with Zoom */
+        /* Enhanced Modal with Better Zoom */
         .modal {
             display: none;
             position: fixed;
@@ -201,60 +205,64 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             z-index: 1000;
-            animation: fadeIn 0.3s;
-            overflow: hidden;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .modal-content {
             position: relative;
             width: 100%;
             height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
+            touch-action: none;
         }
         
-        .modal-image-container {
-            position: relative;
+        .modal-image-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            transform-origin: center center;
+            transition: none;
+            will-change: transform;
         }
         
         .modal-image {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            cursor: zoom-in;
-            transition: transform 0.3s ease;
-            transform-origin: center center;
+            touch-action: none;
+            pointer-events: none;
+            -webkit-user-drag: none;
+            user-drag: none;
         }
         
-        .modal-image.zoomed {
-            cursor: move;
-            max-width: none;
-            max-height: none;
+        /* Controls */
+        .modal-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
         }
         
         .modal-close {
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.3);
-            border: none;
+            width: 44px;
+            height: 44px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid white;
             border-radius: 50%;
             color: white;
             font-size: 24px;
@@ -263,13 +271,14 @@
             align-items: center;
             justify-content: center;
             z-index: 10;
+            pointer-events: auto;
         }
         
         .modal-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.6);
             border: none;
             color: white;
             font-size: 30px;
@@ -277,6 +286,13 @@
             cursor: pointer;
             border-radius: 5px;
             z-index: 10;
+            pointer-events: auto;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .modal-nav:hover {
+            opacity: 1;
         }
         
         .modal-prev {
@@ -298,37 +314,78 @@
             border-radius: 20px;
             font-size: 14px;
             z-index: 10;
+            pointer-events: none;
         }
         
-        .zoom-controls {
+        /* Zoom Info Display */
+        .zoom-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .zoom-info.visible {
+            opacity: 1;
+        }
+        
+        /* Quick Zoom Buttons */
+        .quick-zoom-buttons {
             position: absolute;
             bottom: 70px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            border-radius: 25px;
-            padding: 5px;
             display: flex;
-            gap: 5px;
+            gap: 10px;
             z-index: 10;
+            pointer-events: auto;
         }
         
-        .zoom-btn {
-            width: 40px;
-            height: 40px;
-            border: none;
-            background: rgba(255,255,255,0.2);
+        .quick-zoom-btn {
+            background: rgba(0,0,0,0.7);
             color: white;
-            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
             cursor: pointer;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.2s;
+            pointer-events: auto;
         }
         
-        .zoom-btn:hover {
-            background: rgba(255,255,255,0.3);
+        .quick-zoom-btn:hover,
+        .quick-zoom-btn.active {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+        
+        /* Double Tap Indicator */
+        .double-tap-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .double-tap-hint.show {
+            opacity: 1;
         }
         
         /* Error State */
@@ -461,28 +518,36 @@
         </button>
     </div>
     
-    <!-- Image Modal with Zoom -->
+    <!-- Enhanced Image Modal -->
     <div class="modal" id="imageModal">
-        <div class="modal-content">
-            <div class="modal-image-container" id="imageContainer">
+        <div class="modal-content" id="modalContent">
+            <div class="modal-image-wrapper" id="imageWrapper">
                 <img class="modal-image" id="modalImage" alt="">
             </div>
-            <button class="modal-close" onclick="closeModal()">✕</button>
-            <button class="modal-nav modal-prev" onclick="navigateImage(-1)">‹</button>
-            <button class="modal-nav modal-next" onclick="navigateImage(1)">›</button>
-            <div class="modal-counter" id="modalCounter">1 / 1</div>
-            <div class="zoom-controls">
-                <button class="zoom-btn" onclick="zoomOut()">−</button>
-                <button class="zoom-btn" onclick="resetZoom()">⟲</button>
-                <button class="zoom-btn" onclick="zoomIn()">+</button>
-            </div>
-            <div style="text-align: center; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 12px; opacity: 0.7;">
-                👆 แตะเพื่อซูม | 👌 บีบนิ้วซูม | 🖱️ สกอลล์ซูม
+            
+            <div class="modal-controls">
+                <button class="modal-close" onclick="closeModal()">✕</button>
+                <button class="modal-nav modal-prev" onclick="navigateImage(-1)">‹</button>
+                <button class="modal-nav modal-next" onclick="navigateImage(1)">›</button>
+                <div class="modal-counter" id="modalCounter">1 / 1</div>
+                
+                <!-- Zoom Info Display -->
+                <div class="zoom-info" id="zoomInfo">100%</div>
+                
+                <!-- Quick Zoom Buttons -->
+                <div class="quick-zoom-buttons">
+                    <button class="quick-zoom-btn" onclick="setZoom(1)">1x</button>
+                    <button class="quick-zoom-btn" onclick="setZoom(2)">2x</button>
+                    <button class="quick-zoom-btn" onclick="setZoom(3)">3x</button>
+                    <button class="quick-zoom-btn" onclick="setZoom(5)">5x</button>
+                </div>
+                
+                <!-- Double Tap Hint -->
+                <div class="double-tap-hint" id="doubleTapHint">Double tap to zoom</div>
             </div>
         </div>
     </div>
     
-    <!-- Remove LIFF SDK - No Authentication needed -->
     <script>
         // Global variables
         let images = [];
@@ -494,23 +559,43 @@
         let baseUrl = '';
         let userId = 'anonymous';
         
-        // Zoom variables
-        let currentZoom = 1;
-        let isPanning = false;
-        let startX = 0;
-        let startY = 0;
-        let translateX = 0;
-        let translateY = 0;
-        
-        // Pinch zoom variables
-        let initialDistance = 0;
-        let isPinching = false;
+        // Enhanced Zoom System
+        const zoomSystem = {
+            scale: 1,
+            minScale: 1,
+            maxScale: 10,
+            translateX: 0,
+            translateY: 0,
+            
+            // Touch tracking
+            touches: [],
+            lastTouchEnd: 0,
+            lastDistance: 0,
+            initialDistance: 0,
+            
+            // Gesture states
+            isPinching: false,
+            isPanning: false,
+            isDoubleTapping: false,
+            
+            // Animation
+            animationId: null,
+            velocity: { x: 0, y: 0 },
+            friction: 0.92,
+            
+            // Elements
+            wrapper: null,
+            image: null,
+            content: null,
+            
+            // Boundaries
+            boundaries: { minX: 0, maxX: 0, minY: 0, maxY: 0 }
+        };
         
         // Initialize (No Authentication Version)
         async function initialize() {
             try {
                 console.log('=== No-Auth Initialization ===');
-                console.log('Current URL:', window.location.href);
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -518,26 +603,12 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
-                // If base_url is not provided, use current origin
-                if (!params.has('base_url')) {
-                    baseUrl = window.location.origin;
-                }
-                
-                console.log('Extracted parameters:', {
-                    lot: lotNumber,
-                    date: imageDate,
-                    baseUrl: baseUrl
-                });
-                
                 if (!lotNumber || !imageDate) {
                     showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
                     return;
                 }
                 
-                // Skip LIFF initialization - work without authentication
-                console.log('Running in No-Auth mode (like delete.html)');
-                
-                // Load images directly without authentication
+                // Load images directly
                 await loadImages();
                 
             } catch (error) {
@@ -549,35 +620,19 @@
         // Load images from server
         async function loadImages() {
             try {
-                console.log('Loading images...');
-                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
-                
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
-                console.log('API URL:', apiUrl);
-                
                 const response = await fetch(apiUrl);
-                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API Error:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data);
-                console.log('Images count:', data.images?.length || 0);
-                
                 images = data.images || [];
                 
                 if (images.length === 0) {
                     showError(`ไม่พบรูปภาพ\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
                     return;
-                }
-                
-                // Log first image URL for debugging
-                if (images.length > 0) {
-                    console.log('First image URL:', images[0].url);
                 }
                 
                 // Update UI
@@ -591,7 +646,7 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
+                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
             }
         }
         
@@ -604,13 +659,10 @@
         
         // Render image grid
         function renderImages() {
-            console.log('Rendering', images.length, 'images');
             const grid = document.getElementById('imageGrid');
             grid.innerHTML = '';
             
             images.forEach((image, index) => {
-                console.log(`Image ${index + 1}:`, image.url);
-                
                 const item = document.createElement('div');
                 item.className = 'image-item';
                 if (selectedImages.has(index)) {
@@ -622,15 +674,12 @@
                 img.alt = `Image ${index + 1}`;
                 img.loading = 'lazy';
                 
-                // Add error handler for images
                 img.onerror = () => {
-                    console.error(`Failed to load image ${index + 1}:`, image.url);
                     img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f0f0f0"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999"%3EError%3C/text%3E%3C/svg%3E';
                 };
                 
                 item.appendChild(img);
                 
-                // Click handler
                 item.onclick = () => {
                     if (selectMode) {
                         toggleImageSelection(index);
@@ -641,8 +690,6 @@
                 
                 grid.appendChild(item);
             });
-            
-            console.log('Rendering completed');
         }
         
         // Toggle select mode
@@ -685,13 +732,11 @@
                 selectedImages.add(index);
             }
             
-            // Update UI
             const items = document.querySelectorAll('.image-item');
             items[index].classList.toggle('selected');
             
             updateSelectionCounter();
             
-            // Update share button
             const shareBtn = document.getElementById('shareBtn');
             if (selectedImages.size > 0) {
                 shareBtn.disabled = false;
@@ -708,7 +753,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Share images - No LIFF version
+        // Share images
         async function shareImages() {
             try {
                 let imagesToShare = [];
@@ -726,15 +771,9 @@
                 
                 showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
                 
-                // Get image IDs
                 const imageIds = imagesToShare.map(img => img.image_id).join(',');
-                
-                // Build share URL - direct to share.html without LIFF
                 const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
                 
-                console.log('Opening share page:', shareUrl);
-                
-                // Open in same window (no LIFF)
                 window.location.href = shareUrl;
                 
             } catch (error) {
@@ -743,236 +782,361 @@
             }
         }
         
-        // Open image modal
+        // Open enhanced modal
         function openModal(index) {
             currentModalIndex = index;
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             const modalCounter = document.getElementById('modalCounter');
             
-            // Reset zoom and pan
-            resetZoom();
-            isPinching = false;
-            isPanning = false;
+            // Initialize zoom system
+            initializeZoomSystem();
             
+            // Load image
             modalImage.src = images[index].url;
             modalCounter.textContent = `${index + 1} / ${images.length}`;
             modal.style.display = 'block';
             
             document.body.style.overflow = 'hidden';
             
-            // Add zoom event listeners with better touch handling
-            const modalImageEl = document.getElementById('modalImage');
-            const containerEl = document.getElementById('imageContainer');
+            // Show double tap hint briefly
+            showDoubleTapHint();
             
-            // Single tap to toggle zoom (with delay to distinguish from double tap)
-            let tapTimeout;
-            modalImageEl.addEventListener('click', (e) => {
-                if (e.detail === 1) { // Single click
-                    tapTimeout = setTimeout(() => {
-                        toggleZoom(e);
-                    }, 200);
-                }
-            });
-            
-            // Double tap to zoom
-            modalImageEl.addEventListener('dblclick', (e) => {
-                clearTimeout(tapTimeout);
-                e.preventDefault();
-                if (currentZoom === 1) {
-                    currentZoom = 2;
-                } else {
-                    currentZoom = 1;
-                }
-                updateZoom();
-            });
-            
-            // Setup all pan and zoom events
-            setupPanEvents();
+            // Set up event listeners
+            setupZoomEventListeners();
         }
         
-        // Close modal
-        function closeModal() {
-            const modal = document.getElementById('imageModal');
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-            resetZoom();
+        // Initialize zoom system
+        function initializeZoomSystem() {
+            zoomSystem.wrapper = document.getElementById('imageWrapper');
+            zoomSystem.image = document.getElementById('modalImage');
+            zoomSystem.content = document.getElementById('modalContent');
+            
+            // Reset zoom state
+            zoomSystem.scale = 1;
+            zoomSystem.translateX = 0;
+            zoomSystem.translateY = 0;
+            zoomSystem.isPinching = false;
+            zoomSystem.isPanning = false;
+            
+            // Apply initial transform
+            updateTransform();
         }
         
-        // Navigate images in modal
-        function navigateImage(direction) {
-            currentModalIndex += direction;
+        // Setup zoom event listeners
+        function setupZoomEventListeners() {
+            const content = zoomSystem.content;
             
-            if (currentModalIndex < 0) {
-                currentModalIndex = images.length - 1;
-            } else if (currentModalIndex >= images.length) {
-                currentModalIndex = 0;
-            }
+            // Touch events
+            content.addEventListener('touchstart', handleTouchStart, { passive: false });
+            content.addEventListener('touchmove', handleTouchMove, { passive: false });
+            content.addEventListener('touchend', handleTouchEnd, { passive: false });
             
-            resetZoom();
+            // Mouse events for desktop
+            content.addEventListener('mousedown', handleMouseDown);
+            content.addEventListener('mousemove', handleMouseMove);
+            content.addEventListener('mouseup', handleMouseUp);
+            content.addEventListener('mouseleave', handleMouseUp);
+            content.addEventListener('wheel', handleWheel, { passive: false });
             
-            const modalImage = document.getElementById('modalImage');
-            const modalCounter = document.getElementById('modalCounter');
-            
-            modalImage.src = images[currentModalIndex].url;
-            modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
+            // Double click for desktop
+            content.addEventListener('dblclick', handleDoubleClick);
         }
         
-        // Zoom functions with better touch support
-        function toggleZoom(e) {
-            // Prevent toggle zoom when pinching
-            if (isPinching || (e && e.touches && e.touches.length > 1)) return;
-            
-            if (currentZoom === 1) {
-                zoomIn();
-            } else {
-                resetZoom();
-            }
-        }
-        
-        function zoomIn() {
-            currentZoom = Math.min(currentZoom + 0.5, 3);
-            updateZoom();
-        }
-        
-        function zoomOut() {
-            currentZoom = Math.max(currentZoom - 0.5, 1);
-            updateZoom();
-        }
-        
-        function resetZoom() {
-            currentZoom = 1;
-            translateX = 0;
-            translateY = 0;
-            isPanning = false;
-            isPinching = false;
-            updateZoom();
-        }
-        
-        function updateZoom() {
-            const modalImage = document.getElementById('modalImage');
-            const container = document.getElementById('imageContainer');
-            
-            if (currentZoom > 1) {
-                modalImage.classList.add('zoomed');
-                modalImage.style.cursor = 'move';
-                container.style.cursor = 'move';
-            } else {
-                modalImage.classList.remove('zoomed');
-                modalImage.style.cursor = 'zoom-in';
-                container.style.cursor = 'zoom-in';
-                translateX = 0;
-                translateY = 0;
-            }
-            
-            // Apply transform with zoom and translation
-            modalImage.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
-            
-            // Update zoom display (optional)
-            const zoomPercent = Math.round(currentZoom * 100);
-            console.log(`Zoom: ${zoomPercent}%`);
-        }
-        
-        // Setup pan and pinch zoom events
-        function setupPanEvents() {
-            const container = document.getElementById('imageContainer');
-            const modalImage = document.getElementById('modalImage');
-            
-            // Mouse events
-            container.onmousedown = startPan;
-            container.onmousemove = pan;
-            container.onmouseup = endPan;
-            container.onmouseleave = endPan;
-            
-            // Touch events for mobile
-            container.addEventListener('touchstart', handleTouchStart, { passive: false });
-            container.addEventListener('touchmove', handleTouchMove, { passive: false });
-            container.addEventListener('touchend', handleTouchEnd, { passive: false });
-            
-            // Prevent image drag
-            modalImage.ondragstart = () => false;
-            
-            // Mouse wheel zoom
-            container.onwheel = handleWheel;
-            
-            // Prevent default touch behaviors
-            container.addEventListener('gesturestart', e => e.preventDefault());
-            container.addEventListener('gesturechange', e => e.preventDefault());
-            container.addEventListener('gestureend', e => e.preventDefault());
-        }
-        
-        // Touch variables
-        let touches = [];
-        let lastTouchDistance = 0;
-        let initialPinchZoom = 1;
-        
-        // Handle touch start with better pinch detection
+        // Touch event handlers
         function handleTouchStart(e) {
-            touches = Array.from(e.touches);
+            e.preventDefault();
+            zoomSystem.touches = Array.from(e.touches);
             
-            if (touches.length === 2) {
-                // Two fingers - start pinch zoom
-                isPinching = true;
-                isPanning = false;
-                initialDistance = getDistance(touches[0], touches[1]);
-                lastTouchDistance = initialDistance;
-                initialPinchZoom = currentZoom;
-                e.preventDefault();
-            } else if (touches.length === 1 && currentZoom > 1) {
-                // One finger - start pan if zoomed
-                isPinching = false;
-                startPan(touches[0]);
-                e.preventDefault();
+            if (zoomSystem.touches.length === 2) {
+                // Start pinch zoom
+                zoomSystem.isPinching = true;
+                zoomSystem.isPanning = false;
+                zoomSystem.initialDistance = getDistance(zoomSystem.touches[0], zoomSystem.touches[1]);
+                zoomSystem.lastDistance = zoomSystem.initialDistance;
+            } else if (zoomSystem.touches.length === 1) {
+                // Check for double tap
+                const now = Date.now();
+                const timeSinceLastTap = now - zoomSystem.lastTouchEnd;
+                
+                if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+                    handleDoubleTap(e.touches[0]);
+                } else {
+                    // Start pan if zoomed
+                    if (zoomSystem.scale > 1) {
+                        zoomSystem.isPanning = true;
+                        zoomSystem.startX = e.touches[0].clientX - zoomSystem.translateX;
+                        zoomSystem.startY = e.touches[0].clientY - zoomSystem.translateY;
+                    }
+                }
             }
         }
         
-        // Handle touch move with smooth pinch zoom
         function handleTouchMove(e) {
             e.preventDefault();
-            touches = Array.from(e.touches);
+            zoomSystem.touches = Array.from(e.touches);
             
-            if (touches.length === 2 && isPinching) {
-                // Pinch zoom
-                const currentDistance = getDistance(touches[0], touches[1]);
-                const scale = currentDistance / initialDistance;
+            if (zoomSystem.isPinching && zoomSystem.touches.length === 2) {
+                // Handle pinch zoom
+                const currentDistance = getDistance(zoomSystem.touches[0], zoomSystem.touches[1]);
+                const scale = currentDistance / zoomSystem.initialDistance;
                 
-                // Calculate new zoom based on initial zoom when pinch started
-                const newZoom = Math.max(1, Math.min(3, initialPinchZoom * scale));
+                // Calculate center point between two fingers
+                const centerX = (zoomSystem.touches[0].clientX + zoomSystem.touches[1].clientX) / 2;
+                const centerY = (zoomSystem.touches[0].clientY + zoomSystem.touches[1].clientY) / 2;
                 
-                // Apply smooth zoom
-                if (Math.abs(newZoom - currentZoom) > 0.01) {
-                    currentZoom = newZoom;
-                    updateZoom();
+                // Apply zoom around center point
+                const newScale = Math.max(zoomSystem.minScale, Math.min(zoomSystem.maxScale, zoomSystem.scale * scale));
+                
+                if (newScale !== zoomSystem.scale) {
+                    const rect = zoomSystem.content.getBoundingClientRect();
+                    const x = centerX - rect.left;
+                    const y = centerY - rect.top;
+                    
+                    zoomTo(newScale, x, y);
                 }
                 
-                lastTouchDistance = currentDistance;
-            } else if (touches.length === 1 && isPanning && currentZoom > 1) {
-                // Pan
-                pan(touches[0]);
+                zoomSystem.lastDistance = currentDistance;
+            } else if (zoomSystem.isPanning && zoomSystem.touches.length === 1 && zoomSystem.scale > 1) {
+                // Handle pan
+                const touch = zoomSystem.touches[0];
+                const newX = touch.clientX - zoomSystem.startX;
+                const newY = touch.clientY - zoomSystem.startY;
+                
+                // Apply boundaries
+                const boundaries = calculateBoundaries();
+                zoomSystem.translateX = Math.max(boundaries.minX, Math.min(boundaries.maxX, newX));
+                zoomSystem.translateY = Math.max(boundaries.minY, Math.min(boundaries.maxY, newY));
+                
+                updateTransform();
             }
         }
         
-        // Handle touch end
         function handleTouchEnd(e) {
-            touches = Array.from(e.touches);
+            e.preventDefault();
+            zoomSystem.lastTouchEnd = Date.now();
+            zoomSystem.touches = Array.from(e.touches);
             
-            if (touches.length === 0) {
-                // All fingers lifted
-                isPinching = false;
-                endPan();
-            } else if (touches.length === 1) {
-                // One finger remains - switch from pinch to pan
-                isPinching = false;
-                if (currentZoom > 1) {
-                    isPanning = false; // Reset panning
-                    // Restart pan with remaining finger
-                    setTimeout(() => {
-                        if (touches.length === 1) {
-                            startPan(touches[0]);
-                        }
-                    }, 50);
+            if (zoomSystem.touches.length === 0) {
+                zoomSystem.isPinching = false;
+                zoomSystem.isPanning = false;
+                
+                // Add momentum
+                if (Math.abs(zoomSystem.velocity.x) > 0.5 || Math.abs(zoomSystem.velocity.y) > 0.5) {
+                    startMomentum();
+                }
+            } else if (zoomSystem.touches.length === 1) {
+                // Switch from pinch to pan
+                zoomSystem.isPinching = false;
+                if (zoomSystem.scale > 1) {
+                    zoomSystem.isPanning = true;
+                    zoomSystem.startX = zoomSystem.touches[0].clientX - zoomSystem.translateX;
+                    zoomSystem.startY = zoomSystem.touches[0].clientY - zoomSystem.translateY;
                 }
             }
+        }
+        
+        // Double tap handler
+        function handleDoubleTap(touch) {
+            const rect = zoomSystem.content.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            if (zoomSystem.scale === 1) {
+                animateZoom(2.5, x, y);
+            } else {
+                animateZoom(1, rect.width / 2, rect.height / 2);
+            }
+        }
+        
+        // Mouse event handlers for desktop
+        function handleMouseDown(e) {
+            if (e.button !== 0) return; // Only left click
+            
+            if (zoomSystem.scale > 1) {
+                zoomSystem.isPanning = true;
+                zoomSystem.startX = e.clientX - zoomSystem.translateX;
+                zoomSystem.startY = e.clientY - zoomSystem.translateY;
+                e.preventDefault();
+            }
+        }
+        
+        function handleMouseMove(e) {
+            if (!zoomSystem.isPanning) return;
+            
+            const newX = e.clientX - zoomSystem.startX;
+            const newY = e.clientY - zoomSystem.startY;
+            
+            const boundaries = calculateBoundaries();
+            zoomSystem.translateX = Math.max(boundaries.minX, Math.min(boundaries.maxX, newX));
+            zoomSystem.translateY = Math.max(boundaries.minY, Math.min(boundaries.maxY, newY));
+            
+            updateTransform();
+        }
+        
+        function handleMouseUp() {
+            zoomSystem.isPanning = false;
+        }
+        
+        // Mouse wheel zoom
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            const rect = zoomSystem.content.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.max(zoomSystem.minScale, Math.min(zoomSystem.maxScale, zoomSystem.scale * delta));
+            
+            zoomTo(newScale, x, y);
+        }
+        
+        // Double click handler for desktop
+        function handleDoubleClick(e) {
+            const rect = zoomSystem.content.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (zoomSystem.scale === 1) {
+                animateZoom(2.5, x, y);
+            } else {
+                animateZoom(1, rect.width / 2, rect.height / 2);
+            }
+        }
+        
+        // Zoom to specific scale and point
+        function zoomTo(scale, x, y) {
+            const prevScale = zoomSystem.scale;
+            zoomSystem.scale = scale;
+            
+            // Adjust translation to zoom around point
+            const scaleDiff = scale / prevScale;
+            zoomSystem.translateX = x - (x - zoomSystem.translateX) * scaleDiff;
+            zoomSystem.translateY = y - (y - zoomSystem.translateY) * scaleDiff;
+            
+            // Apply boundaries
+            const boundaries = calculateBoundaries();
+            zoomSystem.translateX = Math.max(boundaries.minX, Math.min(boundaries.maxX, zoomSystem.translateX));
+            zoomSystem.translateY = Math.max(boundaries.minY, Math.min(boundaries.maxY, zoomSystem.translateY));
+            
+            updateTransform();
+            updateZoomInfo();
+        }
+        
+        // Animate zoom with smooth transition
+        function animateZoom(targetScale, x, y) {
+            const startScale = zoomSystem.scale;
+            const startX = zoomSystem.translateX;
+            const startY = zoomSystem.translateY;
+            
+            const targetX = x - (x - startX) * (targetScale / startScale);
+            const targetY = y - (y - startY) * (targetScale / startScale);
+            
+            const duration = 300;
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Ease out cubic
+                const eased = 1 - Math.pow(1 - progress, 3);
+                
+                zoomSystem.scale = startScale + (targetScale - startScale) * eased;
+                zoomSystem.translateX = startX + (targetX - startX) * eased;
+                zoomSystem.translateY = startY + (targetY - startY) * eased;
+                
+                // Apply boundaries
+                if (zoomSystem.scale <= 1) {
+                    zoomSystem.translateX = 0;
+                    zoomSystem.translateY = 0;
+                } else {
+                    const boundaries = calculateBoundaries();
+                    zoomSystem.translateX = Math.max(boundaries.minX, Math.min(boundaries.maxX, zoomSystem.translateX));
+                    zoomSystem.translateY = Math.max(boundaries.minY, Math.min(boundaries.maxY, zoomSystem.translateY));
+                }
+                
+                updateTransform();
+                updateZoomInfo();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            animate();
+        }
+        
+        // Set zoom to specific level
+        function setZoom(level) {
+            const rect = zoomSystem.content.getBoundingClientRect();
+            animateZoom(level, rect.width / 2, rect.height / 2);
+            
+            // Update button states
+            document.querySelectorAll('.quick-zoom-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        // Calculate pan boundaries
+        function calculateBoundaries() {
+            const rect = zoomSystem.content.getBoundingClientRect();
+            const scaledWidth = rect.width * zoomSystem.scale;
+            const scaledHeight = rect.height * zoomSystem.scale;
+            
+            const minX = Math.min(0, rect.width - scaledWidth);
+            const maxX = Math.max(0, rect.width - scaledWidth);
+            const minY = Math.min(0, rect.height - scaledHeight);
+            const maxY = Math.max(0, rect.height - scaledHeight);
+            
+            return { minX, maxX, minY, maxY };
+        }
+        
+        // Update transform
+        function updateTransform() {
+            zoomSystem.wrapper.style.transform = 
+                `translate(${zoomSystem.translateX}px, ${zoomSystem.translateY}px) scale(${zoomSystem.scale})`;
+        }
+        
+        // Update zoom info display
+        function updateZoomInfo() {
+            const zoomInfo = document.getElementById('zoomInfo');
+            zoomInfo.textContent = `${Math.round(zoomSystem.scale * 100)}%`;
+            zoomInfo.classList.add('visible');
+            
+            clearTimeout(zoomInfo.hideTimeout);
+            zoomInfo.hideTimeout = setTimeout(() => {
+                zoomInfo.classList.remove('visible');
+            }, 2000);
+        }
+        
+        // Start momentum scrolling
+        function startMomentum() {
+            function momentum() {
+                if (Math.abs(zoomSystem.velocity.x) < 0.5 && Math.abs(zoomSystem.velocity.y) < 0.5) {
+                    return;
+                }
+                
+                zoomSystem.translateX += zoomSystem.velocity.x;
+                zoomSystem.translateY += zoomSystem.velocity.y;
+                
+                // Apply boundaries
+                const boundaries = calculateBoundaries();
+                zoomSystem.translateX = Math.max(boundaries.minX, Math.min(boundaries.maxX, zoomSystem.translateX));
+                zoomSystem.translateY = Math.max(boundaries.minY, Math.min(boundaries.maxY, zoomSystem.translateY));
+                
+                // Apply friction
+                zoomSystem.velocity.x *= zoomSystem.friction;
+                zoomSystem.velocity.y *= zoomSystem.friction;
+                
+                updateTransform();
+                
+                zoomSystem.animationId = requestAnimationFrame(momentum);
+            }
+            
+            momentum();
         }
         
         // Calculate distance between two touches
@@ -982,54 +1146,58 @@
             return Math.sqrt(dx * dx + dy * dy);
         }
         
-        // Handle mouse wheel zoom
-        function handleWheel(e) {
-            e.preventDefault();
+        // Show double tap hint
+        function showDoubleTapHint() {
+            const hint = document.getElementById('doubleTapHint');
+            hint.classList.add('show');
             
-            if (e.deltaY < 0) {
-                // Scroll up - zoom in
-                currentZoom = Math.min(currentZoom + 0.1, 3);
-            } else {
-                // Scroll down - zoom out
-                currentZoom = Math.max(currentZoom - 0.1, 1);
+            setTimeout(() => {
+                hint.classList.remove('show');
+            }, 2000);
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            
+            // Remove event listeners
+            const content = zoomSystem.content;
+            content.removeEventListener('touchstart', handleTouchStart);
+            content.removeEventListener('touchmove', handleTouchMove);
+            content.removeEventListener('touchend', handleTouchEnd);
+            content.removeEventListener('mousedown', handleMouseDown);
+            content.removeEventListener('mousemove', handleMouseMove);
+            content.removeEventListener('mouseup', handleMouseUp);
+            content.removeEventListener('mouseleave', handleMouseUp);
+            content.removeEventListener('wheel', handleWheel);
+            content.removeEventListener('dblclick', handleDoubleClick);
+            
+            // Cancel any ongoing animation
+            if (zoomSystem.animationId) {
+                cancelAnimationFrame(zoomSystem.animationId);
+            }
+        }
+        
+        // Navigate images
+        function navigateImage(direction) {
+            currentModalIndex += direction;
+            
+            if (currentModalIndex < 0) {
+                currentModalIndex = images.length - 1;
+            } else if (currentModalIndex >= images.length) {
+                currentModalIndex = 0;
             }
             
-            updateZoom();
-        }
-        
-        function startPan(e) {
-            if (currentZoom <= 1 || isPinching) return;
-            
-            isPanning = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
+            // Reset zoom when changing images
+            initializeZoomSystem();
             
             const modalImage = document.getElementById('modalImage');
-            modalImage.style.cursor = 'grabbing';
-        }
-        
-        function pan(e) {
-            if (!isPanning || currentZoom <= 1 || isPinching) return;
+            const modalCounter = document.getElementById('modalCounter');
             
-            e.preventDefault();
-            
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            
-            // Limit panning based on zoom level
-            const maxTranslate = (currentZoom - 1) * 200;
-            translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
-            translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
-            
-            updateZoom();
-        }
-        
-        function endPan() {
-            isPanning = false;
-            const modalImage = document.getElementById('modalImage');
-            if (currentZoom > 1) {
-                modalImage.style.cursor = 'move';
-            }
+            modalImage.src = images[currentModalIndex].url;
+            modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
         }
         
         // Show error
@@ -1062,13 +1230,6 @@
             }, duration);
         }
         
-        // Modal events
-        document.getElementById('imageModal').addEventListener('click', (e) => {
-            if (e.target.id === 'imageModal') {
-                closeModal();
-            }
-        });
-        
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('imageModal');
@@ -1080,14 +1241,24 @@
                 } else if (e.key === 'Escape') {
                     closeModal();
                 } else if (e.key === '+' || e.key === '=') {
-                    zoomIn();
+                    const newScale = Math.min(zoomSystem.scale * 1.2, zoomSystem.maxScale);
+                    const rect = zoomSystem.content.getBoundingClientRect();
+                    animateZoom(newScale, rect.width / 2, rect.height / 2);
                 } else if (e.key === '-') {
-                    zoomOut();
+                    const newScale = Math.max(zoomSystem.scale * 0.8, zoomSystem.minScale);
+                    const rect = zoomSystem.content.getBoundingClientRect();
+                    animateZoom(newScale, rect.width / 2, rect.height / 2);
                 } else if (e.key === '0') {
-                    resetZoom();
+                    const rect = zoomSystem.content.getBoundingClientRect();
+                    animateZoom(1, rect.width / 2, rect.height / 2);
                 }
             }
         });
+        
+        // Prevent default touch behavior on modal
+        document.getElementById('imageModal').addEventListener('gesturestart', e => e.preventDefault());
+        document.getElementById('imageModal').addEventListener('gesturechange', e => e.preventDefault());
+        document.getElementById('imageModal').addEventListener('gestureend', e => e.preventDefault());
         
         // Initialize on load
         window.addEventListener('load', initialize);
