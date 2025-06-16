@@ -721,21 +721,19 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Main share function
+        // Main share function - Fixed version
         async function shareImages() {
             try {
-                // Check if LIFF is available and user is logged in
-                if (!liff || !isLoggedIn) {
-                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
-                    liff.login();
+                // ตรวจสอบว่า LIFF พร้อมใช้งานหรือไม่
+                if (!liff) {
+                    showToast('กำลังเริ่มต้นระบบ กรุณารอสักครู่...');
                     return;
                 }
                 
-                // Check if shareTargetPicker is available
-                if (!liff.isApiAvailable('shareTargetPicker')) {
-                    showToast('❌ ฟีเจอร์นี้ใช้ได้เฉพาะ LINE เวอร์ชัน 10.3.0 ขึ้นไป');
-                    // Fallback to old share method
-                    shareImagesOldMethod();
+                // ตรวจสอบว่า login แล้วหรือยัง
+                if (!liff.isLoggedIn()) {
+                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
+                    liff.login();
                     return;
                 }
                 
@@ -752,17 +750,132 @@
                     return;
                 }
                 
-                // If more than 5 images, show options
-                if (imagesToShare.length > 5) {
-                    showShareOptions(imagesToShare);
-                    return;
-                }
+                // Log for debugging
+                console.log('Images to share:', imagesToShare.length);
+                console.log('LIFF version:', liff.getVersion());
                 
-                // Process images and share
-                await processAndShare(imagesToShare);
+                // ตรวจสอบว่าสามารถใช้ shareTargetPicker ได้หรือไม่
+                if (liff.isApiAvailable('shareTargetPicker')) {
+                    console.log('shareTargetPicker is available');
+                    
+                    // ถ้ามีมากกว่า 5 รูป ให้แสดงตัวเลือก
+                    if (imagesToShare.length > 5) {
+                        showShareOptions(imagesToShare);
+                    } else {
+                        // แชร์ได้เลย
+                        await shareWithTargetPicker(imagesToShare);
+                    }
+                } else {
+                    console.log('shareTargetPicker is NOT available, using fallback');
+                    // ใช้วิธีเดิม (redirect ไปหน้า share.html)
+                    fallbackShare(imagesToShare);
+                }
                 
             } catch (error) {
                 console.error('Share error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการแชร์: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Share using shareTargetPicker (Fixed version)
+        async function shareWithTargetPicker(imagesToShare, batchInfo = null) {
+            const shareBtn = document.getElementById('shareBtn');
+            const originalText = shareBtn.innerHTML;
+            shareBtn.disabled = true;
+            shareBtn.innerHTML = '<span>⏳</span><span>กำลังเตรียมรูป...</span>';
+            
+            try {
+                // เตรียม messages array
+                const messages = [];
+                
+                // สร้างข้อความ header
+                let headerText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}`;
+                
+                if (batchInfo) {
+                    headerText += `\n🖼️ รูปที่ ${batchInfo.start}-${batchInfo.end} จากทั้งหมด ${batchInfo.total} รูป`;
+                } else {
+                    headerText += `\n🖼️ จำนวน ${imagesToShare.length} รูป`;
+                }
+                
+                messages.push({
+                    type: 'text',
+                    text: headerText
+                });
+                
+                // เพิ่มรูปภาพ (สูงสุด 5 รูป)
+                const maxImages = Math.min(imagesToShare.length, 5);
+                for (let i = 0; i < maxImages; i++) {
+                    const image = imagesToShare[i];
+                    let imageUrl = image.url;
+                    
+                    // ตรวจสอบว่า URL เป็น absolute หรือไม่
+                    if (!imageUrl.startsWith('http')) {
+                        imageUrl = `${window.location.origin}${imageUrl}`;
+                    }
+                    
+                    console.log(`Adding image ${i + 1}:`, imageUrl);
+                    
+                    messages.push({
+                        type: 'image',
+                        originalContentUrl: imageUrl,
+                        previewImageUrl: imageUrl
+                    });
+                }
+                
+                console.log('Prepared messages:', messages);
+                
+                // Update button
+                shareBtn.innerHTML = '<span>📤</span><span>เลือกห้องแชท...</span>';
+                
+                // เรียกใช้ shareTargetPicker
+                try {
+                    const result = await liff.shareTargetPicker(messages);
+                    console.log('Share result:', result);
+                    
+                    if (result && result.status === 'success') {
+                        showToast('✅ แชร์รูปภาพเรียบร้อยแล้ว');
+                        
+                        // ถ้ามีรูปเหลือและเป็นการแชร์แบบแบ่งชุด
+                        if (batchInfo && batchInfo.hasMore) {
+                            showContinueShareModal(batchInfo);
+                        } else if (selectMode) {
+                            toggleSelectMode();
+                        }
+                    } else {
+                        showToast('ยกเลิกการแชร์');
+                    }
+                } catch (shareError) {
+                    console.error('shareTargetPicker error:', shareError);
+                    
+                    // ถ้า error เป็นเพราะ API ไม่พร้อม ให้ใช้ fallback
+                    if (shareError.code === 'UNAVAILABLE') {
+                        console.log('API unavailable, using fallback');
+                        fallbackShare(imagesToShare);
+                    } else {
+                        throw shareError;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error in shareWithTargetPicker:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการแชร์: ' + (error.message || 'Unknown error'));
+            } finally {
+                shareBtn.disabled = false;
+                shareBtn.innerHTML = originalText;
+            }
+        }
+        
+        // Fallback share method (redirect to share.html)
+        function fallbackShare(imagesToShare) {
+            try {
+                const imageIds = imagesToShare.map(img => img.image_id).join(',');
+                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
+                
+                console.log('Fallback share URL:', shareUrl);
+                window.location.href = shareUrl;
+                
+            } catch (error) {
+                console.error('Fallback share error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการแชร์');
             }
         }
@@ -789,6 +902,11 @@
                         </button>
                         
                         <button class="share-modal-btn share-modal-btn-secondary" 
+                                onclick="fallbackShareAll()">
+                            🔗 ใช้วิธีแชร์แบบเดิม
+                        </button>
+                        
+                        <button class="share-modal-btn share-modal-btn-secondary" 
                                 onclick="closeShareOptions()">
                             ยกเลิก
                         </button>
@@ -799,7 +917,7 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
         
-        // Share in batches (5 at a time)
+        // Share in batches
         async function shareInBatches() {
             closeShareOptions();
             
@@ -810,30 +928,19 @@
                 imagesToShare = images;
             }
             
-            // Start with first 5 images
-            window.currentBatch = 0;
-            window.allImagesToShare = imagesToShare;
-            await shareNextBatch();
-        }
-        
-        // Share next batch of 5 images
-        async function shareNextBatch() {
-            const startIdx = window.currentBatch * 5;
-            const endIdx = Math.min(startIdx + 5, window.allImagesToShare.length);
-            const batchImages = window.allImagesToShare.slice(startIdx, endIdx);
+            // เริ่มที่ชุดแรก
+            const batch1 = imagesToShare.slice(0, 5);
+            const batchInfo = {
+                start: 1,
+                end: Math.min(5, imagesToShare.length),
+                total: imagesToShare.length,
+                currentBatch: 0,
+                hasMore: imagesToShare.length > 5,
+                allImages: imagesToShare
+            };
             
-            if (batchImages.length === 0) {
-                showToast('✅ แชร์รูปภาพทั้งหมดเรียบร้อยแล้ว');
-                if (selectMode) toggleSelectMode();
-                return;
-            }
-            
-            const isLastBatch = endIdx >= window.allImagesToShare.length;
-            await processAndShare(batchImages, !isLastBatch);
-            
-            if (!isLastBatch) {
-                window.currentBatch++;
-            }
+            window.shareBatchInfo = batchInfo;
+            await shareWithTargetPicker(batch1, batchInfo);
         }
         
         // Share first 5 only
@@ -847,8 +954,22 @@
                 imagesToShare = images;
             }
             
-            const first5Images = imagesToShare.slice(0, 5);
-            await processAndShare(first5Images);
+            const first5 = imagesToShare.slice(0, 5);
+            await shareWithTargetPicker(first5);
+        }
+        
+        // Use fallback share for all images
+        function fallbackShareAll() {
+            closeShareOptions();
+            
+            let imagesToShare = [];
+            if (selectMode && selectedImages.size > 0) {
+                imagesToShare = Array.from(selectedImages).map(index => images[index]);
+            } else {
+                imagesToShare = images;
+            }
+            
+            fallbackShare(imagesToShare);
         }
         
         // Close share options modal
@@ -857,86 +978,25 @@
             if (modal) modal.remove();
         }
         
-        // Process and share images using shareTargetPicker
-        async function processAndShare(imagesToShare, hasMore = false) {
-            const shareBtn = document.getElementById('shareBtn');
-            const originalText = shareBtn.innerHTML;
-            shareBtn.disabled = true;
-            shareBtn.innerHTML = '<span>⏳</span><span>กำลังเตรียมรูป...</span>';
-            
-            try {
-                // Prepare messages
-                const messages = [];
-                
-                // Header message
-                const headerText = hasMore 
-                    ? `📸 รูปภาพ QC (ชุดที่ ${window.currentBatch + 1})\n📦 Lot: ${lotNumber}\n🖼️ รูปที่ ${window.currentBatch * 5 + 1}-${window.currentBatch * 5 + imagesToShare.length}`
-                    : `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป`;
-                
-                messages.push({
-                    type: 'text',
-                    text: headerText
-                });
-                
-                // Add images
-                for (const image of imagesToShare) {
-                    const imageUrl = image.url.startsWith('http') 
-                        ? image.url 
-                        : `${baseUrl}${image.url}`;
-                    
-                    messages.push({
-                        type: 'image',
-                        originalContentUrl: imageUrl,
-                        previewImageUrl: imageUrl
-                    });
-                }
-                
-                // Update button
-                shareBtn.innerHTML = '<span>📤</span><span>เลือกห้องแชท...</span>';
-                
-                // Use shareTargetPicker
-                const result = await liff.shareTargetPicker(messages);
-                
-                if (result && result.status === 'success') {
-                    if (hasMore) {
-                        // Show option to continue sharing
-                        showContinueShareModal();
-                    } else {
-                        showToast('✅ แชร์รูปภาพเรียบร้อยแล้ว');
-                        if (selectMode) toggleSelectMode();
-                    }
-                } else {
-                    showToast('ยกเลิกการแชร์');
-                }
-                
-            } catch (error) {
-                console.error('Share error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์: ' + error.message);
-            } finally {
-                shareBtn.disabled = false;
-                shareBtn.innerHTML = originalText;
-            }
-        }
-        
         // Show continue share modal
-        function showContinueShareModal() {
-            const remaining = window.allImagesToShare.length - (window.currentBatch + 1) * 5;
+        function showContinueShareModal(batchInfo) {
+            const remaining = batchInfo.total - batchInfo.end;
             const modalHtml = `
                 <div class="share-modal" id="continueShareModal">
                     <div class="share-modal-content">
                         <h3>✅ ส่งรูปสำเร็จ!</h3>
                         <p style="margin: 15px 0;">
-                            ส่งไปแล้ว ${Math.min(5, window.allImagesToShare.length - window.currentBatch * 5)} รูป<br>
+                            ส่งไปแล้ว ${batchInfo.end - batchInfo.start + 1} รูป<br>
                             <strong style="color: #FF6B00;">เหลืออีก ${remaining} รูป</strong>
                         </p>
                         
                         <button class="share-modal-btn share-modal-btn-primary" 
-                                onclick="closeContinueModal(); shareNextBatch();">
+                                onclick="continueSharing()">
                             📤 ส่งรูปที่เหลือต่อ
                         </button>
                         
                         <button class="share-modal-btn share-modal-btn-secondary" 
-                                onclick="closeContinueModal()">
+                                onclick="finishSharing()">
                             ✅ เสร็จสิ้น
                         </button>
                     </div>
@@ -946,32 +1006,38 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
         
-        // Close continue modal
-        function closeContinueModal() {
+        // Continue sharing next batch
+        async function continueSharing() {
             const modal = document.getElementById('continueShareModal');
             if (modal) modal.remove();
+            
+            const batchInfo = window.shareBatchInfo;
+            if (!batchInfo) return;
+            
+            // คำนวณชุดถัดไป
+            const nextStart = batchInfo.end + 1;
+            const nextEnd = Math.min(nextStart + 4, batchInfo.total);
+            const nextBatch = batchInfo.allImages.slice(nextStart - 1, nextEnd);
+            
+            // อัพเดท batchInfo
+            batchInfo.currentBatch++;
+            batchInfo.start = nextStart;
+            batchInfo.end = nextEnd;
+            batchInfo.hasMore = nextEnd < batchInfo.total;
+            
+            await shareWithTargetPicker(nextBatch, batchInfo);
         }
         
-        // Old share method (fallback)
-        async function shareImagesOldMethod() {
-            try {
-                let imagesToShare = [];
-                
-                if (selectMode && selectedImages.size > 0) {
-                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
-                } else {
-                    imagesToShare = images;
-                }
-                
-                const imageIds = imagesToShare.map(img => img.image_id).join(',');
-                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
-                
-                window.location.href = shareUrl;
-                
-            } catch (error) {
-                console.error('Share error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์');
+        // Finish sharing
+        function finishSharing() {
+            const modal = document.getElementById('continueShareModal');
+            if (modal) modal.remove();
+            
+            if (selectMode) {
+                toggleSelectMode();
             }
+            
+            window.shareBatchInfo = null;
         }
         
         // Open image modal
