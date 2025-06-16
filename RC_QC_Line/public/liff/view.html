@@ -536,6 +536,7 @@
         let startY = 0;
         let translateX = 0;
         let translateY = 0;
+        let initialDistance = 0;
         
         // Initialize
         async function initialize() {
@@ -557,6 +558,7 @@
                 
                 // Initialize LIFF
                 try {
+                    liff = window.liff;
                     await liff.init({ liffId: '2007575196-NWaXrZVE' });
                     console.log('LIFF initialized successfully');
                     
@@ -571,6 +573,7 @@
                 } catch (liffError) {
                     console.error('LIFF initialization failed:', liffError);
                     console.log('Continuing without LIFF features');
+                    liff = window.liff; // Ensure liff is set even if init fails
                 }
                 
                 // Load images
@@ -725,8 +728,16 @@
         async function shareImages() {
             try {
                 // ตรวจสอบว่า LIFF พร้อมใช้งานหรือไม่
-                if (!liff) {
-                    showToast('กำลังเริ่มต้นระบบ กรุณารอสักครู่...');
+                if (!liff || !window.liff) {
+                    console.log('LIFF not initialized, trying fallback');
+                    // ใช้วิธี fallback ทันที
+                    let imagesToShare = [];
+                    if (selectMode && selectedImages.size > 0) {
+                        imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                    } else {
+                        imagesToShare = images;
+                    }
+                    fallbackShare(imagesToShare);
                     return;
                 }
                 
@@ -773,7 +784,14 @@
                 
             } catch (error) {
                 console.error('Share error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์: ' + (error.message || 'Unknown error'));
+                // Try fallback on any error
+                let imagesToShare = [];
+                if (selectMode && selectedImages.size > 0) {
+                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                } else {
+                    imagesToShare = images;
+                }
+                fallbackShare(imagesToShare);
             }
         }
         
@@ -1156,28 +1174,80 @@
             isPanning = false;
         }
         
+        // Touch variables
         let touches = [];
+        let lastTouchDistance = 0;
+        let initialPinchZoom = 1;
         
+        // Handle touch start with better pinch detection
         function handleTouchStart(e) {
             touches = Array.from(e.touches);
-            if (touches.length === 1 && currentZoom > 1) {
+            
+            if (touches.length === 2) {
+                // Two fingers - start pinch zoom
+                e.preventDefault();
+                isPanning = false;
+                initialDistance = getDistance(touches[0], touches[1]);
+                lastTouchDistance = initialDistance;
+                initialPinchZoom = currentZoom;
+            } else if (touches.length === 1 && currentZoom > 1) {
+                // One finger - start pan if zoomed
                 startPan(touches[0]);
             }
         }
         
+        // Handle touch move with smooth pinch zoom
         function handleTouchMove(e) {
             e.preventDefault();
             touches = Array.from(e.touches);
-            if (touches.length === 1 && isPanning) {
+            
+            if (touches.length === 2) {
+                // Pinch zoom
+                const currentDistance = getDistance(touches[0], touches[1]);
+                const scale = currentDistance / initialDistance;
+                
+                // Calculate new zoom based on initial zoom when pinch started
+                const newZoom = Math.max(1, Math.min(3, initialPinchZoom * scale));
+                
+                // Apply smooth zoom
+                if (Math.abs(newZoom - currentZoom) > 0.01) {
+                    currentZoom = newZoom;
+                    updateZoom();
+                }
+                
+                lastTouchDistance = currentDistance;
+            } else if (touches.length === 1 && isPanning && currentZoom > 1) {
+                // Pan
                 pan(touches[0]);
             }
         }
         
+        // Handle touch end
         function handleTouchEnd(e) {
             touches = Array.from(e.touches);
+            
             if (touches.length === 0) {
-                endPan();
+                // All fingers lifted
+                isPanning = false;
+            } else if (touches.length === 1) {
+                // One finger remains - switch from pinch to pan
+                if (currentZoom > 1) {
+                    isPanning = false; // Reset panning
+                    // Restart pan with remaining finger
+                    setTimeout(() => {
+                        if (touches.length === 1) {
+                            startPan(touches[0]);
+                        }
+                    }, 50);
+                }
             }
+        }
+        
+        // Calculate distance between two touches
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
         }
         
         function handleWheel(e) {
