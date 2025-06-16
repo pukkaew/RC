@@ -732,7 +732,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Main share function - COMPLETELY REWRITTEN
+        // Main share function - WITH SMART FALLBACK
         async function shareImages() {
             try {
                 // Prepare images to share
@@ -750,64 +750,33 @@
                 
                 console.log('Images to share:', imagesToShare.length);
                 
-                // Check if LIFF is available
-                if (!liff || !window.liff) {
-                    console.log('LIFF not available, using fallback');
-                    fallbackShare(imagesToShare);
-                    return;
-                }
-                
-                // Check if logged in
-                if (!liff.isLoggedIn()) {
-                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
-                    liff.login();
-                    return;
-                }
-                
-                // Try to check if shareTargetPicker is available
-                let canUseShareTargetPicker = false;
-                try {
-                    canUseShareTargetPicker = liff.isApiAvailable('shareTargetPicker');
-                } catch (e) {
-                    console.log('Error checking API availability:', e);
-                    canUseShareTargetPicker = false;
-                }
-                
-                if (canUseShareTargetPicker) {
-                    console.log('shareTargetPicker is available');
-                    
-                    // Try to use shareTargetPicker with error handling
+                // Option 1: Try shareTargetPicker if available and logged in
+                if (liff && liff.isLoggedIn()) {
                     try {
-                        if (imagesToShare.length > 5) {
-                            showShareOptions(imagesToShare);
-                        } else {
-                            await shareWithTargetPicker(imagesToShare);
-                        }
-                    } catch (shareError) {
-                        console.error('Error using shareTargetPicker:', shareError);
-                        
-                        // Check if it's a session error
-                        if (isSessionError(shareError)) {
-                            console.log('Session error detected, prompting re-login');
-                            showToast('Session หมดอายุ กรุณา login ใหม่');
+                        const canUseShareTargetPicker = liff.isApiAvailable('shareTargetPicker');
+                        if (canUseShareTargetPicker) {
+                            console.log('Trying shareTargetPicker...');
                             
-                            // Logout and login
-                            try {
-                                await liff.logout();
-                                liff.login();
-                            } catch (loginError) {
-                                console.error('Re-login error:', loginError);
-                                fallbackShare(imagesToShare);
+                            // Test with a simple call first
+                            await liff.ready;
+                            
+                            if (imagesToShare.length > 5) {
+                                showShareOptions(imagesToShare);
+                                return; // Let user choose method
+                            } else {
+                                await shareWithTargetPicker(imagesToShare);
+                                return; // Success
                             }
-                        } else {
-                            // Other error, use fallback
-                            fallbackShare(imagesToShare);
                         }
+                    } catch (error) {
+                        console.log('ShareTargetPicker not available or error:', error);
+                        // Continue to fallback
                     }
-                } else {
-                    console.log('shareTargetPicker not available, using fallback');
-                    fallbackShare(imagesToShare);
                 }
+                
+                // Option 2: Use reliable bot share method
+                console.log('Using bot share method');
+                fallbackShare(imagesToShare);
                 
             } catch (error) {
                 console.error('Share error:', error);
@@ -836,7 +805,7 @@
             return sessionErrorKeywords.some(keyword => errorMsg.includes(keyword));
         }
         
-        // Share using shareTargetPicker - SIMPLIFIED
+        // Share using shareTargetPicker - WITH IMMEDIATE FALLBACK ON ERROR
         async function shareWithTargetPicker(imagesToShare, batchInfo = null) {
             const shareBtn = document.getElementById('shareBtn');
             const originalText = shareBtn.innerHTML;
@@ -883,8 +852,13 @@
                 // Update button
                 shareBtn.innerHTML = '<span>📤</span><span>เลือกห้องแชท...</span>';
                 
-                // Call shareTargetPicker
-                const result = await liff.shareTargetPicker(messages);
+                // Call shareTargetPicker with timeout
+                const sharePromise = liff.shareTargetPicker(messages);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 second timeout
+                );
+                
+                const result = await Promise.race([sharePromise, timeoutPromise]);
                 
                 console.log('Share result:', result);
                 
@@ -903,9 +877,11 @@
             } catch (error) {
                 console.error('shareTargetPicker error:', error);
                 
-                // Always use fallback on error
-                showToast('เกิดข้อผิดพลาด กำลังใช้วิธีแชร์อื่น...');
-                fallbackShare(imagesToShare);
+                // Don't try to re-login, just use fallback immediately
+                showToast('กำลังเปลี่ยนวิธีแชร์...');
+                setTimeout(() => {
+                    fallbackShare(imagesToShare);
+                }, 500);
                 
             } finally {
                 shareBtn.disabled = false;
