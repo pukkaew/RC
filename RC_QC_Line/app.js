@@ -54,6 +54,11 @@ app.get('/view', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/liff/view-web.html'));
 });
 
+// Share page route
+app.get('/share/:sessionId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/share/index.html'));
+});
+
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
