@@ -1,4 +1,4 @@
-// Enhanced Share API routes for image sharing with temp download
+// Enhanced Share API routes for image sharing with bot sending
 // File: RC_QC_Line/routes/shareApi.js
 
 const express = require('express');
@@ -80,12 +80,12 @@ router.post('/share/prepare-image', async (req, res) => {
   }
 });
 
-// Send images to selected chat (No-Auth Version like delete)
-router.post('/share/send-to-chat', async (req, res) => {
+// Send images via bot to user's chat
+router.post('/share/send-via-bot', async (req, res) => {
   try {
-    const { userId, chatId, chatType, chatName, images, lotNumber, imageDate } = req.body;
+    const { userId, images, lotNumber, imageDate } = req.body;
     
-    logger.info(`Share request - User: ${userId}, Chat: ${chatName} (${chatType}), Images: ${images.length}`);
+    logger.info(`Bot share request - Images: ${images.length}, Lot: ${lotNumber}`);
     
     // Validate inputs
     if (!images || images.length === 0) {
@@ -95,122 +95,184 @@ router.post('/share/send-to-chat', async (req, res) => {
       });
     }
     
-    // No-Auth version: Just prepare download links instead of sending via LINE API
+    // For no-auth mode, we'll create a share link that triggers bot to send images
+    const shareToken = uuidv4();
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-    const downloadLinks = [];
     
-    // Generate download links for all images
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      const imageUrl = image.tempUrl ? `${baseUrl}${image.tempUrl}` : `${baseUrl}${image.url}`;
-      
-      downloadLinks.push({
-        index: i + 1,
-        filename: image.filename,
-        url: imageUrl,
-        fullPath: image.fullPath
-      });
-    }
+    // Store share session temporarily
+    global.pendingShares = global.pendingShares || {};
+    global.pendingShares[shareToken] = {
+      images: images,
+      lotNumber: lotNumber,
+      imageDate: imageDate,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (30 * 60 * 1000) // 30 minutes
+    };
     
-    // Create a shareable message with download instructions
-    const shareMessage = `📸 รูปภาพ QC พร้อมแชร์\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${images.length} รูป\n\n💡 วิธีแชร์:\n1. กดค้างที่ลิงก์ด้านล่าง\n2. เลือก "คัดลอก"\n3. วางในห้องแชทที่ต้องการ\n\n🔗 ลิงก์ดาวน์โหลด:`;
+    // Create LINE deep link to trigger bot
+    const botCommand = `#getshare ${shareToken}`;
+    const lineDeepLink = `https://line.me/R/oaMessage/@YOUR_BOT_ID/?${encodeURIComponent(botCommand)}`;
     
-    // Generate shortened share link or use direct links
-    const shareLinks = downloadLinks.map((link, idx) => 
-      `${idx + 1}. ${link.filename}\n${link.url}`
-    ).join('\n\n');
-    
-    // Schedule cleanup of temp files after 30 minutes
-    setTimeout(() => {
-      cleanupTempFiles(images);
-    }, 30 * 60 * 1000);
-    
-    // Return success with download info
+    // Return share info
     res.json({
       success: true,
-      message: `เตรียมลิงก์แชร์ ${images.length} รูป เรียบร้อยแล้ว`,
-      count: images.length,
-      shareMessage: shareMessage,
-      shareLinks: shareLinks,
-      downloadLinks: downloadLinks,
-      instruction: 'คัดลอกลิงก์ด้านบนไปแชร์ในห้องแชทที่ต้องการ',
-      files: images.map(img => ({
-        filename: img.filename,
-        fullPath: img.fullPath,
-        url: `${baseUrl}${img.tempUrl || img.url}`
-      }))
+      message: 'พร้อมรับรูปภาพแล้ว',
+      shareToken: shareToken,
+      botCommand: botCommand,
+      lineDeepLink: lineDeepLink,
+      instruction: `คัดลอกคำสั่งนี้ไปส่งให้บอท: ${botCommand}`,
+      expiresIn: '30 นาที'
     });
     
   } catch (error) {
-    logger.error('Error preparing share links:', error);
+    logger.error('Error creating bot share:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to prepare share links',
+      message: 'Failed to create share session',
       error: error.message
     });
   }
 });
 
-// Cleanup temp files
-async function cleanupTempFiles(images) {
-  for (const image of images) {
-    if (image.tempPath) {
-      try {
-        await fs.unlink(image.tempPath);
-        logger.info(`Cleaned up temp file: ${image.filename}`);
-      } catch (error) {
-        logger.warn(`Could not clean up temp file: ${image.filename}`, error);
-      }
-    }
-  }
-}
-
-// Get available chats for user (mock endpoint for demo)
-router.get('/share/chats/:userId', async (req, res) => {
+// Get share session by token (called by bot)
+router.get('/share/session/:token', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { token } = req.params;
     
-    // In real implementation, this would fetch actual user's groups/rooms from LINE
-    // For demo, return mock data
-    const mockChats = [
-      {
-        id: 'personal',
-        name: 'ส่งให้ตัวเอง',
-        type: 'personal',
-        icon: '👤'
-      },
-      {
-        id: 'C1234567890abcdef',
-        name: 'ทีม QC',
-        type: 'group',
-        icon: '👥'
-      },
-      {
-        id: 'C0987654321fedcba',
-        name: 'Production Team',
-        type: 'group',
-        icon: '👥'
-      }
-    ];
+    // Check if share exists
+    const shareSession = global.pendingShares && global.pendingShares[token];
+    
+    if (!shareSession) {
+      return res.status(404).json({
+        success: false,
+        message: 'Share session not found or expired'
+      });
+    }
+    
+    // Check if expired
+    if (Date.now() > shareSession.expiresAt) {
+      delete global.pendingShares[token];
+      return res.status(404).json({
+        success: false,
+        message: 'Share session expired'
+      });
+    }
     
     res.json({
       success: true,
-      chats: mockChats,
-      count: mockChats.length
+      ...shareSession
     });
     
   } catch (error) {
-    logger.error('Error getting user chats:', error);
+    logger.error('Error getting share session:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get chats'
+      message: 'Failed to get share session'
     });
   }
 });
 
-// Cleanup old temp files (can be called by scheduler)
+// Process share command from bot
+router.post('/share/process-command', async (req, res) => {
+  try {
+    const { userId, token, chatId, chatType } = req.body;
+    
+    logger.info(`Processing share command - User: ${userId}, Token: ${token}`);
+    
+    // Get share session
+    const shareSession = global.pendingShares && global.pendingShares[token];
+    
+    if (!shareSession) {
+      return res.json({
+        success: false,
+        message: 'ไม่พบรูปภาพที่ต้องการแชร์ หรือลิงก์หมดอายุแล้ว'
+      });
+    }
+    
+    // Check expiry
+    if (Date.now() > shareSession.expiresAt) {
+      delete global.pendingShares[token];
+      return res.json({
+        success: false,
+        message: 'ลิงก์แชร์หมดอายุแล้ว กรุณาสร้างใหม่'
+      });
+    }
+    
+    const { images, lotNumber, imageDate } = shareSession;
+    
+    // Prepare messages
+    const messages = [];
+    
+    // Header message
+    messages.push({
+      type: 'text',
+      text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${images.length} รูป`
+    });
+    
+    // Send images
+    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+    let sentCount = 0;
+    
+    for (let i = 0; i < images.length; i += 4) {
+      const batch = images.slice(i, i + 4);
+      const batchMessages = [];
+      
+      for (const image of batch) {
+        const imageUrl = image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`;
+        
+        batchMessages.push({
+          type: 'image',
+          originalContentUrl: imageUrl,
+          previewImageUrl: imageUrl
+        });
+        
+        sentCount++;
+      }
+      
+      // Send batch
+      try {
+        await lineService.pushMessage(userId, batchMessages);
+        
+        // Delay between batches
+        if (i + 4 < images.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        logger.error('Error sending batch:', error);
+      }
+    }
+    
+    // Completion message
+    if (sentCount > 0) {
+      await lineService.pushMessage(userId, {
+        type: 'text',
+        text: `✅ ส่งรูปภาพทั้งหมด ${sentCount} รูป เรียบร้อยแล้ว`
+      });
+    }
+    
+    // Delete used token
+    delete global.pendingShares[token];
+    
+    res.json({
+      success: true,
+      message: `ส่งรูปภาพ ${sentCount} รูป เรียบร้อยแล้ว`,
+      count: sentCount
+    });
+    
+  } catch (error) {
+    logger.error('Error processing share command:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send images',
+      error: error.message
+    });
+  }
+});
+
+// Cleanup expired sessions
 router.post('/share/cleanup', async (req, res) => {
   try {
+    // Clean temp files
     const files = await fs.readdir(TEMP_DIR);
     const now = Date.now();
     const maxAge = 60 * 60 * 1000; // 1 hour
@@ -227,9 +289,20 @@ router.post('/share/cleanup', async (req, res) => {
       }
     }
     
+    // Clean expired share sessions
+    let sessionsCleared = 0;
+    if (global.pendingShares) {
+      for (const [token, session] of Object.entries(global.pendingShares)) {
+        if (now > session.expiresAt) {
+          delete global.pendingShares[token];
+          sessionsCleared++;
+        }
+      }
+    }
+    
     res.json({
       success: true,
-      message: `Cleaned ${cleaned} old temp files`
+      message: `Cleaned ${cleaned} files and ${sessionsCleared} sessions`
     });
     
   } catch (error) {
@@ -240,5 +313,19 @@ router.post('/share/cleanup', async (req, res) => {
     });
   }
 });
+
+// Cleanup temp files helper
+async function cleanupTempFiles(images) {
+  for (const image of images) {
+    if (image.tempPath) {
+      try {
+        await fs.unlink(image.tempPath);
+        logger.info(`Cleaned up temp file: ${image.filename}`);
+      } catch (error) {
+        logger.warn(`Could not clean up temp file: ${image.filename}`, error);
+      }
+    }
+  }
+}
 
 module.exports = router;
