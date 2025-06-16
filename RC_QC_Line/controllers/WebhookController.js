@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated for Multi-Chat Support
+// Controller for handling LINE webhook events - Updated for Multi-Chat Support with viewtoday
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -245,6 +245,9 @@ class WebhookController {
             await uploadController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === lineConfig.userActions.view) {
             await imageController.processLotNumber(userId, lotNumber, replyToken, chatContext);
+          } else if (data.action === 'viewtoday') {
+            // For viewtoday, go directly to viewing images for today
+            await imageController.processViewToday(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'delete') {
             await deleteController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'correct') {
@@ -312,6 +315,18 @@ class WebhookController {
             }
             break;
             
+          case 'viewToday':
+          case 'viewTodayShort':
+            // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #viewtoday ABC123 หรือ #vt ABC123)
+            if (commandInfo.args.length > 0) {
+              const lotNumber = commandInfo.args[0];
+              await imageController.processViewToday(userId, lotNumber, replyToken, chatContext);
+            } else {
+              // กรณีไม่ระบุ Lot - ขอให้ระบุ Lot
+              await imageController.requestLotNumberForToday(userId, replyToken, chatContext);
+            }
+            break;
+            
           case 'delete':
           case 'deleteShort':
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #del ABC123)
@@ -357,6 +372,11 @@ class WebhookController {
                 await lineService.replyMessage(
                   replyToken,
                   lineService.createTextMessage(commandConfig.helpText.view)
+                );
+              } else if (helpType === 'viewtoday' || helpType === 'vt' || helpType === 'ดูวันนี้') {
+                await lineService.replyMessage(
+                  replyToken,
+                  lineService.createTextMessage(commandConfig.helpText.viewtoday)
                 );
               } else if (helpType === 'delete' || helpType === 'del' || helpType === 'ลบ') {
                 await lineService.replyMessage(
@@ -549,6 +569,7 @@ class WebhookController {
         'คำสั่งที่ใช้ได้:\n' +
         `• ${commandConfig.prefixes.upload} [LOT] - อัปโหลดรูปภาพ\n` +
         `• ${commandConfig.prefixes.view} [LOT] - ดูรูปภาพ\n` +
+        `• ${commandConfig.prefixes.viewToday} [LOT] - ดูรูปวันนี้\n` +
         `• ${commandConfig.prefixes.delete} [LOT] - ลบรูปภาพ\n` +
         `• ${commandConfig.prefixes.correct} [OLD] [NEW] - แก้ไขเลข Lot\n` +
         `• ${commandConfig.prefixes.help} - วิธีใช้งาน`;
