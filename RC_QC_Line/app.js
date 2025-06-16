@@ -37,6 +37,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/liff', express.static(path.join(__dirname, 'public/liff')));
 app.use('/temp', express.static(path.join(__dirname, 'public/temp'))); // For temporary share images
+app.use('/share', express.static(path.join(__dirname, 'public/share'))); // For share pages
 
 // LIFF root handler
 app.get('/', (req, res) => {
@@ -68,6 +69,7 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
+const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -76,6 +78,7 @@ app.post('/webhook', webhookController.handleWebhook);
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
 app.use('/api', shareRoutes); // This will handle /api/share/* routes
+app.use('/api', shareApiRoutes); // NEW enhanced share API routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -150,6 +153,25 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000); // 30 minutes
 
+// Cleanup share temp files (every hour)
+setInterval(async () => {
+  try {
+    const shareApiRoutes = require('./routes/shareApi');
+    const response = await fetch(`http://localhost:${PORT}/api/share/cleanup`, {
+      method: 'POST'
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.message.includes('Cleaned')) {
+        logger.info(`Share cleanup: ${result.message}`);
+      }
+    }
+  } catch (error) {
+    logger.error('Error during share temp cleanup:', error);
+  }
+}, 60 * 60 * 1000); // 1 hour
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -158,12 +180,13 @@ app.listen(PORT, () => {
   logger.info(`Health endpoint: ${process.env.BASE_URL}/health`);
   logger.info(`Status endpoint: ${process.env.BASE_URL}/status`);
   logger.info(`LIFF viewer: ${process.env.BASE_URL}/liff/view.html`);
+  logger.info(`LIFF share: ${process.env.BASE_URL}/liff/share.html`);
   logger.info(`Web viewer: ${process.env.BASE_URL}/view`);
   logger.info('Note: For production, use HTTPS for webhook URL');
   logger.info('Multi-chat support enabled');
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
-  logger.info('Image sharing enabled');
+  logger.info('Enhanced image sharing enabled');
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -179,9 +202,14 @@ app.listen(PORT, () => {
   logger.info('- GET /api/share/:sessionId (View share page)');
   logger.info('- POST /api/share/deliver (Deliver images to user)');
   logger.info('- GET /api/share/:sessionId/download (Download as ZIP)');
+  logger.info('- POST /api/share/prepare-image (Prepare image for sharing)');
+  logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
+  logger.info('- GET /api/share/chats/:userId (Get user chats)');
+  logger.info('- POST /api/share/cleanup (Cleanup temp files)');
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
+  logger.info('- Static /share/* (Share pages)');
 });
 
 // Handle uncaught exceptions

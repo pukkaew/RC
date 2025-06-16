@@ -1,10 +1,9 @@
-// Controller for image retrieval and viewing - Album Preview Version with ViewToday
+// Controller for image retrieval and viewing - Album Preview Version
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
 const datePickerService = require('../services/DatePickerService');
 const lineMessageBuilder = require('../views/LineMessageBuilder');
-const dateFormatter = require('../utils/DateFormatter');
 const logger = require('../utils/Logger');
 const { asyncHandler, AppError } = require('../utils/ErrorHandler');
 
@@ -24,83 +23,6 @@ class ImageController {
       await lineService.replyMessage(replyToken, lotRequestMessage);
     } catch (error) {
       logger.error('Error requesting Lot number for viewing:', error);
-      throw error;
-    }
-  }
-
-  // Request Lot number for viewing today's images
-  async requestLotNumberForToday(userId, replyToken, chatContext = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Set user state to waiting for Lot number with viewtoday action
-      lineService.setUserState(userId, lineConfig.userStates.waitingForLot, {
-        action: 'viewtoday'
-      }, chatId);
-      
-      // Ask for Lot number
-      const requestMessage = lineService.createTextMessage('📅 กรุณาระบุเลข Lot ที่ต้องการดูรูปภาพของวันนี้');
-      await lineService.replyMessage(replyToken, requestMessage);
-    } catch (error) {
-      logger.error('Error requesting Lot number for today:', error);
-      throw error;
-    }
-  }
-
-  // Process viewtoday command - directly show today's images
-  async processViewToday(userId, lotNumber, replyToken, chatContext = null) {
-    try {
-      const chatId = chatContext?.chatId || 'direct';
-      
-      // Validate lot number
-      if (!lotNumber || lotNumber.trim() === '') {
-        await lineService.replyMessage(
-          replyToken, 
-          lineService.createTextMessage('เลข Lot ไม่ถูกต้อง กรุณาระบุเลข Lot อีกครั้ง')
-        );
-        return;
-      }
-      
-      const trimmedLot = lotNumber.trim();
-      logger.info(`ViewToday: Processing Lot ${trimmedLot} for today's date`);
-      
-      // Get today's date
-      const today = new Date();
-      const todayISODate = dateFormatter.formatISODate(today);
-      
-      // Reset user state
-      lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
-      
-      // Get images for today
-      const result = await imageService.getImagesByLotAndDate(trimmedLot, todayISODate);
-      
-      // Check if images were found
-      if (!result.images || result.images.length === 0) {
-        const noImageMessage = lineService.createTextMessage(
-          `❌ ไม่พบรูปภาพสำหรับวันนี้\n\n` +
-          `📦 Lot: ${trimmedLot}\n` +
-          `📅 วันที่: ${dateFormatter.formatDisplayDate(today)}\n\n` +
-          `💡 ตรวจสอบว่ามีการอัปโหลดรูปภาพวันนี้หรือไม่`
-        );
-        await lineService.replyMessage(replyToken, noImageMessage);
-        return;
-      }
-      
-      // Build album preview message
-      const albumMessage = this.buildAlbumPreviewMessage(trimmedLot, todayISODate, result.images);
-      
-      // Send album preview
-      await lineService.replyMessage(replyToken, albumMessage);
-      
-      logger.info(`ViewToday: Sent album preview for Lot ${trimmedLot}, ${result.images.length} images`);
-      
-    } catch (error) {
-      logger.error('Error processing viewtoday:', error);
-      
-      // Reply with error message
-      const errorMessage = 'เกิดข้อผิดพลาดในการดูรูปภาพวันนี้ โปรดลองใหม่อีกครั้ง';
-      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
-      
       throw error;
     }
   }
@@ -192,10 +114,6 @@ class ImageController {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
     
-    // Check if this is today
-    const isToday = dateFormatter.formatISODate(new Date()) === date;
-    const dateDisplay = isToday ? `${formattedDate} (วันนี้)` : formattedDate;
-    
     // Limit preview images to 9 for 3x3 grid
     const previewImages = images.slice(0, 9);
     const remainingCount = Math.max(0, images.length - 9);
@@ -285,7 +203,7 @@ class ImageController {
                 },
                 {
                   type: "text",
-                  text: `📅 ${dateDisplay}`,
+                  text: `📅 ${formattedDate}`,
                   size: "sm",
                   color: "#666666",
                   align: "end",

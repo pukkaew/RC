@@ -721,7 +721,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Share images (updated to use share service)
+        // Share images - No LIFF version
         async function shareImages() {
             try {
                 let imagesToShare = [];
@@ -739,38 +739,16 @@
                 
                 showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
                 
-                // Create share session
-                const imageIds = imagesToShare.map(img => img.image_id);
+                // Get image IDs
+                const imageIds = imagesToShare.map(img => img.image_id).join(',');
                 
-                const response = await fetch(`${baseUrl}/api/share/create`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: userId,
-                        lotNumber: lotNumber,
-                        imageDate: imageDate,
-                        imageIds: imageIds
-                    })
-                });
+                // Build share URL - direct to share.html without LIFF
+                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
                 
-                console.log('Share API response status:', response.status);
+                console.log('Opening share page:', shareUrl);
                 
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    console.error('Share API error:', errorData);
-                    throw new Error(`Failed to create share session: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Redirect to share page
-                    window.location.href = result.shareUrl;
-                } else {
-                    throw new Error(result.message || 'Failed to create share');
-                }
+                // Open in same window (no LIFF)
+                window.location.href = shareUrl;
                 
             } catch (error) {
                 console.error('Share error:', error);
@@ -796,8 +774,33 @@
             
             document.body.style.overflow = 'hidden';
             
-            // Add zoom event listeners
-            modalImage.onclick = toggleZoom;
+            // Add zoom event listeners with better touch handling
+            const modalImageEl = document.getElementById('modalImage');
+            const containerEl = document.getElementById('imageContainer');
+            
+            // Single tap to toggle zoom (with delay to distinguish from double tap)
+            let tapTimeout;
+            modalImageEl.addEventListener('click', (e) => {
+                if (e.detail === 1) { // Single click
+                    tapTimeout = setTimeout(() => {
+                        toggleZoom(e);
+                    }, 200);
+                }
+            });
+            
+            // Double tap to zoom
+            modalImageEl.addEventListener('dblclick', (e) => {
+                clearTimeout(tapTimeout);
+                e.preventDefault();
+                if (currentZoom === 1) {
+                    currentZoom = 2;
+                } else {
+                    currentZoom = 1;
+                }
+                updateZoom();
+            });
+            
+            // Setup all pan and zoom events
             setupPanEvents();
         }
         
@@ -828,8 +831,11 @@
             modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
         }
         
-        // Zoom functions
-        function toggleZoom() {
+        // Zoom functions with better touch support
+        function toggleZoom(e) {
+            // Prevent toggle zoom when pinching
+            if (isPinching || (e && e.touches && e.touches.length > 1)) return;
+            
             if (currentZoom === 1) {
                 zoomIn();
             } else {
@@ -851,26 +857,36 @@
             currentZoom = 1;
             translateX = 0;
             translateY = 0;
+            isPanning = false;
+            isPinching = false;
             updateZoom();
         }
         
         function updateZoom() {
             const modalImage = document.getElementById('modalImage');
+            const container = document.getElementById('imageContainer');
             
             if (currentZoom > 1) {
                 modalImage.classList.add('zoomed');
                 modalImage.style.cursor = 'move';
+                container.style.cursor = 'move';
             } else {
                 modalImage.classList.remove('zoomed');
                 modalImage.style.cursor = 'zoom-in';
+                container.style.cursor = 'zoom-in';
                 translateX = 0;
                 translateY = 0;
             }
             
+            // Apply transform with zoom and translation
             modalImage.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
+            
+            // Update zoom display (optional)
+            const zoomPercent = Math.round(currentZoom * 100);
+            console.log(`Zoom: ${zoomPercent}%`);
         }
         
-        // Pan events for zoomed image
+        // Setup pan and pinch zoom events
         function setupPanEvents() {
             const container = document.getElementById('imageContainer');
             const modalImage = document.getElementById('modalImage');
@@ -881,63 +897,93 @@
             container.onmouseup = endPan;
             container.onmouseleave = endPan;
             
-            // Touch events
-            container.ontouchstart = handleTouchStart;
-            container.ontouchmove = handleTouchMove;
-            container.ontouchend = handleTouchEnd;
+            // Touch events for mobile
+            container.addEventListener('touchstart', handleTouchStart, { passive: false });
+            container.addEventListener('touchmove', handleTouchMove, { passive: false });
+            container.addEventListener('touchend', handleTouchEnd, { passive: false });
             
             // Prevent image drag
             modalImage.ondragstart = () => false;
             
             // Mouse wheel zoom
             container.onwheel = handleWheel;
+            
+            // Prevent default touch behaviors
+            container.addEventListener('gesturestart', e => e.preventDefault());
+            container.addEventListener('gesturechange', e => e.preventDefault());
+            container.addEventListener('gestureend', e => e.preventDefault());
         }
         
-        // Handle touch start
+        // Touch variables
+        let touches = [];
+        let lastTouchDistance = 0;
+        let initialPinchZoom = 1;
+        
+        // Handle touch start with better pinch detection
         function handleTouchStart(e) {
-            if (e.touches.length === 2) {
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 2) {
                 // Two fingers - start pinch zoom
                 isPinching = true;
-                initialDistance = getDistance(e.touches[0], e.touches[1]);
-            } else if (e.touches.length === 1 && currentZoom > 1) {
-                // One finger - start pan
-                startPan(e.touches[0]);
+                isPanning = false;
+                initialDistance = getDistance(touches[0], touches[1]);
+                lastTouchDistance = initialDistance;
+                initialPinchZoom = currentZoom;
+                e.preventDefault();
+            } else if (touches.length === 1 && currentZoom > 1) {
+                // One finger - start pan if zoomed
+                isPinching = false;
+                startPan(touches[0]);
+                e.preventDefault();
             }
         }
         
-        // Handle touch move
+        // Handle touch move with smooth pinch zoom
         function handleTouchMove(e) {
             e.preventDefault();
+            touches = Array.from(e.touches);
             
-            if (e.touches.length === 2 && isPinching) {
+            if (touches.length === 2 && isPinching) {
                 // Pinch zoom
-                const currentDistance = getDistance(e.touches[0], e.touches[1]);
+                const currentDistance = getDistance(touches[0], touches[1]);
                 const scale = currentDistance / initialDistance;
                 
-                // Apply zoom with limits
-                const newZoom = Math.max(1, Math.min(3, currentZoom * scale));
+                // Calculate new zoom based on initial zoom when pinch started
+                const newZoom = Math.max(1, Math.min(3, initialPinchZoom * scale));
                 
-                if (newZoom !== currentZoom) {
+                // Apply smooth zoom
+                if (Math.abs(newZoom - currentZoom) > 0.01) {
                     currentZoom = newZoom;
                     updateZoom();
-                    initialDistance = currentDistance;
                 }
-            } else if (e.touches.length === 1 && isPanning) {
+                
+                lastTouchDistance = currentDistance;
+            } else if (touches.length === 1 && isPanning && currentZoom > 1) {
                 // Pan
-                pan(e.touches[0]);
+                pan(touches[0]);
             }
         }
         
         // Handle touch end
         function handleTouchEnd(e) {
-            if (e.touches.length === 0) {
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 0) {
+                // All fingers lifted
                 isPinching = false;
                 endPan();
-            } else if (e.touches.length === 1) {
+            } else if (touches.length === 1) {
                 // One finger remains - switch from pinch to pan
                 isPinching = false;
                 if (currentZoom > 1) {
-                    startPan(e.touches[0]);
+                    isPanning = false; // Reset panning
+                    // Restart pan with remaining finger
+                    setTimeout(() => {
+                        if (touches.length === 1) {
+                            startPan(touches[0]);
+                        }
+                    }, 50);
                 }
             }
         }

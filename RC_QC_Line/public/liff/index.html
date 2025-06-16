@@ -66,15 +66,6 @@
             font-size: 14px;
             color: #1976d2;
         }
-        .debug {
-            background: #f5f5f5;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            font-size: 12px;
-            text-align: left;
-            word-break: break-all;
-        }
     </style>
 </head>
 <body>
@@ -93,27 +84,13 @@
         <div class="info" id="info" style="display: none;">
             <p id="infoMessage"></p>
         </div>
-        
-        <div class="debug" id="debug">
-            <strong>Debug Info:</strong>
-            <div id="debugInfo"></div>
-        </div>
     </div>
 
     <script>
         // Debug logging
-        console.log('=== LIFF Router Starting ===');
-        
-        const debugInfo = [];
-        
-        function addDebug(info) {
-            debugInfo.push(info);
-            document.getElementById('debugInfo').innerHTML = debugInfo.join('<br>');
-        }
-        
-        addDebug('URL: ' + window.location.href);
-        addDebug('Search: ' + window.location.search);
-        addDebug('Hash: ' + window.location.hash);
+        console.log('=== LIFF Router Starting (No-Auth Version) ===');
+        console.log('Current URL:', window.location.href);
+        console.log('Search params:', window.location.search);
         
         // Function to show info
         function showInfo(message) {
@@ -140,45 +117,43 @@
             const params = {};
             const urlParams = new URLSearchParams(window.location.search);
             
-            addDebug('URL Params count: ' + Array.from(urlParams).length);
-            
-            // Method 1: Direct parameters
-            for (const [key, value] of urlParams.entries()) {
-                addDebug(`Param: ${key} = ${value}`);
-                params[key] = value;
-            }
-            
-            // Method 2: Check liff.state
+            // Method 1: Check for LIFF state parameters
             const liffState = urlParams.get('liff.state');
             if (liffState) {
-                addDebug('Found liff.state: ' + liffState);
+                console.log('Found liff.state:', liffState);
                 try {
+                    // Decode and parse the state
                     const decodedState = decodeURIComponent(liffState);
-                    addDebug('Decoded state: ' + decodedState);
+                    console.log('Decoded liff.state:', decodedState);
                     
+                    // Parse query string format
                     const stateParams = new URLSearchParams(decodedState);
                     for (const [key, value] of stateParams.entries()) {
                         params[key] = value;
-                        addDebug(`State param: ${key} = ${value}`);
                     }
                 } catch (e) {
-                    addDebug('Error parsing liff.state: ' + e.message);
+                    console.error('Error parsing liff.state:', e);
+                }
+            }
+            
+            // Method 2: Direct parameters (override state if present)
+            for (const [key, value] of urlParams.entries()) {
+                if (!key.startsWith('liff.') && key !== 'code' && key !== 'state') {
+                    params[key] = value;
                 }
             }
             
             // Method 3: Check hash
             if (window.location.hash) {
-                addDebug('Hash found: ' + window.location.hash);
                 const hashParams = new URLSearchParams(window.location.hash.substring(1));
                 for (const [key, value] of hashParams.entries()) {
                     if (!params[key]) {
                         params[key] = value;
-                        addDebug(`Hash param: ${key} = ${value}`);
                     }
                 }
             }
             
-            addDebug('Final params: ' + JSON.stringify(params));
+            console.log('Extracted parameters:', params);
             return params;
         }
         
@@ -192,40 +167,68 @@
                 const date = params.date;
                 const page = params.page || 'view';
                 
-                addDebug(`Routing - Page: ${page}, Lot: ${lot}, Date: ${date}`);
+                console.log('Routing - Page:', page, 'Lot:', lot, 'Date:', date);
                 
                 // Check if we have required parameters
                 if (!lot || !date) {
+                    // Check if this is from a postback with parameters in different format
+                    const action = params.action;
+                    if (action === 'view' || action === 'delete') {
+                        // Parameters might be in different keys
+                        const lotParam = params.lotNumber || params.lot_number || lot;
+                        const dateParam = params.imageDate || params.image_date || date;
+                        
+                        if (lotParam && dateParam) {
+                            // Redirect with clean parameters
+                            const targetFile = action === 'delete' ? 'delete.html' : 'view.html';
+                            const cleanParams = new URLSearchParams({
+                                lot: lotParam,
+                                date: dateParam,
+                                base_url: window.location.origin
+                            });
+                            window.location.replace(`${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`);
+                            return;
+                        }
+                    }
+                    
                     showInfo('ยินดีต้อนรับสู่ระบบดูรูปภาพ QC\n\nกรุณาเข้าใช้งานผ่านการเลือกวันที่จากเมนูในแชท');
                     return;
                 }
                 
-                // Build target URL
-                const baseUrl = window.location.origin;
-                const targetFile = page === 'delete' ? 'delete.html' : 'view.html';
+                // Determine target file
+                let targetFile = 'view.html';
+                if (page === 'delete') {
+                    targetFile = 'delete.html';
+                }
                 
-                const targetUrl = `${baseUrl}/liff/${targetFile}?lot=${encodeURIComponent(lot)}&date=${encodeURIComponent(date)}&base_url=${encodeURIComponent(baseUrl)}`;
+                // Build clean URL
+                const cleanParams = new URLSearchParams({
+                    lot: lot,
+                    date: date,
+                    base_url: window.location.origin
+                });
                 
-                addDebug('Target URL: ' + targetUrl);
+                const targetUrl = `${window.location.origin}/liff/${targetFile}?${cleanParams.toString()}`;
+                console.log('Redirecting to:', targetUrl);
+                
                 showInfo(`กำลังเปิดหน้า ${page === 'delete' ? 'ลบรูปภาพ' : 'ดูรูปภาพ'}...`);
                 
-                // Redirect after showing debug info
+                // Redirect
                 setTimeout(() => {
                     window.location.replace(targetUrl);
-                }, 2000);
+                }, 500);
                 
             } catch (error) {
                 console.error('Router error:', error);
                 showError('เกิดข้อผิดพลาดในการเปิดหน้า', {
                     error: error.message,
-                    stack: error.stack,
                     url: window.location.href
                 });
             }
         }
         
         // Start routing
-        setTimeout(routeToPage, 500);
+        routeToPage();
     </script>
 </body>
 </html>
