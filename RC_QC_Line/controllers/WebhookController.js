@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated with GetShare Command
+// Controller for handling LINE webhook events - Updated for Multi-Chat Support
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -43,10 +43,6 @@ class WebhookController {
         );
       });
     });
-    
-    // Add getshare command
-    allAliases['#getshare'] = 'getshare';
-    allAliases['#รับรูป'] = 'getshare';
     
     return allAliases;
   }
@@ -249,9 +245,6 @@ class WebhookController {
             await uploadController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === lineConfig.userActions.view) {
             await imageController.processLotNumber(userId, lotNumber, replyToken, chatContext);
-          } else if (data.action === 'viewtoday') {
-            // For viewtoday, go directly to viewing images for today
-            await imageController.processViewToday(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'delete') {
             await deleteController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'correct') {
@@ -319,18 +312,6 @@ class WebhookController {
             }
             break;
             
-          case 'viewToday':
-          case 'viewTodayShort':
-            // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #viewtoday ABC123 หรือ #vt ABC123)
-            if (commandInfo.args.length > 0) {
-              const lotNumber = commandInfo.args[0];
-              await imageController.processViewToday(userId, lotNumber, replyToken, chatContext);
-            } else {
-              // กรณีไม่ระบุ Lot - ขอให้ระบุ Lot
-              await imageController.requestLotNumberForToday(userId, replyToken, chatContext);
-            }
-            break;
-            
           case 'delete':
           case 'deleteShort':
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #del ABC123)
@@ -362,19 +343,6 @@ class WebhookController {
             }
             break;
             
-          case 'getshare':
-            // Handle #getshare command
-            if (commandInfo.args.length > 0) {
-              const shareToken = commandInfo.args[0];
-              await this.handleGetShareCommand(userId, shareToken, replyToken, chatContext);
-            } else {
-              await lineService.replyMessage(
-                replyToken,
-                lineService.createTextMessage('❌ กรุณาระบุรหัสแชร์\nตัวอย่าง: #getshare ABC123')
-              );
-            }
-            break;
-            
           case 'help':
           case 'helpShort':
             // แสดงวิธีใช้งานตามที่ระบุ
@@ -389,11 +357,6 @@ class WebhookController {
                 await lineService.replyMessage(
                   replyToken,
                   lineService.createTextMessage(commandConfig.helpText.view)
-                );
-              } else if (helpType === 'viewtoday' || helpType === 'vt' || helpType === 'ดูวันนี้') {
-                await lineService.replyMessage(
-                  replyToken,
-                  lineService.createTextMessage(commandConfig.helpText.viewtoday)
                 );
               } else if (helpType === 'delete' || helpType === 'del' || helpType === 'ลบ') {
                 await lineService.replyMessage(
@@ -428,68 +391,6 @@ class WebhookController {
     } catch (error) {
       logger.error('Error handling text message:', error);
       throw error;
-    }
-  }
-
-  // Handle getshare command
-  async handleGetShareCommand(userId, shareToken, replyToken, chatContext) {
-    try {
-      logger.info(`Processing getshare command - User: ${userId}, Token: ${shareToken}`);
-      
-      // Validate token format
-      if (!shareToken || shareToken.length < 6) {
-        await lineService.replyMessage(
-          replyToken,
-          lineService.createTextMessage('❌ รหัสแชร์ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง')
-        );
-        return;
-      }
-      
-      // Send processing message
-      await lineService.replyMessage(
-        replyToken,
-        lineService.createTextMessage('⏳ กำลังดึงรูปภาพ กรุณารอสักครู่...')
-      );
-      
-      // Call API to process share command
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/share/process-command`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: userId,
-          token: shareToken,
-          chatId: chatContext?.chatId || 'direct',
-          chatType: chatContext?.chatType || 'user'
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (!result.success) {
-        // Send error message
-        await lineService.pushMessage(
-          userId,
-          lineService.createTextMessage(`❌ ${result.message}`)
-        );
-      } else {
-        // Success - images will be sent by the API
-        logger.info(`Share command processed successfully: ${result.count} images sent`);
-      }
-      
-    } catch (error) {
-      logger.error('Error handling getshare command:', error);
-      
-      await lineService.pushMessage(
-        userId,
-        lineService.createTextMessage('❌ เกิดข้อผิดพลาดในการรับรูปภาพ กรุณาลองใหม่อีกครั้ง')
-      );
     }
   }
 
@@ -643,15 +544,13 @@ class WebhookController {
       // Register new user
       await userController.registerUser(userId);
       
-      // Send welcome message with getshare info
+      // Send welcome message
       const welcomeMessage = 'ยินดีต้อนรับสู่ระบบจัดการรูปภาพสินค้า QC\n\n' +
         'คำสั่งที่ใช้ได้:\n' +
         `• ${commandConfig.prefixes.upload} [LOT] - อัปโหลดรูปภาพ\n` +
         `• ${commandConfig.prefixes.view} [LOT] - ดูรูปภาพ\n` +
-        `• ${commandConfig.prefixes.viewToday} [LOT] - ดูรูปวันนี้\n` +
         `• ${commandConfig.prefixes.delete} [LOT] - ลบรูปภาพ\n` +
         `• ${commandConfig.prefixes.correct} [OLD] [NEW] - แก้ไขเลข Lot\n` +
-        `• #getshare [TOKEN] - รับรูปภาพที่แชร์\n` +
         `• ${commandConfig.prefixes.help} - วิธีใช้งาน`;
       
       await lineService.replyMessage(
