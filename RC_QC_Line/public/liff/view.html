@@ -528,7 +528,6 @@
         let baseUrl = '';
         let userId = 'anonymous';
         let isLoggedIn = false;
-        let sessionCheckInterval = null;
         
         // Zoom variables
         let currentZoom = 1;
@@ -557,22 +556,24 @@
                     return;
                 }
                 
-                // Initialize LIFF with better error handling
+                // Initialize LIFF
                 try {
                     liff = window.liff;
                     await liff.init({ liffId: '2007575196-NWaXrZVE' });
                     console.log('LIFF initialized successfully');
                     
-                    // Setup session monitoring
-                    setupSessionMonitoring();
-                    
                     // Check login status
                     if (liff.isLoggedIn()) {
-                        isLoggedIn = await validateSession();
-                        if (isLoggedIn) {
+                        try {
                             const profile = await liff.getProfile();
+                            isLoggedIn = true;
                             userId = profile.userId;
                             console.log('User logged in:', userId);
+                        } catch (profileError) {
+                            console.error('Profile fetch error:', profileError);
+                            // Session expired - don't auto-login here, let user trigger it
+                            isLoggedIn = false;
+                            console.log('Session might be expired, will prompt login when needed');
                         }
                     } else {
                         console.log('User not logged in - working in anonymous mode');
@@ -589,135 +590,6 @@
             } catch (error) {
                 console.error('Initialization failed:', error);
                 showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
-            }
-        }
-        
-        // Validate session
-        async function validateSession() {
-            try {
-                const profile = await liff.getProfile();
-                const accessToken = liff.getAccessToken();
-                
-                if (!accessToken) {
-                    console.log('No access token found');
-                    return false;
-                }
-                
-                // Try to verify token is still valid
-                const idToken = liff.getIDToken();
-                if (!idToken) {
-                    console.log('No ID token found');
-                    return false;
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Session validation error:', error);
-                
-                // Check specific error codes
-                if (error.code === 401 || error.code === 400 || 
-                    error.message?.includes('401') || error.message?.includes('400') ||
-                    error.message?.includes('expired') || error.message?.includes('invalid')) {
-                    return false;
-                }
-                
-                // For other errors, assume session is still valid
-                return true;
-            }
-        }
-        
-        // Setup session monitoring
-        function setupSessionMonitoring() {
-            // Clear any existing interval
-            if (sessionCheckInterval) {
-                clearInterval(sessionCheckInterval);
-            }
-            
-            // Check session every 30 seconds
-            sessionCheckInterval = setInterval(async () => {
-                if (liff && liff.isLoggedIn()) {
-                    const isValid = await validateSession();
-                    if (!isValid) {
-                        console.log('Session expired detected by monitoring');
-                        clearInterval(sessionCheckInterval);
-                        await handleSessionExpired();
-                    }
-                }
-            }, 30000);
-        }
-        
-        // Handle expired session
-        async function handleSessionExpired() {
-            console.log('Handling session expiry...');
-            
-            // Clear interval
-            if (sessionCheckInterval) {
-                clearInterval(sessionCheckInterval);
-            }
-            
-            try {
-                showToast('Session หมดอายุ กำลังเข้าสู่ระบบใหม่...');
-                
-                // Clear current session
-                if (liff && liff.isLoggedIn()) {
-                    await liff.logout();
-                }
-                
-                // Wait a moment
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Re-login
-                liff.login();
-            } catch (error) {
-                console.error('Error handling session expiry:', error);
-                showToast('กรุณา login ใหม่');
-                
-                // Force login as last resort
-                setTimeout(() => {
-                    liff.login();
-                }, 1000);
-            }
-        }
-        
-        // Wrap LIFF API calls with session check
-        async function safeLiffCall(apiCall, fallback = null) {
-            try {
-                // First check if logged in
-                if (!liff || !liff.isLoggedIn()) {
-                    console.log('Not logged in, using fallback');
-                    return fallback ? await fallback() : null;
-                }
-                
-                // Validate session before API call
-                const isValid = await validateSession();
-                if (!isValid) {
-                    console.log('Session invalid, triggering re-login');
-                    await handleSessionExpired();
-                    return null;
-                }
-                
-                // Make the API call
-                return await apiCall();
-            } catch (error) {
-                console.error('LIFF API call error:', error);
-                
-                // Check if it's a session error
-                if (error.code === 401 || error.code === 400 || 
-                    error.message?.includes('401') || error.message?.includes('400') ||
-                    error.message?.includes('expired') || error.message?.includes('invalid') ||
-                    error.message?.includes('Unauthorized')) {
-                    
-                    console.log('Session error detected, triggering re-login');
-                    await handleSessionExpired();
-                    return null;
-                }
-                
-                // For other errors, try fallback
-                if (fallback) {
-                    return await fallback();
-                }
-                
-                throw error;
             }
         }
         
@@ -860,30 +732,16 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Main share function with better session handling
+        // Main share function - COMPLETELY REWRITTEN
         async function shareImages() {
             try {
-                // Check LIFF availability
-                if (!liff || !window.liff) {
-                    console.log('LIFF not initialized, using fallback');
-                    let imagesToShare = selectMode && selectedImages.size > 0 
-                        ? Array.from(selectedImages).map(index => images[index])
-                        : images;
-                    fallbackShare(imagesToShare);
-                    return;
+                // Prepare images to share
+                let imagesToShare = [];
+                if (selectMode && selectedImages.size > 0) {
+                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                } else {
+                    imagesToShare = images;
                 }
-                
-                // Check login status
-                if (!liff.isLoggedIn()) {
-                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
-                    liff.login();
-                    return;
-                }
-                
-                // Prepare images
-                let imagesToShare = selectMode && selectedImages.size > 0 
-                    ? Array.from(selectedImages).map(index => images[index])
-                    : images;
                 
                 if (imagesToShare.length === 0) {
                     showToast('กรุณาเลือกรูปที่ต้องการแชร์');
@@ -892,37 +750,93 @@
                 
                 console.log('Images to share:', imagesToShare.length);
                 
-                // Use safe LIFF call for shareTargetPicker
-                const isApiAvailable = await safeLiffCall(
-                    () => liff.isApiAvailable('shareTargetPicker'),
-                    () => false
-                );
+                // Check if LIFF is available
+                if (!liff || !window.liff) {
+                    console.log('LIFF not available, using fallback');
+                    fallbackShare(imagesToShare);
+                    return;
+                }
                 
-                if (isApiAvailable) {
+                // Check if logged in
+                if (!liff.isLoggedIn()) {
+                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
+                    liff.login();
+                    return;
+                }
+                
+                // Try to check if shareTargetPicker is available
+                let canUseShareTargetPicker = false;
+                try {
+                    canUseShareTargetPicker = liff.isApiAvailable('shareTargetPicker');
+                } catch (e) {
+                    console.log('Error checking API availability:', e);
+                    canUseShareTargetPicker = false;
+                }
+                
+                if (canUseShareTargetPicker) {
                     console.log('shareTargetPicker is available');
                     
-                    if (imagesToShare.length > 5) {
-                        showShareOptions(imagesToShare);
-                    } else {
-                        await shareWithTargetPicker(imagesToShare);
+                    // Try to use shareTargetPicker with error handling
+                    try {
+                        if (imagesToShare.length > 5) {
+                            showShareOptions(imagesToShare);
+                        } else {
+                            await shareWithTargetPicker(imagesToShare);
+                        }
+                    } catch (shareError) {
+                        console.error('Error using shareTargetPicker:', shareError);
+                        
+                        // Check if it's a session error
+                        if (isSessionError(shareError)) {
+                            console.log('Session error detected, prompting re-login');
+                            showToast('Session หมดอายุ กรุณา login ใหม่');
+                            
+                            // Logout and login
+                            try {
+                                await liff.logout();
+                                liff.login();
+                            } catch (loginError) {
+                                console.error('Re-login error:', loginError);
+                                fallbackShare(imagesToShare);
+                            }
+                        } else {
+                            // Other error, use fallback
+                            fallbackShare(imagesToShare);
+                        }
                     }
                 } else {
-                    console.log('shareTargetPicker is NOT available, using fallback');
+                    console.log('shareTargetPicker not available, using fallback');
                     fallbackShare(imagesToShare);
                 }
                 
             } catch (error) {
                 console.error('Share error:', error);
-                
-                // Always try fallback on error
-                let imagesToShare = selectMode && selectedImages.size > 0 
+                fallbackShare(selectMode && selectedImages.size > 0 
                     ? Array.from(selectedImages).map(index => images[index])
-                    : images;
-                fallbackShare(imagesToShare);
+                    : images);
             }
         }
         
-        // Share using shareTargetPicker with better error handling
+        // Check if error is session-related
+        function isSessionError(error) {
+            if (!error) return false;
+            
+            // Check error code
+            if (error.code === 401 || error.code === 400 || error.code === 'UNAUTHORIZED') {
+                return true;
+            }
+            
+            // Check error message
+            const errorMsg = (error.message || error.toString() || '').toLowerCase();
+            const sessionErrorKeywords = [
+                '401', '400', 'unauthorized', 'expired', 'invalid', 
+                'session', 'token', 'authenticate', 'login'
+            ];
+            
+            return sessionErrorKeywords.some(keyword => errorMsg.includes(keyword));
+        }
+        
+        // Share using shareTargetPicker - SIMPLIFIED
         async function shareWithTargetPicker(imagesToShare, batchInfo = null) {
             const shareBtn = document.getElementById('shareBtn');
             const originalText = shareBtn.innerHTML;
@@ -964,23 +878,13 @@
                     });
                 }
                 
-                console.log('Prepared messages:', messages.length);
+                console.log('Calling shareTargetPicker with', messages.length, 'messages');
                 
                 // Update button
                 shareBtn.innerHTML = '<span>📤</span><span>เลือกห้องแชท...</span>';
                 
-                // Use safe LIFF call for shareTargetPicker
-                const result = await safeLiffCall(
-                    () => liff.shareTargetPicker(messages),
-                    () => {
-                        throw new Error('Session expired');
-                    }
-                );
-                
-                if (!result) {
-                    // Session expired, fallback was triggered
-                    return;
-                }
+                // Call shareTargetPicker
+                const result = await liff.shareTargetPicker(messages);
                 
                 console.log('Share result:', result);
                 
@@ -997,18 +901,12 @@
                 }
                 
             } catch (error) {
-                console.error('Error in shareWithTargetPicker:', error);
+                console.error('shareTargetPicker error:', error);
                 
-                // Check error type
-                if (error.message === 'Session expired' ||
-                    error.code === 'UNAVAILABLE' ||
-                    error.message?.includes('UNAVAILABLE')) {
-                    console.log('Using fallback due to error');
-                    fallbackShare(imagesToShare);
-                } else {
-                    showToast('❌ เกิดข้อผิดพลาดในการแชร์ กำลังใช้วิธีอื่น...');
-                    fallbackShare(imagesToShare);
-                }
+                // Always use fallback on error
+                showToast('เกิดข้อผิดพลาด กำลังใช้วิธีแชร์อื่น...');
+                fallbackShare(imagesToShare);
+                
             } finally {
                 shareBtn.disabled = false;
                 shareBtn.innerHTML = originalText;
@@ -1071,9 +969,12 @@
         async function shareInBatches() {
             closeShareOptions();
             
-            let imagesToShare = selectMode && selectedImages.size > 0 
-                ? Array.from(selectedImages).map(index => images[index])
-                : images;
+            let imagesToShare = [];
+            if (selectMode && selectedImages.size > 0) {
+                imagesToShare = Array.from(selectedImages).map(index => images[index]);
+            } else {
+                imagesToShare = images;
+            }
             
             const batch1 = imagesToShare.slice(0, 5);
             const batchInfo = {
@@ -1093,9 +994,12 @@
         async function shareFirst5Only() {
             closeShareOptions();
             
-            let imagesToShare = selectMode && selectedImages.size > 0 
-                ? Array.from(selectedImages).map(index => images[index])
-                : images;
+            let imagesToShare = [];
+            if (selectMode && selectedImages.size > 0) {
+                imagesToShare = Array.from(selectedImages).map(index => images[index]);
+            } else {
+                imagesToShare = images;
+            }
             
             const first5 = imagesToShare.slice(0, 5);
             await shareWithTargetPicker(first5);
@@ -1105,9 +1009,12 @@
         function fallbackShareAll() {
             closeShareOptions();
             
-            let imagesToShare = selectMode && selectedImages.size > 0 
-                ? Array.from(selectedImages).map(index => images[index])
-                : images;
+            let imagesToShare = [];
+            if (selectMode && selectedImages.size > 0) {
+                imagesToShare = Array.from(selectedImages).map(index => images[index]);
+            } else {
+                imagesToShare = images;
+            }
             
             fallbackShare(imagesToShare);
         }
@@ -1418,13 +1325,6 @@
                 } else if (e.key === 'Escape') {
                     closeModal();
                 }
-            }
-        });
-        
-        // Cleanup on unload
-        window.addEventListener('unload', () => {
-            if (sessionCheckInterval) {
-                clearInterval(sessionCheckInterval);
             }
         });
         
