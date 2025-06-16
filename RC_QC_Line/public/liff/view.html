@@ -193,7 +193,7 @@
             z-index: 1;
         }
         
-        /* Simple Modal */
+        /* Modal with Swiper */
         .modal {
             display: none;
             position: fixed;
@@ -201,23 +201,61 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #000;
+            background: rgba(0,0,0,0.9);
             z-index: 1000;
+            animation: fadeIn 0.3s;
         }
         
-        .modal-content {
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .modal-slider {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            transition: transform 0.3s ease-out;
+        }
+        
+        .modal-slide {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .modal-image-container {
             position: relative;
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
         
         .modal-image {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            transform-origin: center center;
+            transition: none;
         }
         
         .modal-close {
@@ -235,6 +273,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10;
         }
         
         .modal-nav {
@@ -248,6 +287,12 @@
             padding: 20px 15px;
             cursor: pointer;
             border-radius: 5px;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        
+        .modal-nav:hover {
+            background: rgba(255,255,255,0.4);
         }
         
         .modal-prev {
@@ -268,6 +313,38 @@
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 14px;
+            z-index: 10;
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            border-radius: 25px;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .zoom-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
         
         /* Error State */
@@ -349,15 +426,7 @@
             text-align: center;
             font-size: 12px;
         }
-        
-        /* PhotoSwipe Container */
-        .pswp {
-            z-index: 2000;
-        }
     </style>
-    
-    <!-- PhotoSwipe CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.3.7/photoswipe.min.css">
 </head>
 <body>
     <!-- Header -->
@@ -408,44 +477,62 @@
         </button>
     </div>
     
-    <!-- PhotoSwipe Script -->
-    <script type="module">
-        import PhotoSwipeLightbox from 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.3.7/photoswipe-lightbox.esm.min.js';
-        import PhotoSwipe from 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.3.7/photoswipe.esm.min.js';
-        
-        // Make it globally available
-        window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-        window.PhotoSwipe = PhotoSwipe;
-    </script>
+    <!-- Image Modal with Swiper and Zoom -->
+    <div class="modal" id="imageModal">
+        <div class="modal-container">
+            <div class="modal-slider" id="modalSlider">
+                <!-- Slides will be generated dynamically -->
+            </div>
+            
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <button class="modal-nav modal-prev" onclick="slideToPrev()">‹</button>
+            <button class="modal-nav modal-next" onclick="slideToNext()">›</button>
+            <div class="modal-counter" id="modalCounter">1 / 1</div>
+            
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomOut()">−</button>
+                <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Global variables
         let images = [];
         let selectedImages = new Set();
         let selectMode = false;
+        let currentModalIndex = 0;
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
         let userId = 'anonymous';
-        let lightbox = null;
+        
+        // Modal and zoom variables
+        let modalSlider = null;
+        let currentSlide = 0;
+        let isSliding = false;
+        let slideStartX = 0;
+        let slideStartY = 0;
+        let slideDeltaX = 0;
+        
+        // Zoom variables for each slide
+        let zoomLevels = [];
+        let currentZoomLevel = 1;
+        let isPinching = false;
+        let initialPinchDistance = 0;
+        let lastScale = 1;
         
         // Initialize (No Authentication Version)
         async function initialize() {
             try {
                 console.log('=== No-Auth Initialization ===');
-                console.log('Current URL:', window.location.href);
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
-                
-                console.log('Extracted parameters:', {
-                    lot: lotNumber,
-                    date: imageDate,
-                    baseUrl: baseUrl
-                });
                 
                 if (!lotNumber || !imageDate) {
                     showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
@@ -464,22 +551,14 @@
         // Load images from server
         async function loadImages() {
             try {
-                console.log('Loading images...');
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
-                console.log('API URL:', apiUrl);
-                
                 const response = await fetch(apiUrl);
-                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('API Error:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log('API Response:', data);
-                
                 images = data.images || [];
                 
                 if (images.length === 0) {
@@ -487,14 +566,14 @@
                     return;
                 }
                 
+                // Initialize zoom levels for each image
+                zoomLevels = new Array(images.length).fill(1);
+                
                 // Update header
                 updateHeader();
                 
                 // Render images
                 renderImages();
-                
-                // Initialize PhotoSwipe after images are rendered
-                setTimeout(initPhotoSwipe, 100);
                 
                 // Show content
                 document.getElementById('loading').style.display = 'none';
@@ -503,7 +582,7 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
+                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
             }
         }
         
@@ -516,7 +595,6 @@
         
         // Render image grid
         function renderImages() {
-            console.log('Rendering', images.length, 'images');
             const grid = document.getElementById('imageGrid');
             grid.innerHTML = '';
             
@@ -527,111 +605,28 @@
                     item.classList.add('selected');
                 }
                 
-                const link = document.createElement('a');
-                link.href = image.url;
-                link.setAttribute('data-pswp-width', '1200');
-                link.setAttribute('data-pswp-height', '1200');
-                link.setAttribute('data-index', index);
-                
                 const img = document.createElement('img');
                 img.src = image.url;
                 img.alt = `Image ${index + 1}`;
                 img.loading = 'lazy';
                 
                 img.onerror = () => {
-                    console.error(`Failed to load image ${index + 1}:`, image.url);
                     img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f0f0f0"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999"%3EError%3C/text%3E%3C/svg%3E';
                 };
                 
-                link.appendChild(img);
-                item.appendChild(link);
+                item.appendChild(img);
                 
-                // Override click handler
-                item.onclick = (e) => {
-                    e.preventDefault();
+                // Click handler
+                item.onclick = () => {
                     if (selectMode) {
                         toggleImageSelection(index);
                     } else {
-                        // PhotoSwipe will handle this
+                        openModal(index);
                     }
                 };
                 
                 grid.appendChild(item);
             });
-            
-            console.log('Rendering completed');
-        }
-        
-        // Initialize PhotoSwipe
-        function initPhotoSwipe() {
-            if (!window.PhotoSwipeLightbox) {
-                console.error('PhotoSwipeLightbox not loaded');
-                return;
-            }
-            
-            // Prepare gallery items
-            const galleryItems = images.map((image, index) => ({
-                src: image.url,
-                w: 1200,
-                h: 1200,
-                title: `รูปที่ ${index + 1}/${images.length}`
-            }));
-            
-            lightbox = new window.PhotoSwipeLightbox({
-                gallery: '#imageGrid',
-                children: 'a',
-                pswpModule: window.PhotoSwipe,
-                
-                // Options
-                showHideAnimationType: 'zoom',
-                showAnimationDuration: 250,
-                hideAnimationDuration: 250,
-                
-                // UI Elements
-                arrowPrev: true,
-                arrowNext: true,
-                zoom: true,
-                close: true,
-                counter: true,
-                
-                // Zoom settings
-                maxSpreadZoom: 4,
-                pinchToClose: true,
-                closeOnVerticalDrag: true,
-                
-                // Mobile friendly
-                allowPanToNext: true,
-                spacing: 0.1,
-                bgOpacity: 1,
-                mouseMovePan: true,
-                
-                // Custom data
-                dataSource: galleryItems
-            });
-            
-            // Add custom counter
-            lightbox.on('uiRegister', function() {
-                lightbox.pswp.ui.registerElement({
-                    name: 'custom-counter',
-                    order: 9,
-                    isButton: false,
-                    appendTo: 'bar',
-                    html: {
-                        isCustomSVG: false,
-                        inner: '<div class="pswp__counter"></div>'
-                    },
-                    onInit: (el, pswp) => {
-                        pswp.on('change', () => {
-                            el.querySelector('.pswp__counter').innerHTML = 
-                                `${pswp.currIndex + 1} / ${pswp.getNumItems()}`;
-                        });
-                    }
-                });
-            });
-            
-            lightbox.init();
-            
-            console.log('PhotoSwipe initialized');
         }
         
         // Toggle select mode
@@ -715,15 +710,9 @@
                 
                 showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
                 
-                // Get image IDs
                 const imageIds = imagesToShare.map(img => img.image_id).join(',');
-                
-                // Build share URL
                 const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
                 
-                console.log('Opening share page:', shareUrl);
-                
-                // Open in same window
                 window.location.href = shareUrl;
                 
             } catch (error) {
@@ -731,6 +720,305 @@
                 showToast('❌ เกิดข้อผิดพลาดในการแชร์');
             }
         }
+        
+        // Open modal
+        function openModal(index) {
+            currentSlide = index;
+            const modal = document.getElementById('imageModal');
+            modalSlider = document.getElementById('modalSlider');
+            
+            // Create slides
+            modalSlider.innerHTML = '';
+            images.forEach((image, i) => {
+                const slide = document.createElement('div');
+                slide.className = 'modal-slide';
+                slide.setAttribute('data-index', i);
+                
+                const container = document.createElement('div');
+                container.className = 'modal-image-container';
+                
+                const img = document.createElement('img');
+                img.className = 'modal-image';
+                img.src = image.url;
+                img.alt = `Image ${i + 1}`;
+                img.draggable = false;
+                
+                container.appendChild(img);
+                slide.appendChild(container);
+                modalSlider.appendChild(slide);
+            });
+            
+            // Set initial position
+            updateSliderPosition();
+            updateCounter();
+            
+            // Show modal
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Add event listeners
+            setupModalEventListeners();
+        }
+        
+        // Setup modal event listeners
+        function setupModalEventListeners() {
+            const container = document.querySelector('.modal-container');
+            
+            // Touch events
+            container.addEventListener('touchstart', handleTouchStart, { passive: false });
+            container.addEventListener('touchmove', handleTouchMove, { passive: false });
+            container.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            // Mouse events for desktop
+            container.addEventListener('mousedown', handleMouseDown);
+            container.addEventListener('mousemove', handleMouseMove);
+            container.addEventListener('mouseup', handleMouseUp);
+            container.addEventListener('mouseleave', handleMouseUp);
+            
+            // Prevent default gestures
+            container.addEventListener('gesturestart', e => e.preventDefault());
+            container.addEventListener('gesturechange', e => e.preventDefault());
+            container.addEventListener('gestureend', e => e.preventDefault());
+        }
+        
+        // Touch event handlers
+        let touches = [];
+        let lastTouchEnd = 0;
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 2) {
+                // Start pinch zoom
+                isPinching = true;
+                isSliding = false;
+                initialPinchDistance = getDistance(touches[0], touches[1]);
+                lastScale = zoomLevels[currentSlide];
+            } else if (touches.length === 1) {
+                // Check for double tap
+                const now = Date.now();
+                if (now - lastTouchEnd < 300) {
+                    handleDoubleTap(touches[0]);
+                } else {
+                    // Start slide or pan
+                    slideStartX = touches[0].clientX;
+                    slideStartY = touches[0].clientY;
+                    slideDeltaX = 0;
+                    isSliding = zoomLevels[currentSlide] === 1;
+                }
+            }
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (isPinching && touches.length === 2) {
+                // Handle pinch zoom
+                const currentDistance = getDistance(touches[0], touches[1]);
+                const scale = currentDistance / initialPinchDistance;
+                const newZoom = Math.max(1, Math.min(5, lastScale * scale));
+                
+                zoomLevels[currentSlide] = newZoom;
+                applyZoom(currentSlide, newZoom);
+            } else if (touches.length === 1 && !isPinching) {
+                const deltaX = touches[0].clientX - slideStartX;
+                const deltaY = touches[0].clientY - slideStartY;
+                
+                if (zoomLevels[currentSlide] === 1) {
+                    // Slide between images
+                    slideDeltaX = deltaX;
+                    modalSlider.style.transition = 'none';
+                    modalSlider.style.transform = `translateX(${-currentSlide * 100 + (deltaX / window.innerWidth * 100)}%)`;
+                } else {
+                    // Pan zoomed image
+                    const container = modalSlider.children[currentSlide].querySelector('.modal-image-container');
+                    const img = container.querySelector('.modal-image');
+                    const currentTransform = img.style.transform || '';
+                    const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
+                    const scale = scaleMatch ? parseFloat(scaleMatch[1]) : 1;
+                    
+                    img.style.transform = `scale(${scale}) translate(${deltaX / scale}px, ${deltaY / scale}px)`;
+                }
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            lastTouchEnd = Date.now();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 0) {
+                isPinching = false;
+                
+                if (isSliding && Math.abs(slideDeltaX) > 50) {
+                    // Complete slide
+                    if (slideDeltaX > 0 && currentSlide > 0) {
+                        currentSlide--;
+                    } else if (slideDeltaX < 0 && currentSlide < images.length - 1) {
+                        currentSlide++;
+                    }
+                }
+                
+                // Reset slider position
+                updateSliderPosition();
+                updateCounter();
+                isSliding = false;
+            }
+        }
+        
+        // Mouse handlers for desktop
+        let isMouseDown = false;
+        let mouseStartX = 0;
+        
+        function handleMouseDown(e) {
+            if (e.button !== 0) return;
+            isMouseDown = true;
+            mouseStartX = e.clientX;
+            slideStartX = e.clientX;
+            slideDeltaX = 0;
+            isSliding = zoomLevels[currentSlide] === 1;
+        }
+        
+        function handleMouseMove(e) {
+            if (!isMouseDown) return;
+            
+            const deltaX = e.clientX - slideStartX;
+            
+            if (zoomLevels[currentSlide] === 1) {
+                slideDeltaX = deltaX;
+                modalSlider.style.transition = 'none';
+                modalSlider.style.transform = `translateX(${-currentSlide * 100 + (deltaX / window.innerWidth * 100)}%)`;
+            }
+        }
+        
+        function handleMouseUp(e) {
+            if (!isMouseDown) return;
+            isMouseDown = false;
+            
+            if (isSliding && Math.abs(slideDeltaX) > 50) {
+                if (slideDeltaX > 0 && currentSlide > 0) {
+                    currentSlide--;
+                } else if (slideDeltaX < 0 && currentSlide < images.length - 1) {
+                    currentSlide++;
+                }
+            }
+            
+            updateSliderPosition();
+            updateCounter();
+            isSliding = false;
+        }
+        
+        // Double tap handler
+        function handleDoubleTap(touch) {
+            const currentZoom = zoomLevels[currentSlide];
+            const newZoom = currentZoom === 1 ? 2.5 : 1;
+            zoomLevels[currentSlide] = newZoom;
+            applyZoom(currentSlide, newZoom);
+        }
+        
+        // Helper functions
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        function applyZoom(slideIndex, zoom) {
+            const slide = modalSlider.children[slideIndex];
+            if (!slide) return;
+            
+            const img = slide.querySelector('.modal-image');
+            img.style.transition = 'transform 0.3s';
+            img.style.transform = `scale(${zoom})`;
+        }
+        
+        function updateSliderPosition() {
+            modalSlider.style.transition = 'transform 0.3s';
+            modalSlider.style.transform = `translateX(${-currentSlide * 100}%)`;
+        }
+        
+        function updateCounter() {
+            document.getElementById('modalCounter').textContent = `${currentSlide + 1} / ${images.length}`;
+        }
+        
+        // Navigation functions
+        function slideToPrev() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSliderPosition();
+                updateCounter();
+            }
+        }
+        
+        function slideToNext() {
+            if (currentSlide < images.length - 1) {
+                currentSlide++;
+                updateSliderPosition();
+                updateCounter();
+            }
+        }
+        
+        // Zoom controls
+        function zoomIn() {
+            const currentZoom = zoomLevels[currentSlide];
+            const newZoom = Math.min(5, currentZoom * 1.5);
+            zoomLevels[currentSlide] = newZoom;
+            applyZoom(currentSlide, newZoom);
+        }
+        
+        function zoomOut() {
+            const currentZoom = zoomLevels[currentSlide];
+            const newZoom = Math.max(1, currentZoom / 1.5);
+            zoomLevels[currentSlide] = newZoom;
+            applyZoom(currentSlide, newZoom);
+        }
+        
+        function resetZoom() {
+            zoomLevels[currentSlide] = 1;
+            applyZoom(currentSlide, 1);
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            
+            // Reset all zooms
+            zoomLevels.fill(1);
+            
+            // Remove event listeners
+            const container = document.querySelector('.modal-container');
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+            container.removeEventListener('touchend', handleTouchEnd);
+            container.removeEventListener('mousedown', handleMouseDown);
+            container.removeEventListener('mousemove', handleMouseMove);
+            container.removeEventListener('mouseup', handleMouseUp);
+            container.removeEventListener('mouseleave', handleMouseUp);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (e.key === 'ArrowLeft') {
+                    slideToPrev();
+                } else if (e.key === 'ArrowRight') {
+                    slideToNext();
+                } else if (e.key === 'Escape') {
+                    closeModal();
+                } else if (e.key === '+' || e.key === '=') {
+                    zoomIn();
+                } else if (e.key === '-') {
+                    zoomOut();
+                } else if (e.key === '0') {
+                    resetZoom();
+                }
+            }
+        });
         
         // Show error
         function showError(message, details = null) {
