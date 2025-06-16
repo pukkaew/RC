@@ -518,6 +518,11 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
+                // If base_url is not provided, use current origin
+                if (!params.has('base_url')) {
+                    baseUrl = window.location.origin;
+                }
+                
                 console.log('Extracted parameters:', {
                     lot: lotNumber,
                     date: imageDate,
@@ -737,7 +742,7 @@
                 // Create share session
                 const imageIds = imagesToShare.map(img => img.image_id);
                 
-                const response = await fetch(`${baseUrl}/api/create-share`, {
+                const response = await fetch(`${baseUrl}/api/share/create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

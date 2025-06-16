@@ -8,11 +8,19 @@ const logger = require('../utils/Logger');
 const archiver = require('archiver');
 
 // Create share session (Enhanced for LIFF)
-router.post('/create-share', async (req, res) => {
+router.post('/share/create', async (req, res) => {
   try {
     const { userId, lotNumber, imageDate, imageIds } = req.body;
     
     logger.info(`Creating share session for user: ${userId}, lot: ${lotNumber}, images: ${imageIds?.length}`);
+    
+    // Validate parameters
+    if (!lotNumber || !imageDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: lotNumber and imageDate'
+      });
+    }
     
     // Get images
     const result = await imageService.getImagesByLotAndDate(lotNumber, imageDate);
@@ -28,11 +36,18 @@ router.post('/create-share', async (req, res) => {
     let imagesToShare = result.images;
     if (imageIds && imageIds.length > 0) {
       imagesToShare = result.images.filter(img => imageIds.includes(img.image_id));
+      
+      if (imagesToShare.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Selected images not found'
+        });
+      }
     }
     
     // Create share session
     const shareSession = await imageShareService.createShareSession(
-      userId,
+      userId || 'anonymous',
       imagesToShare,
       lotNumber,
       imageDate
@@ -54,7 +69,7 @@ router.post('/create-share', async (req, res) => {
     logger.error('Error creating share session:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message || 'Failed to create share session'
     });
   }
 });

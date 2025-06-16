@@ -70,7 +70,7 @@ app.post('/webhook', webhookController.handleWebhook);
 // API routes for LIFF
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
-app.use('/api', shareRoutes);
+app.use('/api', shareRoutes); // This will handle /api/share/* routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
