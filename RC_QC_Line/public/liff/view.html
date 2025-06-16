@@ -556,17 +556,34 @@
                     return;
                 }
                 
-                // Initialize LIFF
+                // Initialize LIFF with session validation
                 try {
                     liff = window.liff;
                     await liff.init({ liffId: '2007575196-NWaXrZVE' });
                     console.log('LIFF initialized successfully');
                     
+                    // Check login status and validate session
                     if (liff.isLoggedIn()) {
-                        isLoggedIn = true;
-                        const profile = await liff.getProfile();
-                        userId = profile.userId;
-                        console.log('User logged in:', userId);
+                        try {
+                            // Try to get profile to validate session
+                            const profile = await liff.getProfile();
+                            isLoggedIn = true;
+                            userId = profile.userId;
+                            console.log('User logged in:', userId);
+                            
+                            // Validate access token
+                            const accessToken = liff.getAccessToken();
+                            if (!accessToken) {
+                                console.log('No access token, need to re-login');
+                                await handleSessionExpired();
+                            }
+                        } catch (profileError) {
+                            console.error('Profile fetch error:', profileError);
+                            // Session might be expired
+                            if (profileError.code === 401 || profileError.code === 400) {
+                                await handleSessionExpired();
+                            }
+                        }
                     } else {
                         console.log('User not logged in - working in anonymous mode');
                     }
@@ -582,6 +599,22 @@
             } catch (error) {
                 console.error('Initialization failed:', error);
                 showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
+            }
+        }
+        
+        // Handle expired session
+        async function handleSessionExpired() {
+            console.log('Session expired, logging out and re-login');
+            try {
+                // Clear current session
+                if (liff && liff.isLoggedIn()) {
+                    await liff.logout();
+                }
+                // Re-login
+                liff.login();
+            } catch (error) {
+                console.error('Error handling session expiry:', error);
+                showToast('กรุณา login ใหม่');
             }
         }
         
@@ -724,7 +757,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Main share function - Fixed version
+        // Main share function - Fixed version with session validation
         async function shareImages() {
             try {
                 // ตรวจสอบว่า LIFF พร้อมใช้งานหรือไม่
@@ -746,6 +779,19 @@
                     showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
                     liff.login();
                     return;
+                }
+                
+                // Validate session by trying to get profile
+                try {
+                    const profile = await liff.getProfile();
+                    console.log('Session is valid');
+                } catch (sessionError) {
+                    console.error('Session validation error:', sessionError);
+                    if (sessionError.code === 401 || sessionError.code === 400) {
+                        showToast('Session หมดอายุ กำลัง login ใหม่...');
+                        await handleSessionExpired();
+                        return;
+                    }
                 }
                 
                 let imagesToShare = [];
@@ -784,18 +830,26 @@
                 
             } catch (error) {
                 console.error('Share error:', error);
-                // Try fallback on any error
-                let imagesToShare = [];
-                if (selectMode && selectedImages.size > 0) {
-                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                
+                // Check if it's a session error
+                if (error.code === 401 || error.code === 400 || 
+                    error.message?.includes('401') || error.message?.includes('400')) {
+                    showToast('Session หมดอายุ กำลัง login ใหม่...');
+                    await handleSessionExpired();
                 } else {
-                    imagesToShare = images;
+                    // Try fallback on any error
+                    let imagesToShare = [];
+                    if (selectMode && selectedImages.size > 0) {
+                        imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                    } else {
+                        imagesToShare = images;
+                    }
+                    fallbackShare(imagesToShare);
                 }
-                fallbackShare(imagesToShare);
             }
         }
         
-        // Share using shareTargetPicker (Fixed version)
+        // Share using shareTargetPicker (Fixed version with session handling)
         async function shareWithTargetPicker(imagesToShare, batchInfo = null) {
             const shareBtn = document.getElementById('shareBtn');
             const originalText = shareBtn.innerHTML;
@@ -803,6 +857,19 @@
             shareBtn.innerHTML = '<span>⏳</span><span>กำลังเตรียมรูป...</span>';
             
             try {
+                // Check session before sharing
+                try {
+                    const profile = await liff.getProfile();
+                    console.log('Session valid, proceeding with share');
+                } catch (sessionError) {
+                    console.error('Session error:', sessionError);
+                    if (sessionError.code === 401 || sessionError.code === 400) {
+                        showToast('Session หมดอายุ กำลัง login ใหม่...');
+                        await handleSessionExpired();
+                        return;
+                    }
+                }
+                
                 // เตรียม messages array
                 const messages = [];
                 
@@ -865,8 +932,12 @@
                 } catch (shareError) {
                     console.error('shareTargetPicker error:', shareError);
                     
-                    // ถ้า error เป็นเพราะ API ไม่พร้อม ให้ใช้ fallback
-                    if (shareError.code === 'UNAVAILABLE') {
+                    // Handle session errors
+                    if (shareError.code === 401 || shareError.code === 400 || 
+                        shareError.message?.includes('401') || shareError.message?.includes('400')) {
+                        showToast('Session หมดอายุ กำลัง login ใหม่...');
+                        await handleSessionExpired();
+                    } else if (shareError.code === 'UNAVAILABLE') {
                         console.log('API unavailable, using fallback');
                         fallbackShare(imagesToShare);
                     } else {
@@ -876,7 +947,16 @@
                 
             } catch (error) {
                 console.error('Error in shareWithTargetPicker:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์: ' + (error.message || 'Unknown error'));
+                
+                // Check if it's a session error
+                if (error.message?.includes('401') || error.message?.includes('400')) {
+                    showToast('Session หมดอายุ กำลัง login ใหม่...');
+                    await handleSessionExpired();
+                } else {
+                    showToast('❌ เกิดข้อผิดพลาดในการแชร์ กำลังใช้วิธีอื่น...');
+                    // Fallback to old method
+                    fallbackShare(imagesToShare);
+                }
             } finally {
                 shareBtn.disabled = false;
                 shareBtn.innerHTML = originalText;
