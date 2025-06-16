@@ -401,55 +401,14 @@
             z-index: 50;
         }
         
-        /* Share Options Modal */
-        .share-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s;
-        }
-        
-        .share-modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            max-width: 90%;
-            width: 320px;
+        /* No Auth Notice */
+        .no-auth-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
             text-align: center;
-        }
-        
-        .share-modal h3 {
-            color: #00B900;
-            margin-bottom: 15px;
-        }
-        
-        .share-modal-btn {
-            width: 100%;
-            padding: 15px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .share-modal-btn-primary {
-            background: #00B900;
-            color: white;
-        }
-        
-        .share-modal-btn-secondary {
-            background: #f0f0f0;
-            color: #333;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -458,6 +417,11 @@
     <div class="header">
         <h1>📸 รูปภาพ QC</h1>
         <div class="info" id="headerInfo">กำลังโหลด...</div>
+    </div>
+    
+    <!-- No Auth Notice -->
+    <div class="no-auth-notice">
+        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
     </div>
     
     <!-- Selection Counter -->
@@ -512,13 +476,15 @@
                 <button class="zoom-btn" onclick="resetZoom()">⟲</button>
                 <button class="zoom-btn" onclick="zoomIn()">+</button>
             </div>
+            <div style="text-align: center; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-size: 12px; opacity: 0.7;">
+                👆 แตะเพื่อซูม | 👌 บีบนิ้วซูม | 🖱️ สกอลล์ซูม
+            </div>
         </div>
     </div>
     
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Remove LIFF SDK - No Authentication needed -->
     <script>
         // Global variables
-        let liff = null;
         let images = [];
         let selectedImages = new Set();
         let selectMode = false;
@@ -527,7 +493,6 @@
         let imageDate = '';
         let baseUrl = '';
         let userId = 'anonymous';
-        let isLoggedIn = false;
         
         // Zoom variables
         let currentZoom = 1;
@@ -536,12 +501,16 @@
         let startY = 0;
         let translateX = 0;
         let translateY = 0;
-        let initialDistance = 0;
         
-        // Initialize
+        // Pinch zoom variables
+        let initialDistance = 0;
+        let isPinching = false;
+        
+        // Initialize (No Authentication Version)
         async function initialize() {
             try {
-                console.log('=== Initializing LIFF ===');
+                console.log('=== No-Auth Initialization ===');
+                console.log('Current URL:', window.location.href);
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -549,42 +518,26 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
-                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
+                // If base_url is not provided, use current origin
+                if (!params.has('base_url')) {
+                    baseUrl = window.location.origin;
+                }
+                
+                console.log('Extracted parameters:', {
+                    lot: lotNumber,
+                    date: imageDate,
+                    baseUrl: baseUrl
+                });
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่');
+                    showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
                     return;
                 }
                 
-                // Initialize LIFF
-                try {
-                    liff = window.liff;
-                    await liff.init({ liffId: '2007575196-NWaXrZVE' });
-                    console.log('LIFF initialized successfully');
-                    
-                    // Check login status
-                    if (liff.isLoggedIn()) {
-                        try {
-                            const profile = await liff.getProfile();
-                            isLoggedIn = true;
-                            userId = profile.userId;
-                            console.log('User logged in:', userId);
-                        } catch (profileError) {
-                            console.error('Profile fetch error:', profileError);
-                            // Session expired - don't auto-login here, let user trigger it
-                            isLoggedIn = false;
-                            console.log('Session might be expired, will prompt login when needed');
-                        }
-                    } else {
-                        console.log('User not logged in - working in anonymous mode');
-                    }
-                } catch (liffError) {
-                    console.error('LIFF initialization failed:', liffError);
-                    console.log('Continuing without LIFF features');
-                    liff = window.liff;
-                }
+                // Skip LIFF initialization - work without authentication
+                console.log('Running in No-Auth mode (like delete.html)');
                 
-                // Load images
+                // Load images directly without authentication
                 await loadImages();
                 
             } catch (error) {
@@ -597,22 +550,34 @@
         async function loadImages() {
             try {
                 console.log('Loading images...');
+                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
+                
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
+                console.log('API URL:', apiUrl);
                 
                 const response = await fetch(apiUrl);
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 console.log('API Response:', data);
+                console.log('Images count:', data.images?.length || 0);
                 
                 images = data.images || [];
                 
                 if (images.length === 0) {
                     showError(`ไม่พบรูปภาพ\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
                     return;
+                }
+                
+                // Log first image URL for debugging
+                if (images.length > 0) {
+                    console.log('First image URL:', images[0].url);
                 }
                 
                 // Update UI
@@ -626,7 +591,7 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
+                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
             }
         }
         
@@ -639,10 +604,13 @@
         
         // Render image grid
         function renderImages() {
+            console.log('Rendering', images.length, 'images');
             const grid = document.getElementById('imageGrid');
             grid.innerHTML = '';
             
             images.forEach((image, index) => {
+                console.log(`Image ${index + 1}:`, image.url);
+                
                 const item = document.createElement('div');
                 item.className = 'image-item';
                 if (selectedImages.has(index)) {
@@ -653,6 +621,12 @@
                 img.src = image.url;
                 img.alt = `Image ${index + 1}`;
                 img.loading = 'lazy';
+                
+                // Add error handler for images
+                img.onerror = () => {
+                    console.error(`Failed to load image ${index + 1}:`, image.url);
+                    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f0f0f0"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999"%3EError%3C/text%3E%3C/svg%3E';
+                };
                 
                 item.appendChild(img);
                 
@@ -667,6 +641,8 @@
                 
                 grid.appendChild(item);
             });
+            
+            console.log('Rendering completed');
         }
         
         // Toggle select mode
@@ -732,11 +708,11 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Main share function - WITH SMART FALLBACK
+        // Share images - No LIFF version
         async function shareImages() {
             try {
-                // Prepare images to share
                 let imagesToShare = [];
+                
                 if (selectMode && selectedImages.size > 0) {
                     imagesToShare = Array.from(selectedImages).map(index => images[index]);
                 } else {
@@ -748,317 +724,23 @@
                     return;
                 }
                 
-                console.log('Images to share:', imagesToShare.length);
+                showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
                 
-                // Option 1: Try shareTargetPicker if available and logged in
-                if (liff && liff.isLoggedIn()) {
-                    try {
-                        const canUseShareTargetPicker = liff.isApiAvailable('shareTargetPicker');
-                        if (canUseShareTargetPicker) {
-                            console.log('Trying shareTargetPicker...');
-                            
-                            // Test with a simple call first
-                            await liff.ready;
-                            
-                            if (imagesToShare.length > 5) {
-                                showShareOptions(imagesToShare);
-                                return; // Let user choose method
-                            } else {
-                                await shareWithTargetPicker(imagesToShare);
-                                return; // Success
-                            }
-                        }
-                    } catch (error) {
-                        console.log('ShareTargetPicker not available or error:', error);
-                        // Continue to fallback
-                    }
-                }
-                
-                // Option 2: Use reliable bot share method
-                console.log('Using bot share method');
-                fallbackShare(imagesToShare);
-                
-            } catch (error) {
-                console.error('Share error:', error);
-                fallbackShare(selectMode && selectedImages.size > 0 
-                    ? Array.from(selectedImages).map(index => images[index])
-                    : images);
-            }
-        }
-        
-        // Check if error is session-related
-        function isSessionError(error) {
-            if (!error) return false;
-            
-            // Check error code
-            if (error.code === 401 || error.code === 400 || error.code === 'UNAUTHORIZED') {
-                return true;
-            }
-            
-            // Check error message
-            const errorMsg = (error.message || error.toString() || '').toLowerCase();
-            const sessionErrorKeywords = [
-                '401', '400', 'unauthorized', 'expired', 'invalid', 
-                'session', 'token', 'authenticate', 'login'
-            ];
-            
-            return sessionErrorKeywords.some(keyword => errorMsg.includes(keyword));
-        }
-        
-        // Share using shareTargetPicker - WITH IMMEDIATE FALLBACK ON ERROR
-        async function shareWithTargetPicker(imagesToShare, batchInfo = null) {
-            const shareBtn = document.getElementById('shareBtn');
-            const originalText = shareBtn.innerHTML;
-            shareBtn.disabled = true;
-            shareBtn.innerHTML = '<span>⏳</span><span>กำลังเตรียมรูป...</span>';
-            
-            try {
-                // Prepare messages
-                const messages = [];
-                
-                // Header message
-                let headerText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}`;
-                
-                if (batchInfo) {
-                    headerText += `\n🖼️ รูปที่ ${batchInfo.start}-${batchInfo.end} จากทั้งหมด ${batchInfo.total} รูป`;
-                } else {
-                    headerText += `\n🖼️ จำนวน ${imagesToShare.length} รูป`;
-                }
-                
-                messages.push({
-                    type: 'text',
-                    text: headerText
-                });
-                
-                // Add images (max 5)
-                const maxImages = Math.min(imagesToShare.length, 5);
-                for (let i = 0; i < maxImages; i++) {
-                    const image = imagesToShare[i];
-                    let imageUrl = image.url;
-                    
-                    if (!imageUrl.startsWith('http')) {
-                        imageUrl = `${window.location.origin}${imageUrl}`;
-                    }
-                    
-                    messages.push({
-                        type: 'image',
-                        originalContentUrl: imageUrl,
-                        previewImageUrl: imageUrl
-                    });
-                }
-                
-                console.log('Calling shareTargetPicker with', messages.length, 'messages');
-                
-                // Update button
-                shareBtn.innerHTML = '<span>📤</span><span>เลือกห้องแชท...</span>';
-                
-                // Call shareTargetPicker with timeout
-                const sharePromise = liff.shareTargetPicker(messages);
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 10000) // 10 second timeout
-                );
-                
-                const result = await Promise.race([sharePromise, timeoutPromise]);
-                
-                console.log('Share result:', result);
-                
-                if (result && result.status === 'success') {
-                    showToast('✅ แชร์รูปภาพเรียบร้อยแล้ว');
-                    
-                    if (batchInfo && batchInfo.hasMore) {
-                        showContinueShareModal(batchInfo);
-                    } else if (selectMode) {
-                        toggleSelectMode();
-                    }
-                } else {
-                    showToast('ยกเลิกการแชร์');
-                }
-                
-            } catch (error) {
-                console.error('shareTargetPicker error:', error);
-                
-                // Don't try to re-login, just use fallback immediately
-                showToast('กำลังเปลี่ยนวิธีแชร์...');
-                setTimeout(() => {
-                    fallbackShare(imagesToShare);
-                }, 500);
-                
-            } finally {
-                shareBtn.disabled = false;
-                shareBtn.innerHTML = originalText;
-            }
-        }
-        
-        // Fallback share method
-        function fallbackShare(imagesToShare) {
-            try {
+                // Get image IDs
                 const imageIds = imagesToShare.map(img => img.image_id).join(',');
+                
+                // Build share URL - direct to share.html without LIFF
                 const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
                 
-                console.log('Fallback share URL:', shareUrl);
+                console.log('Opening share page:', shareUrl);
+                
+                // Open in same window (no LIFF)
                 window.location.href = shareUrl;
                 
             } catch (error) {
-                console.error('Fallback share error:', error);
+                console.error('Share error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการแชร์');
             }
-        }
-        
-        // Show share options for more than 5 images
-        function showShareOptions(imagesToShare) {
-            const modalHtml = `
-                <div class="share-modal" id="shareOptionsModal">
-                    <div class="share-modal-content">
-                        <h3>📤 เลือกวิธีแชร์</h3>
-                        <p style="color: #666; margin-bottom: 15px;">
-                            มี ${imagesToShare.length} รูป<br>
-                            <small>(LINE จำกัดส่งครั้งละ 5 รูป)</small>
-                        </p>
-                        
-                        <button class="share-modal-btn share-modal-btn-primary" 
-                                onclick="shareInBatches()">
-                            📤 ส่งทีละ 5 รูป
-                        </button>
-                        
-                        <button class="share-modal-btn share-modal-btn-secondary" 
-                                onclick="shareFirst5Only()">
-                            ⚡ ส่งแค่ 5 รูปแรก
-                        </button>
-                        
-                        <button class="share-modal-btn share-modal-btn-secondary" 
-                                onclick="fallbackShareAll()">
-                            🔗 ใช้วิธีแชร์แบบเดิม
-                        </button>
-                        
-                        <button class="share-modal-btn share-modal-btn-secondary" 
-                                onclick="closeShareOptions()">
-                            ยกเลิก
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-        
-        // Share in batches
-        async function shareInBatches() {
-            closeShareOptions();
-            
-            let imagesToShare = [];
-            if (selectMode && selectedImages.size > 0) {
-                imagesToShare = Array.from(selectedImages).map(index => images[index]);
-            } else {
-                imagesToShare = images;
-            }
-            
-            const batch1 = imagesToShare.slice(0, 5);
-            const batchInfo = {
-                start: 1,
-                end: Math.min(5, imagesToShare.length),
-                total: imagesToShare.length,
-                currentBatch: 0,
-                hasMore: imagesToShare.length > 5,
-                allImages: imagesToShare
-            };
-            
-            window.shareBatchInfo = batchInfo;
-            await shareWithTargetPicker(batch1, batchInfo);
-        }
-        
-        // Share first 5 only
-        async function shareFirst5Only() {
-            closeShareOptions();
-            
-            let imagesToShare = [];
-            if (selectMode && selectedImages.size > 0) {
-                imagesToShare = Array.from(selectedImages).map(index => images[index]);
-            } else {
-                imagesToShare = images;
-            }
-            
-            const first5 = imagesToShare.slice(0, 5);
-            await shareWithTargetPicker(first5);
-        }
-        
-        // Use fallback share for all images
-        function fallbackShareAll() {
-            closeShareOptions();
-            
-            let imagesToShare = [];
-            if (selectMode && selectedImages.size > 0) {
-                imagesToShare = Array.from(selectedImages).map(index => images[index]);
-            } else {
-                imagesToShare = images;
-            }
-            
-            fallbackShare(imagesToShare);
-        }
-        
-        // Close share options modal
-        function closeShareOptions() {
-            const modal = document.getElementById('shareOptionsModal');
-            if (modal) modal.remove();
-        }
-        
-        // Show continue share modal
-        function showContinueShareModal(batchInfo) {
-            const remaining = batchInfo.total - batchInfo.end;
-            const modalHtml = `
-                <div class="share-modal" id="continueShareModal">
-                    <div class="share-modal-content">
-                        <h3>✅ ส่งรูปสำเร็จ!</h3>
-                        <p style="margin: 15px 0;">
-                            ส่งไปแล้ว ${batchInfo.end - batchInfo.start + 1} รูป<br>
-                            <strong style="color: #FF6B00;">เหลืออีก ${remaining} รูป</strong>
-                        </p>
-                        
-                        <button class="share-modal-btn share-modal-btn-primary" 
-                                onclick="continueSharing()">
-                            📤 ส่งรูปที่เหลือต่อ
-                        </button>
-                        
-                        <button class="share-modal-btn share-modal-btn-secondary" 
-                                onclick="finishSharing()">
-                            ✅ เสร็จสิ้น
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-        
-        // Continue sharing next batch
-        async function continueSharing() {
-            const modal = document.getElementById('continueShareModal');
-            if (modal) modal.remove();
-            
-            const batchInfo = window.shareBatchInfo;
-            if (!batchInfo) return;
-            
-            const nextStart = batchInfo.end + 1;
-            const nextEnd = Math.min(nextStart + 4, batchInfo.total);
-            const nextBatch = batchInfo.allImages.slice(nextStart - 1, nextEnd);
-            
-            batchInfo.currentBatch++;
-            batchInfo.start = nextStart;
-            batchInfo.end = nextEnd;
-            batchInfo.hasMore = nextEnd < batchInfo.total;
-            
-            await shareWithTargetPicker(nextBatch, batchInfo);
-        }
-        
-        // Finish sharing
-        function finishSharing() {
-            const modal = document.getElementById('continueShareModal');
-            if (modal) modal.remove();
-            
-            if (selectMode) {
-                toggleSelectMode();
-            }
-            
-            window.shareBatchInfo = null;
         }
         
         // Open image modal
@@ -1068,13 +750,44 @@
             const modalImage = document.getElementById('modalImage');
             const modalCounter = document.getElementById('modalCounter');
             
+            // Reset zoom and pan
             resetZoom();
+            isPinching = false;
+            isPanning = false;
             
             modalImage.src = images[index].url;
             modalCounter.textContent = `${index + 1} / ${images.length}`;
             modal.style.display = 'block';
             
             document.body.style.overflow = 'hidden';
+            
+            // Add zoom event listeners with better touch handling
+            const modalImageEl = document.getElementById('modalImage');
+            const containerEl = document.getElementById('imageContainer');
+            
+            // Single tap to toggle zoom (with delay to distinguish from double tap)
+            let tapTimeout;
+            modalImageEl.addEventListener('click', (e) => {
+                if (e.detail === 1) { // Single click
+                    tapTimeout = setTimeout(() => {
+                        toggleZoom(e);
+                    }, 200);
+                }
+            });
+            
+            // Double tap to zoom
+            modalImageEl.addEventListener('dblclick', (e) => {
+                clearTimeout(tapTimeout);
+                e.preventDefault();
+                if (currentZoom === 1) {
+                    currentZoom = 2;
+                } else {
+                    currentZoom = 1;
+                }
+                updateZoom();
+            });
+            
+            // Setup all pan and zoom events
             setupPanEvents();
         }
         
@@ -1105,7 +818,18 @@
             modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
         }
         
-        // Zoom functions
+        // Zoom functions with better touch support
+        function toggleZoom(e) {
+            // Prevent toggle zoom when pinching
+            if (isPinching || (e && e.touches && e.touches.length > 1)) return;
+            
+            if (currentZoom === 1) {
+                zoomIn();
+            } else {
+                resetZoom();
+            }
+        }
+        
         function zoomIn() {
             currentZoom = Math.min(currentZoom + 0.5, 3);
             updateZoom();
@@ -1121,60 +845,60 @@
             translateX = 0;
             translateY = 0;
             isPanning = false;
+            isPinching = false;
             updateZoom();
         }
         
         function updateZoom() {
             const modalImage = document.getElementById('modalImage');
+            const container = document.getElementById('imageContainer');
             
             if (currentZoom > 1) {
                 modalImage.classList.add('zoomed');
                 modalImage.style.cursor = 'move';
+                container.style.cursor = 'move';
             } else {
                 modalImage.classList.remove('zoomed');
                 modalImage.style.cursor = 'zoom-in';
+                container.style.cursor = 'zoom-in';
                 translateX = 0;
                 translateY = 0;
             }
             
+            // Apply transform with zoom and translation
             modalImage.style.transform = `scale(${currentZoom}) translate(${translateX}px, ${translateY}px)`;
+            
+            // Update zoom display (optional)
+            const zoomPercent = Math.round(currentZoom * 100);
+            console.log(`Zoom: ${zoomPercent}%`);
         }
         
-        // Setup pan events
+        // Setup pan and pinch zoom events
         function setupPanEvents() {
             const container = document.getElementById('imageContainer');
             const modalImage = document.getElementById('modalImage');
             
+            // Mouse events
             container.onmousedown = startPan;
             container.onmousemove = pan;
             container.onmouseup = endPan;
             container.onmouseleave = endPan;
             
+            // Touch events for mobile
             container.addEventListener('touchstart', handleTouchStart, { passive: false });
             container.addEventListener('touchmove', handleTouchMove, { passive: false });
             container.addEventListener('touchend', handleTouchEnd, { passive: false });
             
+            // Prevent image drag
             modalImage.ondragstart = () => false;
+            
+            // Mouse wheel zoom
             container.onwheel = handleWheel;
-        }
-        
-        function startPan(e) {
-            if (currentZoom <= 1) return;
-            isPanning = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-        }
-        
-        function pan(e) {
-            if (!isPanning || currentZoom <= 1) return;
-            e.preventDefault();
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            updateZoom();
-        }
-        
-        function endPan() {
-            isPanning = false;
+            
+            // Prevent default touch behaviors
+            container.addEventListener('gesturestart', e => e.preventDefault());
+            container.addEventListener('gesturechange', e => e.preventDefault());
+            container.addEventListener('gestureend', e => e.preventDefault());
         }
         
         // Touch variables
@@ -1182,31 +906,40 @@
         let lastTouchDistance = 0;
         let initialPinchZoom = 1;
         
-        // Handle touch start
+        // Handle touch start with better pinch detection
         function handleTouchStart(e) {
             touches = Array.from(e.touches);
             
             if (touches.length === 2) {
-                e.preventDefault();
+                // Two fingers - start pinch zoom
+                isPinching = true;
                 isPanning = false;
                 initialDistance = getDistance(touches[0], touches[1]);
                 lastTouchDistance = initialDistance;
                 initialPinchZoom = currentZoom;
+                e.preventDefault();
             } else if (touches.length === 1 && currentZoom > 1) {
+                // One finger - start pan if zoomed
+                isPinching = false;
                 startPan(touches[0]);
+                e.preventDefault();
             }
         }
         
-        // Handle touch move
+        // Handle touch move with smooth pinch zoom
         function handleTouchMove(e) {
             e.preventDefault();
             touches = Array.from(e.touches);
             
-            if (touches.length === 2) {
+            if (touches.length === 2 && isPinching) {
+                // Pinch zoom
                 const currentDistance = getDistance(touches[0], touches[1]);
                 const scale = currentDistance / initialDistance;
+                
+                // Calculate new zoom based on initial zoom when pinch started
                 const newZoom = Math.max(1, Math.min(3, initialPinchZoom * scale));
                 
+                // Apply smooth zoom
                 if (Math.abs(newZoom - currentZoom) > 0.01) {
                     currentZoom = newZoom;
                     updateZoom();
@@ -1214,6 +947,7 @@
                 
                 lastTouchDistance = currentDistance;
             } else if (touches.length === 1 && isPanning && currentZoom > 1) {
+                // Pan
                 pan(touches[0]);
             }
         }
@@ -1223,10 +957,15 @@
             touches = Array.from(e.touches);
             
             if (touches.length === 0) {
-                isPanning = false;
+                // All fingers lifted
+                isPinching = false;
+                endPan();
             } else if (touches.length === 1) {
+                // One finger remains - switch from pinch to pan
+                isPinching = false;
                 if (currentZoom > 1) {
-                    isPanning = false;
+                    isPanning = false; // Reset panning
+                    // Restart pan with remaining finger
                     setTimeout(() => {
                         if (touches.length === 1) {
                             startPan(touches[0]);
@@ -1243,14 +982,54 @@
             return Math.sqrt(dx * dx + dy * dy);
         }
         
+        // Handle mouse wheel zoom
         function handleWheel(e) {
             e.preventDefault();
+            
             if (e.deltaY < 0) {
+                // Scroll up - zoom in
                 currentZoom = Math.min(currentZoom + 0.1, 3);
             } else {
+                // Scroll down - zoom out
                 currentZoom = Math.max(currentZoom - 0.1, 1);
             }
+            
             updateZoom();
+        }
+        
+        function startPan(e) {
+            if (currentZoom <= 1 || isPinching) return;
+            
+            isPanning = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            
+            const modalImage = document.getElementById('modalImage');
+            modalImage.style.cursor = 'grabbing';
+        }
+        
+        function pan(e) {
+            if (!isPanning || currentZoom <= 1 || isPinching) return;
+            
+            e.preventDefault();
+            
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            
+            // Limit panning based on zoom level
+            const maxTranslate = (currentZoom - 1) * 200;
+            translateX = Math.max(-maxTranslate, Math.min(maxTranslate, translateX));
+            translateY = Math.max(-maxTranslate, Math.min(maxTranslate, translateY));
+            
+            updateZoom();
+        }
+        
+        function endPan() {
+            isPanning = false;
+            const modalImage = document.getElementById('modalImage');
+            if (currentZoom > 1) {
+                modalImage.style.cursor = 'move';
+            }
         }
         
         // Show error
@@ -1300,6 +1079,12 @@
                     navigateImage(1);
                 } else if (e.key === 'Escape') {
                     closeModal();
+                } else if (e.key === '+' || e.key === '=') {
+                    zoomIn();
+                } else if (e.key === '-') {
+                    zoomOut();
+                } else if (e.key === '0') {
+                    resetZoom();
                 }
             }
         });
