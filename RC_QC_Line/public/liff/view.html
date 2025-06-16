@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QC Photo Viewer</title>
+    <title>QC Photo Viewer with Share</title>
     <style>
         * {
             margin: 0;
@@ -70,16 +70,6 @@
             padding: 3px;
         }
         
-        @media (min-width: 768px) {
-            .image-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 8px;
-                padding: 15px;
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-        }
-        
         .image-item {
             position: relative;
             padding-bottom: 100%;
@@ -102,6 +92,10 @@
             object-fit: cover;
         }
         
+        .image-item.selected {
+            transform: scale(0.9);
+        }
+        
         .image-item.selected::after {
             content: '✓';
             position: absolute;
@@ -109,13 +103,13 @@
             right: 5px;
             background: #00B900;
             color: white;
-            width: 24px;
-            height: 24px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
@@ -163,9 +157,29 @@
             color: #333;
         }
         
+        .btn-danger {
+            background: #FF0000;
+            color: white;
+        }
+        
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+        
+        /* Select Mode */
+        .select-mode .image-item::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 28px;
+            height: 28px;
+            border: 3px solid white;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1;
         }
         
         /* Modal */
@@ -251,20 +265,6 @@
             font-size: 14px;
         }
         
-        /* Select Mode */
-        .select-mode .image-item::before {
-            content: '';
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 24px;
-            height: 24px;
-            border: 2px solid white;
-            background: rgba(255,255,255,0.8);
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        
         /* Error State */
         .error {
             text-align: center;
@@ -275,18 +275,6 @@
         .error-icon {
             font-size: 48px;
             margin-bottom: 10px;
-        }
-        
-        .error-details {
-            background: #f0f0f0;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
-            font-size: 12px;
-            text-align: left;
-            max-width: 90%;
-            margin-left: auto;
-            margin-right: auto;
         }
         
         /* Toast */
@@ -318,14 +306,65 @@
             }
         }
         
-        /* No Auth Notice */
-        .no-auth-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 10px;
+        /* Selection counter */
+        .selection-counter {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00B900;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 50;
+        }
+        
+        /* Progress Modal */
+        .progress-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .progress-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
             text-align: center;
-            font-size: 12px;
+            max-width: 300px;
+        }
+        
+        .progress-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #00B900;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .progress-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .progress-sub {
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
@@ -336,9 +375,9 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- No Auth Notice -->
-    <div class="no-auth-notice">
-        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
+    <!-- Selection Counter -->
+    <div class="selection-counter" id="selectionCounter">
+        เลือกแล้ว 0 รูป
     </div>
     
     <!-- Content -->
@@ -357,19 +396,18 @@
             <div class="error-icon">❌</div>
             <h2>เกิดข้อผิดพลาด</h2>
             <p id="errorMessage">ไม่สามารถโหลดรูปภาพได้</p>
-            <div class="error-details" id="errorDetails" style="display: none;"></div>
         </div>
     </div>
     
     <!-- Bottom Bar -->
     <div class="bottom-bar" id="bottomBar" style="display: none;">
-        <button class="btn btn-secondary" id="selectBtn">
+        <button class="btn btn-secondary" id="selectBtn" onclick="toggleSelectMode()">
             <span>📌</span>
             <span>เลือกรูป</span>
         </button>
-        <button class="btn btn-primary" id="shareBtn">
-            <span>💾</span>
-            <span>ดาวน์โหลด</span>
+        <button class="btn btn-primary" id="shareBtn" onclick="shareImages()">
+            <span>📤</span>
+            <span>แชร์</span>
         </button>
     </div>
     
@@ -384,8 +422,20 @@
         </div>
     </div>
     
+    <!-- Progress Modal -->
+    <div class="progress-modal" id="progressModal">
+        <div class="progress-content">
+            <div class="progress-spinner"></div>
+            <div class="progress-text" id="progressText">กำลังเตรียมรูปภาพ...</div>
+            <div class="progress-sub" id="progressSub">กรุณารอสักครู่</div>
+        </div>
+    </div>
+    
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         // Global variables
+        let liff = null;
+        let userId = null;
         let images = [];
         let selectedImages = new Set();
         let selectMode = false;
@@ -394,10 +444,10 @@
         let imageDate = '';
         let baseUrl = '';
         
-        // Initialize (No Authentication Version)
+        // Initialize LIFF
         async function initialize() {
             try {
-                console.log('=== No-Auth Initialization ===');
+                console.log('Initializing LIFF...');
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -405,19 +455,32 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
-                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
-                
                 if (!lotNumber || !imageDate) {
                     showError('ไม่พบข้อมูล Lot หรือวันที่');
                     return;
                 }
                 
-                // Load images directly without authentication
+                // Initialize LIFF
+                await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                
+                // Get user profile
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+                
+                console.log('User ID:', userId);
+                
+                // Load images
                 await loadImages();
                 
             } catch (error) {
                 console.error('Initialization failed:', error);
-                showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
+                // Try to load images anyway
+                await loadImages();
             }
         }
         
@@ -454,7 +517,7 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ', error.message);
+                showError('เกิดข้อผิดพลาดในการโหลดรูปภาพ');
             }
         }
         
@@ -505,18 +568,26 @@
             const selectBtn = document.getElementById('selectBtn');
             const shareBtn = document.getElementById('shareBtn');
             const grid = document.getElementById('imageGrid');
+            const counter = document.getElementById('selectionCounter');
             
             if (selectMode) {
                 grid.classList.add('select-mode');
                 selectBtn.innerHTML = '<span>❌</span><span>ยกเลิก</span>';
-                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
+                selectBtn.classList.remove('btn-secondary');
+                selectBtn.classList.add('btn-danger');
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
                 shareBtn.disabled = true;
-                showToast('เลือกรูปที่ต้องการ');
+                counter.style.display = 'block';
+                updateSelectionCounter();
+                showToast('แตะเพื่อเลือกรูปที่ต้องการแชร์');
             } else {
                 grid.classList.remove('select-mode');
                 selectBtn.innerHTML = '<span>📌</span><span>เลือกรูป</span>';
-                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>';
+                selectBtn.classList.remove('btn-danger');
+                selectBtn.classList.add('btn-secondary');
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ทั้งหมด</span>';
                 shareBtn.disabled = false;
+                counter.style.display = 'none';
                 renderImages();
             }
         }
@@ -533,55 +604,80 @@
             const items = document.querySelectorAll('.image-item');
             items[index].classList.toggle('selected');
             
+            updateSelectionCounter();
+            
             // Update share button
             const shareBtn = document.getElementById('shareBtn');
             if (selectedImages.size > 0) {
                 shareBtn.disabled = false;
-                shareBtn.innerHTML = `<span>💾</span><span>ดาวน์โหลด ${selectedImages.size} รูป</span>`;
+                shareBtn.innerHTML = `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
             } else {
                 shareBtn.disabled = true;
-                shareBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
             }
         }
         
-        // Download images
-        async function downloadImages() {
+        // Update selection counter
+        function updateSelectionCounter() {
+            const counter = document.getElementById('selectionCounter');
+            counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
+        }
+        
+        // Share images
+        async function shareImages() {
             try {
-                let imagesToDownload = [];
+                let imagesToShare = [];
                 
                 if (selectMode && selectedImages.size > 0) {
-                    imagesToDownload = Array.from(selectedImages).map(index => images[index]);
+                    // Share selected images
+                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
                 } else {
-                    imagesToDownload = images;
+                    // Share all images
+                    imagesToShare = images;
                 }
                 
-                showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
-                
-                // Create download links
-                for (let i = 0; i < imagesToDownload.length; i++) {
-                    const image = imagesToDownload[i];
-                    const link = document.createElement('a');
-                    link.href = image.url;
-                    link.download = `QC_${lotNumber}_${i + 1}.jpg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // Delay between downloads
-                    if (i < imagesToDownload.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                    }
+                if (imagesToShare.length === 0) {
+                    showToast('กรุณาเลือกรูปที่ต้องการแชร์');
+                    return;
                 }
                 
-                showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูป เสร็จสิ้น`);
+                showProgress('กำลังเตรียมรูปภาพ...', `${imagesToShare.length} รูป`);
                 
-                if (selectMode) {
-                    toggleSelectMode();
+                // Create share session
+                const imageIds = imagesToShare.map(img => img.image_id);
+                
+                const response = await fetch(`${baseUrl}/api/share/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId || 'anonymous',
+                        lotNumber: lotNumber,
+                        imageDate: imageDate,
+                        imageIds: imageIds
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create share session');
+                }
+                
+                const result = await response.json();
+                
+                hideProgress();
+                
+                if (result.success) {
+                    // Open share page
+                    window.location.href = result.shareUrl;
+                } else {
+                    throw new Error(result.message || 'Failed to create share session');
                 }
                 
             } catch (error) {
-                console.error('Download error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
+                console.error('Share error:', error);
+                hideProgress();
+                showToast('เกิดข้อผิดพลาดในการแชร์: ' + error.message);
             }
         }
         
@@ -620,66 +716,3 @@
             const modalCounter = document.getElementById('modalCounter');
             
             modalImage.src = images[currentModalIndex].url;
-            modalCounter.textContent = `${currentModalIndex + 1} / ${images.length}`;
-        }
-        
-        // Show error
-        function showError(message, details = null) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
-            
-            if (details) {
-                const detailsEl = document.getElementById('errorDetails');
-                detailsEl.style.display = 'block';
-                detailsEl.textContent = typeof details === 'string' ? details : JSON.stringify(details, null, 2);
-            }
-        }
-        
-        // Show toast
-        function showToast(message, duration = 3000) {
-            const existingToast = document.querySelector('.toast');
-            if (existingToast) {
-                existingToast.remove();
-            }
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, duration);
-        }
-        
-        // Event listeners
-        document.getElementById('selectBtn').addEventListener('click', toggleSelectMode);
-        document.getElementById('shareBtn').addEventListener('click', downloadImages);
-        
-        // Modal events
-        document.getElementById('imageModal').addEventListener('click', (e) => {
-            if (e.target.id === 'imageModal') {
-                closeModal();
-            }
-        });
-        
-        // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('imageModal');
-            if (modal.style.display === 'block') {
-                if (e.key === 'ArrowLeft') {
-                    navigateImage(-1);
-                } else if (e.key === 'ArrowRight') {
-                    navigateImage(1);
-                } else if (e.key === 'Escape') {
-                    closeModal();
-                }
-            }
-        });
-        
-        // Initialize on load
-        window.addEventListener('load', initialize);
-    </script>
-</body>
-</html>

@@ -1,4 +1,4 @@
-// Main application file - Updated with API Routes
+// Main application file - Updated with Share Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -36,6 +36,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/liff', express.static(path.join(__dirname, 'public/liff')));
+app.use('/temp', express.static(path.join(__dirname, 'public/temp'))); // For temporary share images
 
 // LIFF root handler
 app.get('/', (req, res) => {
@@ -61,6 +62,7 @@ const lineService = require('./services/LineService');
 // Import API routes
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
+const shareRoutes = require('./routes/share');
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -68,6 +70,7 @@ app.post('/webhook', webhookController.handleWebhook);
 // API routes for LIFF
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
+app.use('/api', shareRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -155,6 +158,7 @@ app.listen(PORT, () => {
   logger.info('Multi-chat support enabled');
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
+  logger.info('Image sharing enabled');
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -166,8 +170,13 @@ app.listen(PORT, () => {
   logger.info('- GET /api/lots/:lot (Get lot info)');
   logger.info('- POST /api/bot-share (Bot share images)');
   logger.info('- GET /api/bot-share/health (Bot share health)');
+  logger.info('- POST /api/create-share (Create share session)');
+  logger.info('- GET /api/share/:sessionId (View share page)');
+  logger.info('- POST /api/share/deliver (Deliver images to user)');
+  logger.info('- GET /api/share/:sessionId/download (Download as ZIP)');
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
+  logger.info('- Static /temp/* (Temporary share files)');
 });
 
 // Handle uncaught exceptions
@@ -188,6 +197,13 @@ process.on('SIGTERM', () => {
     const cleanedUploads = uploadController.cleanupPendingUploads();
     const cleanedStates = lineService.cleanupExpiredStates();
     logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
+    
+    // Clean up share sessions if available
+    const imageShareService = require('./services/ImageShareService');
+    if (imageShareService && imageShareService.cleanExpiredSessions) {
+      imageShareService.cleanExpiredSessions();
+      logger.info('Cleaned up share sessions');
+    }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);
   }
@@ -203,6 +219,13 @@ process.on('SIGINT', () => {
     const cleanedUploads = uploadController.cleanupPendingUploads();
     const cleanedStates = lineService.cleanupExpiredStates();
     logger.info(`Final cleanup: ${cleanedUploads} uploads, ${cleanedStates} states`);
+    
+    // Clean up share sessions if available
+    const imageShareService = require('./services/ImageShareService');
+    if (imageShareService && imageShareService.cleanExpiredSessions) {
+      imageShareService.cleanExpiredSessions();
+      logger.info('Cleaned up share sessions');
+    }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);
   }
