@@ -77,6 +77,7 @@ const shareRoutes = require('./routes/share');
 const shareApiRoutes = require('./routes/shareApi');
 const directShareRoutes = require('./routes/directShare'); // NEW direct share routes
 const chatShareRoutes = require('./routes/chatShare'); // NEW chat share routes
+const adminRoutes = require('./routes/admin'); // NEW admin routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -88,6 +89,7 @@ app.use('/api', shareRoutes);
 app.use('/api', shareApiRoutes);
 app.use('/api', directShareRoutes); // NEW direct share API routes
 app.use('/api', chatShareRoutes); // NEW chat share API routes
+app.use('/api', adminRoutes); // NEW admin API routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -95,7 +97,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'RC_QC_Line',
-    version: '2.2.0'
+    version: '2.3.0'
   });
 });
 
@@ -242,6 +244,7 @@ app.listen(PORT, () => {
   logger.info('Enhanced image sharing enabled');
   logger.info('Direct share to chat enabled');
   logger.info('Chat selection sharing enabled'); // NEW
+  logger.info('Admin API enabled'); // NEW
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -270,6 +273,11 @@ app.listen(PORT, () => {
   logger.info('- POST /api/chats/share-via-picker (Create shareable message)'); // NEW
   logger.info('- POST /api/chats/create-interactive-share (Create interactive share)'); // NEW
   logger.info('- POST /api/chats/process-share/:sessionId (Process share action)'); // NEW
+  logger.info('- POST /api/admin/clear-user-state/:userId (Clear user state)'); // NEW
+  logger.info('- GET /api/admin/user-state/:userId (Get user state)'); // NEW
+  logger.info('- POST /api/admin/clear-all-states (Clear all states)'); // NEW
+  logger.info('- GET /api/admin/system-stats (Get system statistics)'); // NEW
+  logger.info('- POST /api/admin/force-cleanup (Force cleanup)'); // NEW
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
