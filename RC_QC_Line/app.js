@@ -1,4 +1,4 @@
-// Main application file - Updated with Share Routes
+// Main application file - Updated with Direct Share Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -60,6 +60,11 @@ app.get('/share/:sessionId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/share/index.html'));
 });
 
+// Direct share page route (NEW)
+app.get('/direct-share/:sessionId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/share/direct.html'));
+});
+
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
@@ -69,7 +74,8 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
-const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
+const shareApiRoutes = require('./routes/shareApi');
+const directShareRoutes = require('./routes/directShare'); // NEW direct share routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -77,8 +83,9 @@ app.post('/webhook', webhookController.handleWebhook);
 // API routes for LIFF
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
-app.use('/api', shareRoutes); // This will handle /api/share/* routes
-app.use('/api', shareApiRoutes); // NEW enhanced share API routes
+app.use('/api', shareRoutes);
+app.use('/api', shareApiRoutes);
+app.use('/api', directShareRoutes); // NEW direct share API routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -86,7 +93,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'RC_QC_Line',
-    version: '2.0.0'
+    version: '2.1.0'
   });
 });
 
@@ -172,6 +179,24 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000); // 1 hour
 
+// Cleanup direct share sessions (every 15 minutes) - NEW
+setInterval(async () => {
+  try {
+    const response = await fetch(`http://localhost:${PORT}/api/direct-share/cleanup`, {
+      method: 'POST'
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        logger.info(`Direct share cleanup: ${result.message}`);
+      }
+    }
+  } catch (error) {
+    logger.error('Error during direct share cleanup:', error);
+  }
+}, 15 * 60 * 1000); // 15 minutes
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -187,6 +212,7 @@ app.listen(PORT, () => {
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
   logger.info('Enhanced image sharing enabled');
+  logger.info('Direct share to chat enabled'); // NEW
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -206,6 +232,11 @@ app.listen(PORT, () => {
   logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
   logger.info('- GET /api/share/chats/:userId (Get user chats)');
   logger.info('- POST /api/share/cleanup (Cleanup temp files)');
+  logger.info('- POST /api/direct-share/create (Create direct share session)'); // NEW
+  logger.info('- GET /api/direct-share/:sessionId (Get share session)'); // NEW
+  logger.info('- POST /api/direct-share/:sessionId/send (Send to chat)'); // NEW
+  logger.info('- POST /api/direct-share/create-message (Create share message)'); // NEW
+  logger.info('- POST /api/direct-share/generate-link (Generate share links)'); // NEW
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');

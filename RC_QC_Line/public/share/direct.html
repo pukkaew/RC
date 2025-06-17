@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แชร์รูปภาพ QC</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: #f5f5f5;
+      padding-bottom: 60px;
+    }
+    
+    /* Header */
+    .header {
+      background: #00B900;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .header .info {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    /* Container */
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    
+    /* Info Card */
+    .info-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .info-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .info-label {
+      color: #666;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+    
+    .info-value {
+      font-weight: 500;
+      font-size: 16px;
+    }
+    
+    /* Preview Section */
+    .preview-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .preview-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    
+    .preview-item {
+      position: relative;
+      padding-bottom: 100%;
+      background: #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .preview-item img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .preview-more {
+      background: rgba(0,0,0,0.7);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    /* Share Options */
+    .share-options {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .share-option {
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .share-option:hover {
+      background: #f5f5f5;
+      border-color: #00B900;
+    }
+    
+    .share-option:active {
+      transform: scale(0.98);
+    }
+    
+    .share-option-icon {
+      font-size: 36px;
+    }
+    
+    .share-option-text {
+      flex: 1;
+    }
+    
+    .share-option-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+    
+    .share-option-desc {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* Status Messages */
+    .status {
+      text-align: center;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .status.success {
+      color: #00B900;
+    }
+    
+    .status.error {
+      color: #FF0000;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #666;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #00B900;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Instructions */
+    .instructions {
+      background: #FFF3CD;
+      border: 1px solid #FFEAA7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #856404;
+    }
+    
+    .instructions h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .instructions ol {
+      margin-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 5px;
+    }
+    
+    /* Error State */
+    .error-container {
+      text-align: center;
+      padding: 50px 20px;
+      color: #666;
+    }
+    
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: #FF0000;
+    }
+    
+    /* Copy Button */
+    .copy-btn {
+      background: #00B900;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .copy-btn:hover {
+      background: #00A000;
+    }
+    
+    .copy-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .copy-btn.copied {
+      background: #666;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #00B900;
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>📤 แชร์รูปภาพ QC</h1>
+    <div class="info" id="headerInfo">กำลังโหลด...</div>
+  </div>
+  
+  <div class="container">
+    <!-- Loading State -->
+    <div class="loading" id="loading">
+      <div class="loading-spinner"></div>
+      <div>กำลังโหลดข้อมูล...</div>
+    </div>
+    
+    <!-- Error State -->
+    <div class="error-container" id="error" style="display: none;">
+      <div class="error-icon">❌</div>
+      <h2>เกิดข้อผิดพลาด</h2>
+      <p id="errorMessage">ไม่สามารถโหลดข้อมูลได้</p>
+    </div>
+    
+    <!-- Content -->
+    <div id="content" style="display: none;">
+      <!-- Info Card -->
+      <div class="info-card">
+        <div class="info-row">
+          <span class="info-label">📦 Lot:</span>
+          <span class="info-value" id="lotNumber">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📅 วันที่:</span>
+          <span class="info-value" id="imageDate">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🖼️ จำนวน:</span>
+          <span class="info-value" id="imageCount">-</span>
+        </div>
+      </div>
+      
+      <!-- Preview Section -->
+      <div class="preview-section" id="previewSection">
+        <div class="preview-title">ตัวอย่างรูปภาพ</div>
+        <div class="preview-grid" id="previewGrid"></div>
+      </div>
+      
+      <!-- Share Options -->
+      <div class="share-options">
+        <div class="share-option" onclick="shareViaLineNow()">
+          <div class="share-option-icon">💬</div>
+          <div class="share-option-text">
+            <div class="share-option-title">ส่งรูปภาพทันที</div>
+            <div class="share-option-desc">Bot จะส่งรูปภาพไปยังแชทของคุณ</div>
+          </div>
+        </div>
+        
+        <div class="share-option" onclick="shareViaLineLink()">
+          <div class="share-option-icon">🔗</div>
+          <div class="share-option-text">
+            <div class="share-option-title">แชร์ผ่านลิงก์</div>
+            <div class="share-option-desc">สร้างลิงก์สำหรับแชร์ไปยังห้องแชทอื่น</div>
+          </div>
+        </div>
+        
+        <div class="share-option" onclick="copyImageLinks()">
+          <div class="share-option-icon">📋</div>
+          <div class="share-option-text">
+            <div class="share-option-title">คัดลอกลิงก์รูปภาพ</div>
+            <div class="share-option-desc">คัดลอกลิงก์รูปภาพทั้งหมด</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Instructions -->
+      <div class="instructions">
+        <h3>💡 วิธีแชร์รูปภาพไปยังห้องแชทอื่น</h3>
+        <ol>
+          <li>เลือก "ส่งรูปภาพทันที" - Bot จะส่งรูปมาให้คุณในแชท</li>
+          <li>กดค้างที่รูปภาพแล้วเลือก "Forward" หรือ "ส่งต่อ"</li>
+          <li>เลือกห้องแชทที่ต้องการส่ง</li>
+          <li>กด "ส่ง" เพื่อแชร์รูปภาพ</li>
+        </ol>
+      </div>
+    </div>
+    
+    <!-- Status Messages -->
+    <div class="status" id="status" style="display: none;"></div>
+  </div>
+  
+  <!-- Modal -->
+  <div class="modal" id="linkModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📋 ลิงก์สำหรับแชร์</h3>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 15px;">คัดลอกข้อความด้านล่างไปแชร์:</p>
+        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; font-size: 14px; word-break: break-all;" id="shareText"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="copyShareText()">📋 คัดลอก</button>
+        <button class="btn btn-secondary" onclick="closeModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Global variables
+    let sessionId = '';
+    let sessionData = null;
+    let baseUrl = '';
+    
+    // Initialize
+    async function initialize() {
+      try {
+        // Get session ID from URL
+        const pathParts = window.location.pathname.split('/');
+        sessionId = pathParts[pathParts.length - 1];
+        baseUrl = window.location.origin;
+        
+        console.log('Session ID:', sessionId);
+        
+        // Load session data
+        await loadSession();
+        
+      } catch (error) {
+        console.error('Initialization failed:', error);
+        showError('ไม่สามารถเริ่มต้นระบบได้');
+      }
+    }
+    
+    // Load session data
+    async function loadSession() {
+      try {
+        const response = await fetch(`/api/direct-share/${sessionId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          showError(data.message || 'ไม่พบข้อมูลการแชร์');
+          return;
+        }
+        
+        sessionData = data.session;
+        
+        // Update UI
+        updateUI();
+        
+        // Show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        
+      } catch (error) {
+        console.error('Error loading session:', error);
+        showError('ไม่สามารถโหลดข้อมูลได้');
+      }
+    }
+    
+    // Update UI with session data
+    function updateUI() {
+      // Update header
+      document.getElementById('headerInfo').textContent = 
+        `พร้อมแชร์ ${sessionData.imageCount} รูป`;
+      
+      // Update info card
+      document.getElementById('lotNumber').textContent = sessionData.lotNumber;
+      document.getElementById('imageDate').textContent = 
+        new Date(sessionData.imageDate).toLocaleDateString('th-TH');
+      document.getElementById('imageCount').textContent = `${sessionData.imageCount} รูป`;
+      
+      // Create preview grid (placeholder)
+      const previewGrid = document.getElementById('previewGrid');
+      previewGrid.innerHTML = '';
+      
+      const maxPreview = Math.min(8, sessionData.imageCount);
+      for (let i = 0; i < maxPreview; i++) {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        
+        if (i === maxPreview - 1 && sessionData.imageCount > maxPreview) {
+          item.classList.add('preview-more');
+          item.innerHTML = `+${sessionData.imageCount - maxPreview + 1}`;
+        } else {
+          item.innerHTML = '<div style="background: #e0e0e0; width: 100%; height: 100%;"></div>';
+        }
+        
+        previewGrid.appendChild(item);
+      }
+    }
+    
+    // Share via LINE (send images now)
+    async function shareViaLineNow() {
+      try {
+        showStatus('กำลังส่งรูปภาพ...', 'loading');
+        
+        // Check if in LIFF
+        if (typeof liff !== 'undefined' && liff.isInClient()) {
+          // Get user profile
+          const profile = await liff.getProfile();
+          
+          // Send to user's chat
+          const response = await fetch(`/api/direct-share/${sessionId}/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              targetUserId: profile.userId,
+              chatType: 'user'
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showStatus(`✅ ส่งรูปภาพ ${result.count} รูป เรียบร้อยแล้ว\nกรุณาตรวจสอบแชทของคุณ`, 'success');
+            
+            // Close LIFF after 2 seconds
+            setTimeout(() => {
+              if (liff.isInClient()) {
+                liff.closeWindow();
+              }
+            }, 2000);
+          } else {
+            throw new Error(result.message);
+          }
+          
+        } else {
+          // Not in LIFF, show instructions
+          showStatus('กรุณาเปิดลิงก์นี้ใน LINE app เพื่อรับรูปภาพ', 'error');
+        }
+        
+      } catch (error) {
+        console.error('Error sharing via LINE:', error);
+        showStatus('เกิดข้อผิดพลาดในการส่งรูปภาพ', 'error');
+      }
+    }
+    
+    // Share via LINE link
+    async function shareViaLineLink() {
+      try {
+        showStatus('กำลังสร้างลิงก์...', 'loading');
+        
+        // Generate share link
+        const response = await fetch('/api/direct-share/generate-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            lotNumber: sessionData.lotNumber,
+            imageDate: sessionData.imageDate
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Show modal with share text
+          document.getElementById('shareText').textContent = result.shareText;
+          document.getElementById('linkModal').style.display = 'flex';
+          hideStatus();
+        } else {
+          throw new Error(result.message);
+        }
+        
+      } catch (error) {
+        console.error('Error generating link:', error);
+        showStatus('เกิดข้อผิดพลาดในการสร้างลิงก์', 'error');
+      }
+    }
+    
+    // Copy image links
+    async function copyImageLinks() {
+      try {
+        showStatus('กำลังสร้างลิงก์...', 'loading');
+        
+        // Generate links
+        const response = await fetch('/api/direct-share/generate-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            lotNumber: sessionData.lotNumber,
+            imageDate: sessionData.imageDate
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Copy to clipboard
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(result.shareText);
+            showStatus('✅ คัดลอกลิงก์รูปภาพแล้ว', 'success');
+          } else {
+            // Fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = result.shareText;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showStatus('✅ คัดลอกลิงก์รูปภาพแล้ว', 'success');
+          }
+          
+          // Hide status after 3 seconds
+          setTimeout(hideStatus, 3000);
+        } else {
+          throw new Error(result.message);
+        }
+        
+      } catch (error) {
+        console.error('Error copying links:', error);
+        showStatus('เกิดข้อผิดพลาดในการคัดลอก', 'error');
+      }
+    }
+    
+    // Copy share text from modal
+    async function copyShareText() {
+      try {
+        const shareText = document.getElementById('shareText').textContent;
+        
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(shareText);
+        } else {
+          // Fallback
+          const textarea = document.createElement('textarea');
+          textarea.value = shareText;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+        
+        // Update button
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ คัดลอกแล้ว';
+        btn.classList.add('copied');
+        
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error copying:', error);
+        alert('ไม่สามารถคัดลอกได้');
+      }
+    }
+    
+    // Close modal
+    function closeModal() {
+      document.getElementById('linkModal').style.display = 'none';
+    }
+    
+    // Show status message
+    function showStatus(message, type = 'info') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+      statusEl.style.display = 'block';
+      
+      if (type === 'loading') {
+        statusEl.innerHTML = '<div class="loading-spinner"></div>' + message;
+      }
+    }
+    
+    // Hide status
+    function hideStatus() {
+      document.getElementById('status').style.display = 'none';
+    }
+    
+    // Show error
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('errorMessage').textContent = message;
+    }
+    
+    // Check if LIFF is available and initialize
+    window.addEventListener('load', async () => {
+      // Check for LIFF
+      if (typeof liff !== 'undefined') {
+        try {
+          await liff.init({ liffId: '2007575196-NWaXrZVE' });
+          console.log('LIFF initialized');
+        } catch (error) {
+          console.error('LIFF init error:', error);
+        }
+      }
+      
+      // Initialize app
+      initialize();
+    });
+  </script>
+  
+  <!-- Include LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</body>
+</html>

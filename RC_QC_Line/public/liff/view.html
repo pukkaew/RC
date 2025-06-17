@@ -396,6 +396,32 @@
             pointer-events: none;
         }
         
+        /* Share Button in Viewer */
+        .viewer-share-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #00B900;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            pointer-events: auto;
+            transition: all 0.2s ease-out;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viewer-share-btn:active {
+            transform: scale(0.95);
+            background: #00A000;
+        }
+        
         /* Error State */
         .error {
             text-align: center;
@@ -478,6 +504,101 @@
             font-size: 12px;
         }
         
+        /* Share Modal */
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .share-modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .share-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .share-modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .share-modal-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .share-modal-body {
+            padding: 20px;
+        }
+        
+        .share-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .share-option:hover {
+            background: #f5f5f5;
+            border-color: #00B900;
+        }
+        
+        .share-option-icon {
+            font-size: 24px;
+        }
+        
+        .share-option-text {
+            flex: 1;
+        }
+        
+        .share-option-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .share-option-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .share-modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .share-cancel-btn {
+            width: 100%;
+            padding: 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
         /* Prevent iOS bounce */
         html, body {
             overscroll-behavior-y: contain;
@@ -557,6 +678,51 @@
                     <button class="viewer-zoom-btn" onclick="viewer.resetZoom()">⟲</button>
                     <button class="viewer-zoom-btn" id="zoomIn" onclick="viewer.zoomIn()">+</button>
                 </div>
+                
+                <button class="viewer-share-btn" onclick="shareCurrentImage()">
+                    <span>📤</span>
+                    <span>แชร์</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div class="share-modal" id="shareModal" onclick="closeShareModal(event)">
+        <div class="share-modal-content" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <div class="share-modal-title">📤 เลือกวิธีการแชร์</div>
+                <div class="share-modal-subtitle" id="shareModalSubtitle">แชร์รูปที่เลือก</div>
+            </div>
+            
+            <div class="share-modal-body">
+                <div class="share-option" onclick="shareToLine()">
+                    <div class="share-option-icon">💬</div>
+                    <div class="share-option-text">
+                        <div class="share-option-title">แชร์ผ่าน LINE</div>
+                        <div class="share-option-desc">ส่งรูปไปยังแชทอื่นได้ทันที</div>
+                    </div>
+                </div>
+                
+                <div class="share-option" onclick="copyImageLinks()">
+                    <div class="share-option-icon">📋</div>
+                    <div class="share-option-text">
+                        <div class="share-option-title">คัดลอกลิงก์</div>
+                        <div class="share-option-desc">คัดลอกลิงก์รูปภาพ</div>
+                    </div>
+                </div>
+                
+                <div class="share-option" onclick="downloadImages()">
+                    <div class="share-option-icon">💾</div>
+                    <div class="share-option-text">
+                        <div class="share-option-title">ดาวน์โหลด</div>
+                        <div class="share-option-desc">บันทึกรูปลงเครื่อง</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="share-modal-footer">
+                <button class="share-cancel-btn" onclick="closeShareModal()">ยกเลิก</button>
             </div>
         </div>
     </div>
@@ -569,6 +735,7 @@
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
+        let currentShareImages = [];
         
         // Image Viewer System
         const viewer = {
@@ -1129,7 +1296,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Share images
+        // Share images - Enhanced version
         async function shareImages() {
             try {
                 let imagesToShare = [];
@@ -1145,16 +1312,152 @@
                     return;
                 }
                 
-                showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
+                currentShareImages = imagesToShare;
                 
-                const imageIds = imagesToShare.map(img => img.image_id).join(',');
-                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
+                // Update modal subtitle
+                document.getElementById('shareModalSubtitle').textContent = 
+                    `จำนวน ${imagesToShare.length} รูป`;
                 
-                window.location.href = shareUrl;
+                // Show share options modal
+                document.getElementById('shareModal').style.display = 'flex';
                 
             } catch (error) {
                 console.error('Share error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการแชร์');
+            }
+        }
+        
+        // Share current image from viewer
+        function shareCurrentImage() {
+            if (viewer.currentIndex >= 0 && viewer.currentIndex < images.length) {
+                currentShareImages = [images[viewer.currentIndex]];
+                
+                // Update modal subtitle
+                document.getElementById('shareModalSubtitle').textContent = 
+                    `รูปที่ ${viewer.currentIndex + 1}`;
+                
+                // Show share options modal
+                document.getElementById('shareModal').style.display = 'flex';
+            }
+        }
+        
+        // Share to LINE
+        async function shareToLine() {
+            try {
+                closeShareModal();
+                showToast(`กำลังเตรียมแชร์ ${currentShareImages.length} รูป...`);
+                
+                // Use the bot share API endpoint
+                const response = await fetch(`${baseUrl}/api/bot-share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: 'direct-share',
+                        lotNumber: lotNumber,
+                        imageDate: imageDate,
+                        imageIds: currentShareImages.map(img => img.image_id)
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`✅ เตรียมแชร์ ${result.count} รูปเรียบร้อยแล้ว\nกรุณาเลือกห้องแชทที่ต้องการส่ง`);
+                    
+                    // Generate share links for LINE
+                    const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป`;
+                    const shareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`;
+                    
+                    // Open LINE share
+                    window.open(shareUrl, '_blank');
+                } else {
+                    throw new Error(result.message || 'Failed to prepare share');
+                }
+                
+            } catch (error) {
+                console.error('LINE share error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการแชร์ผ่าน LINE');
+            }
+        }
+        
+        // Copy image links
+        async function copyImageLinks() {
+            try {
+                closeShareModal();
+                
+                const links = currentShareImages.map((img, index) => {
+                    const imageUrl = img.url.startsWith('http') ? img.url : `${baseUrl}${img.url}`;
+                    return `${index + 1}. ${imageUrl}`;
+                }).join('\n');
+                
+                const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป\n\n🔗 ลิงก์รูปภาพ:\n${links}`;
+                
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(shareText);
+                } else {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareText;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                }
+                
+                showToast('✅ คัดลอกลิงก์รูปภาพแล้ว');
+                
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                showToast('❌ ไม่สามารถคัดลอกได้');
+            }
+        }
+        
+        // Download images
+        async function downloadImages() {
+            try {
+                closeShareModal();
+                showToast(`กำลังดาวน์โหลด ${currentShareImages.length} รูป...`);
+                
+                for (let i = 0; i < currentShareImages.length; i++) {
+                    const image = currentShareImages[i];
+                    const response = await fetch(image.url);
+                    const blob = await response.blob();
+                    
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `QC_${lotNumber}_${i + 1}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(a.href);
+                    
+                    // Small delay between downloads
+                    if (i < currentShareImages.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                
+                showToast(`✅ ดาวน์โหลด ${currentShareImages.length} รูปเรียบร้อยแล้ว`);
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
+            }
+        }
+        
+        // Close share modal
+        function closeShareModal(event) {
+            if (!event || event.target === event.currentTarget) {
+                document.getElementById('shareModal').style.display = 'none';
+                currentShareImages = [];
             }
         }
         
