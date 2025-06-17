@@ -1,4 +1,4 @@
-// Main application file - Updated with Direct Share Routes and Chat Share Routes
+// Main application file - Updated with Share Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -60,11 +60,6 @@ app.get('/share/:sessionId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/share/index.html'));
 });
 
-// Direct share page route (NEW)
-app.get('/direct-share/:sessionId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/share/direct.html'));
-});
-
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
@@ -74,10 +69,7 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
-const shareApiRoutes = require('./routes/shareApi');
-const directShareRoutes = require('./routes/directShare'); // NEW direct share routes
-const chatShareRoutes = require('./routes/chatShare'); // NEW chat share routes
-const adminRoutes = require('./routes/admin'); // NEW admin routes
+const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -85,11 +77,8 @@ app.post('/webhook', webhookController.handleWebhook);
 // API routes for LIFF
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
-app.use('/api', shareRoutes);
-app.use('/api', shareApiRoutes);
-app.use('/api', directShareRoutes); // NEW direct share API routes
-app.use('/api', chatShareRoutes); // NEW chat share API routes
-app.use('/api', adminRoutes); // NEW admin API routes
+app.use('/api', shareRoutes); // This will handle /api/share/* routes
+app.use('/api', shareApiRoutes); // NEW enhanced share API routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -97,7 +86,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'RC_QC_Line',
-    version: '2.3.0'
+    version: '2.0.0'
   });
 });
 
@@ -183,49 +172,6 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000); // 1 hour
 
-// Cleanup direct share sessions (every 15 minutes) - NEW
-setInterval(async () => {
-  try {
-    const response = await fetch(`http://localhost:${PORT}/api/direct-share/cleanup`, {
-      method: 'POST'
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success) {
-        logger.info(`Direct share cleanup: ${result.message}`);
-      }
-    }
-  } catch (error) {
-    logger.error('Error during direct share cleanup:', error);
-  }
-}, 15 * 60 * 1000); // 15 minutes
-
-// Cleanup chat share sessions (every 10 minutes) - NEW
-setInterval(() => {
-  try {
-    // Clean up expired chat share sessions
-    if (global.shareSessions) {
-      const now = new Date();
-      let cleaned = 0;
-      
-      for (const [sessionId, session] of global.shareSessions.entries()) {
-        const age = now - session.createdAt;
-        if (age > 10 * 60 * 1000) { // 10 minutes
-          global.shareSessions.delete(sessionId);
-          cleaned++;
-        }
-      }
-      
-      if (cleaned > 0) {
-        logger.info(`Chat share cleanup: Cleaned ${cleaned} expired sessions`);
-      }
-    }
-  } catch (error) {
-    logger.error('Error during chat share cleanup:', error);
-  }
-}, 10 * 60 * 1000); // 10 minutes
-
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -235,16 +181,12 @@ app.listen(PORT, () => {
   logger.info(`Status endpoint: ${process.env.BASE_URL}/status`);
   logger.info(`LIFF viewer: ${process.env.BASE_URL}/liff/view.html`);
   logger.info(`LIFF share: ${process.env.BASE_URL}/liff/share.html`);
-  logger.info(`LIFF chat selector: ${process.env.BASE_URL}/liff/chat-selector.html`); // NEW
   logger.info(`Web viewer: ${process.env.BASE_URL}/view`);
   logger.info('Note: For production, use HTTPS for webhook URL');
   logger.info('Multi-chat support enabled');
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
   logger.info('Enhanced image sharing enabled');
-  logger.info('Direct share to chat enabled');
-  logger.info('Chat selection sharing enabled'); // NEW
-  logger.info('Admin API enabled'); // NEW
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -264,20 +206,6 @@ app.listen(PORT, () => {
   logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
   logger.info('- GET /api/share/chats/:userId (Get user chats)');
   logger.info('- POST /api/share/cleanup (Cleanup temp files)');
-  logger.info('- POST /api/direct-share/create (Create direct share session)');
-  logger.info('- GET /api/direct-share/:sessionId (Get share session)');
-  logger.info('- POST /api/direct-share/:sessionId/send (Send to chat)');
-  logger.info('- POST /api/direct-share/create-message (Create share message)');
-  logger.info('- POST /api/direct-share/generate-link (Generate share links)');
-  logger.info('- GET /api/chats/available/:userId (Get available chats)'); // NEW
-  logger.info('- POST /api/chats/share-via-picker (Create shareable message)'); // NEW
-  logger.info('- POST /api/chats/create-interactive-share (Create interactive share)'); // NEW
-  logger.info('- POST /api/chats/process-share/:sessionId (Process share action)'); // NEW
-  logger.info('- POST /api/admin/clear-user-state/:userId (Clear user state)'); // NEW
-  logger.info('- GET /api/admin/user-state/:userId (Get user state)'); // NEW
-  logger.info('- POST /api/admin/clear-all-states (Clear all states)'); // NEW
-  logger.info('- GET /api/admin/system-stats (Get system statistics)'); // NEW
-  logger.info('- POST /api/admin/force-cleanup (Force cleanup)'); // NEW
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
@@ -309,12 +237,6 @@ process.on('SIGTERM', () => {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
     }
-    
-    // Clean up chat share sessions
-    if (global.shareSessions) {
-      global.shareSessions.clear();
-      logger.info('Cleaned up chat share sessions');
-    }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);
   }
@@ -336,12 +258,6 @@ process.on('SIGINT', () => {
     if (imageShareService && imageShareService.cleanExpiredSessions) {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
-    }
-    
-    // Clean up chat share sessions
-    if (global.shareSessions) {
-      global.shareSessions.clear();
-      logger.info('Cleaned up chat share sessions');
     }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);

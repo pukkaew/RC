@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>เลือกห้องแชท - QC Photo Share</title>
+    <title>QC Photo Viewer</title>
     <style>
         * {
             margin: 0;
@@ -15,7 +15,9 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: #f5f5f5;
-            padding-bottom: 80px;
+            padding-bottom: 60px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         /* Header */
@@ -63,111 +65,67 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Chat List */
-        .chat-list {
-            padding: 15px;
-            max-width: 600px;
-            margin: 0 auto;
+        /* Image Grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px;
+            padding: 3px;
         }
         
-        .chat-section {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        @media (min-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+                padding: 15px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
         }
         
-        .chat-section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .chat-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-radius: 8px;
+        .image-item {
+            position: relative;
+            padding-bottom: 100%;
+            background: #e0e0e0;
+            overflow: hidden;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 5px;
+            transition: transform 0.2s ease-out;
         }
         
-        .chat-item:last-child {
-            margin-bottom: 0;
+        .image-item:active {
+            transform: scale(0.95);
         }
         
-        .chat-item:hover {
-            background: #f5f5f5;
+        .image-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
-        .chat-item:active {
-            transform: scale(0.98);
-            background: #e0e0e0;
+        .image-item.selected {
+            transform: scale(0.9);
         }
         
-        .chat-icon {
-            width: 48px;
-            height: 48px;
+        .image-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #00B900;
+            color: white;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            background: #e0e0e0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-        
-        .chat-icon.personal {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .chat-icon.group {
-            background: #2196F3;
-            color: white;
-        }
-        
-        .chat-icon.official {
-            background: #FF9800;
-            color: white;
-        }
-        
-        .chat-info {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .chat-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .chat-desc {
-            font-size: 12px;
-            color: #999;
-        }
-        
-        .chat-arrow {
-            color: #ccc;
-            font-size: 20px;
-            margin-left: 10px;
-        }
-        
-        /* Selected State */
-        .chat-item.selected {
-            background: #E8F5E9;
-            border: 2px solid #00B900;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1;
         }
         
         /* Bottom Bar */
@@ -178,7 +136,7 @@
             right: 0;
             background: white;
             border-top: 1px solid #e0e0e0;
-            padding: 15px;
+            padding: 10px 15px;
             display: flex;
             gap: 10px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
@@ -192,11 +150,13 @@
             font-size: 16px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease-out;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 5px;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .btn:active {
@@ -213,9 +173,227 @@
             color: #333;
         }
         
+        .btn-danger {
+            background: #FF0000;
+            color: white;
+        }
+        
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: scale(1);
+        }
+        
+        /* Select Mode */
+        .select-mode .image-item::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 28px;
+            height: 28px;
+            border: 3px solid white;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1;
+        }
+        
+        /* Modal Container */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .modal.show {
+            opacity: 1;
+        }
+        
+        /* Image Viewer Container */
+        .viewer-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        /* Image Wrapper for Transform */
+        .viewer-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            will-change: transform;
+        }
+        
+        /* Viewer Image */
+        .viewer-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        
+        /* UI Controls */
+        .viewer-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        /* Close Button */
+        .viewer-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: all 0.2s ease-out;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viewer-close:active {
+            transform: scale(0.9);
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Navigation Arrows */
+        .viewer-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 88px;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+        
+        .viewer-nav:active {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .viewer-nav.prev {
+            left: 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .viewer-nav.next {
+            right: 0;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .viewer-nav:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        
+        /* Counter */
+        .viewer-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Zoom Controls */
+        .viewer-zoom-controls {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 25px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            pointer-events: auto;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viewer-zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-out;
+        }
+        
+        .viewer-zoom-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.9);
+        }
+        
+        .viewer-zoom-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        
+        /* Loading Indicator */
+        .viewer-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            pointer-events: none;
         }
         
         /* Error State */
@@ -228,69 +406,24 @@
         .error-icon {
             font-size: 48px;
             margin-bottom: 10px;
-            color: #FF0000;
         }
         
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: #999;
-        }
-        
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-            opacity: 0.5;
-        }
-        
-        /* Preview Section */
-        .preview-section {
-            background: white;
-            border-radius: 12px;
+        .error-details {
+            background: #f0f0f0;
             padding: 15px;
-            margin: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-top: 10px;
-        }
-        
-        .preview-item {
-            position: relative;
-            padding-bottom: 100%;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .preview-item img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .preview-more {
-            background: rgba(0,0,0,0.7);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
+            margin: 20px auto;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: left;
+            max-width: 90%;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
         
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.8);
@@ -299,7 +432,12 @@
             border-radius: 25px;
             font-size: 14px;
             z-index: 2000;
-            animation: slideUp 0.3s;
+            animation: slideUp 0.3s ease-out;
+            white-space: pre-line;
+            text-align: center;
+            max-width: 80%;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
         
         @keyframes slideUp {
@@ -312,13 +450,55 @@
                 opacity: 1;
             }
         }
+        
+        /* Selection counter */
+        .selection-counter {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00B900;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 50;
+        }
+        
+        /* No Auth Notice */
+        .no-auth-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        /* Prevent iOS bounce */
+        html, body {
+            overscroll-behavior-y: contain;
+        }
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header">
-        <h1>📤 เลือกห้องแชทสำหรับแชร์</h1>
+        <h1>📸 รูปภาพ QC</h1>
         <div class="info" id="headerInfo">กำลังโหลด...</div>
+    </div>
+    
+    <!-- No Auth Notice -->
+    <div class="no-auth-notice">
+        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
+    </div>
+    
+    <!-- Selection Counter -->
+    <div class="selection-counter" id="selectionCounter">
+        เลือกแล้ว 0 รูป
     </div>
     
     <!-- Content -->
@@ -326,403 +506,669 @@
         <!-- Loading State -->
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
-            <div>กำลังโหลดรายการแชท...</div>
+            <div>กำลังโหลดรูปภาพ...</div>
         </div>
         
-        <!-- Preview Section -->
-        <div class="preview-section" id="previewSection" style="display: none;">
-            <div class="chat-section-title">รูปภาพที่จะแชร์</div>
-            <div class="preview-grid" id="previewGrid"></div>
-        </div>
-        
-        <!-- Chat List -->
-        <div class="chat-list" id="chatList" style="display: none;">
-            <!-- Personal Chat -->
-            <div class="chat-section">
-                <div class="chat-section-title">แชทส่วนตัว</div>
-                <div class="chat-item" onclick="selectChat('personal')" data-chat-id="personal">
-                    <div class="chat-icon personal">👤</div>
-                    <div class="chat-info">
-                        <div class="chat-name">ส่งให้ตัวเอง</div>
-                        <div class="chat-desc">Bot จะส่งรูปภาพมาให้คุณ</div>
-                    </div>
-                    <div class="chat-arrow">›</div>
-                </div>
-            </div>
-            
-            <!-- Groups -->
-            <div class="chat-section" id="groupSection" style="display: none;">
-                <div class="chat-section-title">กลุ่ม</div>
-                <div id="groupList"></div>
-            </div>
-            
-            <!-- Official Accounts -->
-            <div class="chat-section">
-                <div class="chat-section-title">วิธีอื่น</div>
-                <div class="chat-item" onclick="shareViaForward()">
-                    <div class="chat-icon official">↗️</div>
-                    <div class="chat-info">
-                        <div class="chat-name">Forward รูปภาพ</div>
-                        <div class="chat-desc">รับรูปแล้ว Forward ไปห้องอื่น</div>
-                    </div>
-                    <div class="chat-arrow">›</div>
-                </div>
-                <div class="chat-item" onclick="shareViaLink()">
-                    <div class="chat-icon official">🔗</div>
-                    <div class="chat-info">
-                        <div class="chat-name">สร้างลิงก์แชร์</div>
-                        <div class="chat-desc">สร้างลิงก์สำหรับส่งให้คนอื่น</div>
-                    </div>
-                    <div class="chat-arrow">›</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Empty State -->
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <div class="empty-icon">📭</div>
-            <h2>ไม่พบห้องแชท</h2>
-            <p>ไม่สามารถโหลดรายการห้องแชทได้</p>
-        </div>
+        <!-- Image Grid -->
+        <div class="image-grid" id="imageGrid" style="display: none;"></div>
         
         <!-- Error State -->
         <div class="error" id="error" style="display: none;">
             <div class="error-icon">❌</div>
             <h2>เกิดข้อผิดพลาด</h2>
-            <p id="errorMessage">ไม่สามารถโหลดข้อมูลได้</p>
+            <p id="errorMessage">ไม่สามารถโหลดรูปภาพได้</p>
+            <div class="error-details" id="errorDetails" style="display: none;"></div>
         </div>
     </div>
     
     <!-- Bottom Bar -->
     <div class="bottom-bar" id="bottomBar" style="display: none;">
-        <button class="btn btn-secondary" onclick="goBack()">
-            <span>🔙</span>
-            <span>กลับ</span>
+        <button class="btn btn-secondary" id="selectBtn" onclick="toggleSelectMode()">
+            <span>📌</span>
+            <span>เลือกรูป</span>
         </button>
-        <button class="btn btn-primary" id="shareBtn" disabled onclick="confirmShare()">
+        <button class="btn btn-primary" id="shareBtn" onclick="shareImages()">
             <span>📤</span>
-            <span>เลือกห้องแชท</span>
+            <span>แชร์</span>
         </button>
     </div>
     
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Image Viewer Modal -->
+    <div class="modal" id="imageModal">
+        <div class="viewer-container" id="viewerContainer">
+            <div class="viewer-wrapper" id="viewerWrapper">
+                <img class="viewer-image" id="viewerImage" alt="">
+            </div>
+            
+            <div class="viewer-loading" id="viewerLoading" style="display: none;">
+                <div class="loading-spinner"></div>
+            </div>
+            
+            <div class="viewer-ui">
+                <button class="viewer-close" onclick="viewer.close()">✕</button>
+                
+                <button class="viewer-nav prev" id="navPrev" onclick="viewer.prev()">‹</button>
+                <button class="viewer-nav next" id="navNext" onclick="viewer.next()">›</button>
+                
+                <div class="viewer-counter" id="viewerCounter">1 / 1</div>
+                
+                <div class="viewer-zoom-controls">
+                    <button class="viewer-zoom-btn" id="zoomOut" onclick="viewer.zoomOut()">−</button>
+                    <button class="viewer-zoom-btn" onclick="viewer.resetZoom()">⟲</button>
+                    <button class="viewer-zoom-btn" id="zoomIn" onclick="viewer.zoomIn()">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Global variables
-        let selectedChatId = null;
-        let selectedChatType = null;
-        let selectedChatName = null;
+        let images = [];
+        let selectedImages = new Set();
+        let selectMode = false;
         let lotNumber = '';
         let imageDate = '';
-        let selectedImageIds = [];
-        let userId = null;
-        let isProcessing = false;
+        let baseUrl = '';
         
-        // Initialize LIFF and load data
+        // Image Viewer System
+        const viewer = {
+            // State
+            isOpen: false,
+            currentIndex: 0,
+            scale: 1,
+            minScale: 1,
+            maxScale: 5,
+            x: 0,
+            y: 0,
+            
+            // Touch/Mouse tracking
+            startX: 0,
+            startY: 0,
+            startDistance: 0,
+            isDragging: false,
+            isPinching: false,
+            lastTap: 0,
+            
+            // Elements
+            modal: null,
+            container: null,
+            wrapper: null,
+            image: null,
+            
+            // Initialize
+            init() {
+                this.modal = document.getElementById('imageModal');
+                this.container = document.getElementById('viewerContainer');
+                this.wrapper = document.getElementById('viewerWrapper');
+                this.image = document.getElementById('viewerImage');
+                
+                this.setupEventListeners();
+            },
+            
+            // Setup event listeners
+            setupEventListeners() {
+                // Touch events
+                this.container.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+                this.container.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+                this.container.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+                
+                // Mouse events
+                this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+                
+                // Keyboard
+                document.addEventListener('keydown', this.handleKeydown.bind(this));
+                
+                // Prevent iOS bounce
+                this.modal.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+            },
+            
+            // Open viewer
+            open(index) {
+                this.currentIndex = index;
+                this.isOpen = true;
+                this.resetTransform();
+                
+                // Show modal with animation
+                this.modal.style.display = 'block';
+                setTimeout(() => this.modal.classList.add('show'), 10);
+                
+                // Load image
+                this.loadImage(index);
+                
+                // Update UI
+                this.updateUI();
+                
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            },
+            
+            // Close viewer
+            close() {
+                this.isOpen = false;
+                this.modal.classList.remove('show');
+                
+                setTimeout(() => {
+                    this.modal.style.display = 'none';
+                    this.resetTransform();
+                }, 300);
+                
+                document.body.style.overflow = '';
+            },
+            
+            // Load image
+            loadImage(index) {
+                const loading = document.getElementById('viewerLoading');
+                loading.style.display = 'block';
+                
+                const img = new Image();
+                img.onload = () => {
+                    this.image.src = images[index].url;
+                    loading.style.display = 'none';
+                };
+                img.onerror = () => {
+                    loading.style.display = 'none';
+                    showToast('ไม่สามารถโหลดรูปภาพได้');
+                };
+                img.src = images[index].url;
+            },
+            
+            // Navigate
+            prev() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.resetTransform();
+                    this.loadImage(this.currentIndex);
+                    this.updateUI();
+                }
+            },
+            
+            next() {
+                if (this.currentIndex < images.length - 1) {
+                    this.currentIndex++;
+                    this.resetTransform();
+                    this.loadImage(this.currentIndex);
+                    this.updateUI();
+                }
+            },
+            
+            // Touch handlers
+            handleTouchStart(e) {
+                e.preventDefault();
+                
+                if (e.touches.length === 1) {
+                    // Single touch - pan or double tap
+                    const touch = e.touches[0];
+                    this.startX = touch.clientX - this.x;
+                    this.startY = touch.clientY - this.y;
+                    this.isDragging = true;
+                    
+                    // Double tap detection
+                    const now = Date.now();
+                    if (now - this.lastTap < 300) {
+                        this.handleDoubleTap(touch);
+                    }
+                    this.lastTap = now;
+                    
+                } else if (e.touches.length === 2) {
+                    // Pinch zoom
+                    this.isPinching = true;
+                    this.isDragging = false;
+                    this.startDistance = this.getDistance(e.touches[0], e.touches[1]);
+                }
+            },
+            
+            handleTouchMove(e) {
+                e.preventDefault();
+                
+                if (this.isPinching && e.touches.length === 2) {
+                    // Pinch zoom
+                    const distance = this.getDistance(e.touches[0], e.touches[1]);
+                    const delta = distance / this.startDistance;
+                    this.setScale(this.scale * delta);
+                    this.startDistance = distance;
+                    
+                } else if (this.isDragging && e.touches.length === 1) {
+                    // Pan
+                    const touch = e.touches[0];
+                    this.x = touch.clientX - this.startX;
+                    this.y = touch.clientY - this.startY;
+                    
+                    // Swipe to navigate when not zoomed
+                    if (this.scale === 1) {
+                        const deltaX = this.x;
+                        if (Math.abs(deltaX) > 50) {
+                            this.wrapper.style.opacity = 1 - Math.abs(deltaX) / 300;
+                        }
+                    }
+                    
+                    this.updateTransform();
+                }
+            },
+            
+            handleTouchEnd(e) {
+                if (this.scale === 1 && Math.abs(this.x) > 100) {
+                    // Swipe navigation
+                    if (this.x > 0 && this.currentIndex > 0) {
+                        this.prev();
+                    } else if (this.x < 0 && this.currentIndex < images.length - 1) {
+                        this.next();
+                    } else {
+                        this.animateToOrigin();
+                    }
+                } else {
+                    // Constrain position
+                    this.constrainPosition();
+                }
+                
+                this.isDragging = false;
+                this.isPinching = false;
+                this.wrapper.style.opacity = 1;
+            },
+            
+            // Mouse handlers
+            handleMouseDown(e) {
+                if (e.button === 0) {
+                    this.startX = e.clientX - this.x;
+                    this.startY = e.clientY - this.y;
+                    this.isDragging = true;
+                    this.container.style.cursor = 'grabbing';
+                }
+            },
+            
+            handleMouseMove(e) {
+                if (this.isDragging) {
+                    this.x = e.clientX - this.startX;
+                    this.y = e.clientY - this.startY;
+                    this.updateTransform();
+                }
+            },
+            
+            handleMouseUp(e) {
+                this.isDragging = false;
+                this.container.style.cursor = '';
+                this.constrainPosition();
+            },
+            
+            // Mouse wheel zoom
+            handleWheel(e) {
+                e.preventDefault();
+                
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * delta));
+                
+                // Zoom to cursor position
+                const rect = this.container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                this.zoomTo(newScale, x, y);
+            },
+            
+            // Keyboard
+            handleKeydown(e) {
+                if (!this.isOpen) return;
+                
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        this.prev();
+                        break;
+                    case 'ArrowRight':
+                        this.next();
+                        break;
+                    case 'Escape':
+                        this.close();
+                        break;
+                    case '+':
+                    case '=':
+                        this.zoomIn();
+                        break;
+                    case '-':
+                        this.zoomOut();
+                        break;
+                    case '0':
+                        this.resetZoom();
+                        break;
+                }
+            },
+            
+            // Double tap
+            handleDoubleTap(touch) {
+                const newScale = this.scale === 1 ? 2 : 1;
+                const rect = this.container.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                this.animateZoomTo(newScale, x, y);
+            },
+            
+            // Zoom controls
+            zoomIn() {
+                const newScale = Math.min(this.maxScale, this.scale * 1.5);
+                this.animateZoomTo(newScale);
+            },
+            
+            zoomOut() {
+                const newScale = Math.max(this.minScale, this.scale / 1.5);
+                this.animateZoomTo(newScale);
+            },
+            
+            resetZoom() {
+                this.animateZoomTo(1);
+            },
+            
+            // Set scale
+            setScale(scale) {
+                this.scale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Zoom to point
+            zoomTo(scale, x, y) {
+                const prevScale = this.scale;
+                this.scale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+                
+                // Adjust position to zoom to point
+                const scaleRatio = this.scale / prevScale;
+                this.x = x - (x - this.x) * scaleRatio;
+                this.y = y - (y - this.y) * scaleRatio;
+                
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Animate zoom
+            animateZoomTo(scale, x, y) {
+                const rect = this.container.getBoundingClientRect();
+                const centerX = x !== undefined ? x : rect.width / 2;
+                const centerY = y !== undefined ? y : rect.height / 2;
+                
+                this.wrapper.style.transition = 'transform 0.3s ease-out';
+                this.zoomTo(scale, centerX, centerY);
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                    this.constrainPosition();
+                }, 300);
+            },
+            
+            // Animate to origin
+            animateToOrigin() {
+                this.wrapper.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+                this.x = 0;
+                this.y = 0;
+                this.updateTransform();
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                }, 300);
+            },
+            
+            // Constrain position
+            constrainPosition() {
+                if (this.scale <= 1) {
+                    this.x = 0;
+                    this.y = 0;
+                } else {
+                    const rect = this.container.getBoundingClientRect();
+                    const imgRect = this.image.getBoundingClientRect();
+                    
+                    const maxX = Math.max(0, (imgRect.width * this.scale - rect.width) / 2);
+                    const maxY = Math.max(0, (imgRect.height * this.scale - rect.height) / 2);
+                    
+                    this.x = Math.max(-maxX, Math.min(maxX, this.x));
+                    this.y = Math.max(-maxY, Math.min(maxY, this.y));
+                }
+                
+                this.wrapper.style.transition = 'transform 0.2s ease-out';
+                this.updateTransform();
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                }, 200);
+            },
+            
+            // Update transform
+            updateTransform() {
+                this.wrapper.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
+            },
+            
+            // Reset transform
+            resetTransform() {
+                this.scale = 1;
+                this.x = 0;
+                this.y = 0;
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Update UI
+            updateUI() {
+                // Counter
+                document.getElementById('viewerCounter').textContent = 
+                    `${this.currentIndex + 1} / ${images.length}`;
+                
+                // Navigation buttons
+                document.getElementById('navPrev').disabled = this.currentIndex === 0;
+                document.getElementById('navNext').disabled = this.currentIndex === images.length - 1;
+                
+                this.updateZoomButtons();
+            },
+            
+            // Update zoom buttons
+            updateZoomButtons() {
+                document.getElementById('zoomOut').disabled = this.scale <= this.minScale;
+                document.getElementById('zoomIn').disabled = this.scale >= this.maxScale;
+            },
+            
+            // Get distance between touches
+            getDistance(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+        };
+        
+        // Initialize
         async function initialize() {
             try {
-                console.log('Initializing chat selector...');
-                
-                // Get parameters from URL
+                // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
                 imageDate = params.get('date') || '';
-                const imageIdsParam = params.get('imageIds') || '';
-                selectedImageIds = imageIdsParam ? imageIdsParam.split(',') : [];
-                
-                console.log('Parameters:', { lotNumber, imageDate, selectedImageIds });
+                baseUrl = params.get('base_url') || window.location.origin;
                 
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่');
+                    showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
                     return;
                 }
                 
-                // Update header
-                const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
-                document.getElementById('headerInfo').textContent = 
-                    `📦 Lot: ${lotNumber} | 📅 ${formattedDate} | 🖼️ ${selectedImageIds.length || 'ทั้งหมด'} รูป`;
+                // Initialize viewer
+                viewer.init();
                 
-                // Initialize LIFF
-                await initializeLiff();
-                
-                // Load preview
-                loadPreview();
-                
-                // Load chat list
-                await loadChatList();
+                // Load images
+                await loadImages();
                 
             } catch (error) {
                 console.error('Initialization failed:', error);
-                showError('ไม่สามารถเริ่มต้นระบบได้: ' + error.message);
+                showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
             }
         }
         
-        // Initialize LIFF
-        async function initializeLiff() {
+        // Load images
+        async function loadImages() {
             try {
-                await liff.init({ liffId: '2007575196-NWaXrZVE' });
-                console.log('LIFF initialized successfully');
+                const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
+                const response = await fetch(apiUrl);
                 
-                if (!liff.isLoggedIn()) {
-                    liff.login();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                images = data.images || [];
+                
+                if (images.length === 0) {
+                    showError(`ไม่พบรูปภาพ\n\nLot: ${lotNumber}\nDate: ${imageDate}`);
                     return;
                 }
                 
-                // Get user profile
-                const profile = await liff.getProfile();
-                userId = profile.userId;
-                console.log('User ID:', userId);
+                updateHeader();
+                renderImages();
                 
-            } catch (error) {
-                console.error('LIFF initialization failed:', error);
-                showError('ไม่สามารถเริ่มต้น LIFF ได้');
-                throw error;
-            }
-        }
-        
-        // Load preview images
-        function loadPreview() {
-            const previewGrid = document.getElementById('previewGrid');
-            previewGrid.innerHTML = '';
-            
-            const maxPreview = 8;
-            const imageCount = selectedImageIds.length || 10; // Mock count if all images
-            
-            for (let i = 0; i < Math.min(maxPreview, imageCount); i++) {
-                const item = document.createElement('div');
-                item.className = 'preview-item';
-                
-                if (i === maxPreview - 1 && imageCount > maxPreview) {
-                    item.classList.add('preview-more');
-                    item.innerHTML = `+${imageCount - maxPreview + 1}`;
-                } else {
-                    // Placeholder for now
-                    item.innerHTML = '<div style="background: #e0e0e0; width: 100%; height: 100%;"></div>';
-                }
-                
-                previewGrid.appendChild(item);
-            }
-            
-            document.getElementById('previewSection').style.display = 'block';
-        }
-        
-        // Load chat list
-        async function loadChatList() {
-            try {
-                // Hide loading, show chat list
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('chatList').style.display = 'block';
+                document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
                 
-                // Try to get user's groups (this is limited by LINE API)
-                // For now, we'll use mock data or basic options
-                loadMockGroups();
-                
             } catch (error) {
-                console.error('Error loading chat list:', error);
-                showEmptyState();
+                console.error('Error loading images:', error);
+                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
             }
         }
         
-        // Load mock groups for demo
-        function loadMockGroups() {
-            const mockGroups = [
-                { id: 'group1', name: 'ทีม QC', type: 'group' },
-                { id: 'group2', name: 'Production Team', type: 'group' },
-                { id: 'group3', name: 'ฝ่ายผลิต', type: 'group' }
-            ];
-            
-            const groupList = document.getElementById('groupList');
-            groupList.innerHTML = '';
-            
-            mockGroups.forEach(group => {
-                const chatItem = document.createElement('div');
-                chatItem.className = 'chat-item';
-                chatItem.setAttribute('data-chat-id', group.id);
-                chatItem.setAttribute('data-chat-type', group.type);
-                chatItem.setAttribute('data-chat-name', group.name);
-                chatItem.onclick = () => selectChat(group.id, group.type, group.name);
-                
-                chatItem.innerHTML = `
-                    <div class="chat-icon group">👥</div>
-                    <div class="chat-info">
-                        <div class="chat-name">${group.name}</div>
-                        <div class="chat-desc">แชร์ไปยังกลุ่มนี้</div>
-                    </div>
-                    <div class="chat-arrow">›</div>
-                `;
-                
-                groupList.appendChild(chatItem);
-            });
-            
-            document.getElementById('groupSection').style.display = 'block';
+        // Update header
+        function updateHeader() {
+            const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
+            document.getElementById('headerInfo').textContent = 
+                `📦 Lot: ${lotNumber} | 📅 ${formattedDate} | 🖼️ ${images.length} รูป`;
         }
         
-        // Select a chat
-        function selectChat(chatId, chatType = 'personal', chatName = 'ส่งให้ตัวเอง') {
-            // Remove previous selection
-            document.querySelectorAll('.chat-item').forEach(item => {
-                item.classList.remove('selected');
-            });
+        // Render images
+        function renderImages() {
+            const grid = document.getElementById('imageGrid');
+            grid.innerHTML = '';
             
-            // Add selection to clicked item
-            const selectedItem = document.querySelector(`[data-chat-id="${chatId}"]`);
-            if (selectedItem) {
-                selectedItem.classList.add('selected');
-            }
-            
-            // Update selection
-            selectedChatId = chatId;
-            selectedChatType = chatType;
-            selectedChatName = chatName;
-            
-            // Update button
-            const shareBtn = document.getElementById('shareBtn');
-            shareBtn.disabled = false;
-            shareBtn.innerHTML = `<span>📤</span><span>แชร์ไปยัง ${chatName}</span>`;
-            
-            console.log('Selected chat:', { chatId, chatType, chatName });
-        }
-        
-        // Share via forward method
-        async function shareViaForward() {
-            if (isProcessing) return;
-            isProcessing = true;
-            
-            try {
-                showToast('กำลังส่งรูปภาพให้คุณ...');
-                
-                // Call API to send images to user
-                const response = await fetch('/api/bot-share', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: userId,
-                        lotNumber: lotNumber,
-                        imageDate: imageDate,
-                        imageIds: selectedImageIds.length > 0 ? selectedImageIds : null
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast(`✅ ส่งรูปภาพ ${result.count} รูป แล้ว\nกรุณาไปที่แชทเพื่อ Forward`);
-                    
-                    // Close LIFF after 2 seconds
-                    setTimeout(() => {
-                        if (liff.isInClient()) {
-                            liff.closeWindow();
-                        }
-                    }, 2000);
-                } else {
-                    throw new Error(result.message || 'Failed to send images');
+            images.forEach((image, index) => {
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                if (selectedImages.has(index)) {
+                    item.classList.add('selected');
                 }
                 
-            } catch (error) {
-                console.error('Error sharing via forward:', error);
-                showToast('❌ เกิดข้อผิดพลาด: ' + error.message);
-                isProcessing = false;
-            }
-        }
-        
-        // Share via link
-        async function shareViaLink() {
-            try {
-                // Navigate to share link page
-                const params = new URLSearchParams({
-                    lot: lotNumber,
-                    date: imageDate,
-                    imageIds: selectedImageIds.join(',')
-                });
+                const img = document.createElement('img');
+                img.src = image.url;
+                img.alt = `Image ${index + 1}`;
+                img.loading = 'lazy';
                 
-                window.location.href = `/liff/share.html?${params.toString()}`;
+                item.appendChild(img);
                 
-            } catch (error) {
-                console.error('Error sharing via link:', error);
-                showToast('❌ เกิดข้อผิดพลาด');
-            }
-        }
-        
-        // Confirm share to selected chat
-        async function confirmShare() {
-            if (!selectedChatId || isProcessing) return;
-            isProcessing = true;
-            
-            try {
-                const shareBtn = document.getElementById('shareBtn');
-                shareBtn.disabled = true;
-                shareBtn.innerHTML = '<span>⏳</span><span>กำลังส่ง...</span>';
-                
-                if (selectedChatId === 'personal') {
-                    // Send to personal chat
-                    await shareViaForward();
-                } else {
-                    // For group chats, we need to use a different approach
-                    // Since we can't directly send to groups, we'll create a shareable message
-                    showToast('กำลังสร้างข้อความสำหรับแชร์...');
-                    
-                    // Create shareable flex message
-                    const response = await fetch('/api/direct-share/create-message', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            lotNumber: lotNumber,
-                            imageDate: imageDate,
-                            imageIds: selectedImageIds.length > 0 ? selectedImageIds : null
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success && liff.isApiAvailable('shareTargetPicker')) {
-                        // Use LINE's share target picker
-                        await liff.shareTargetPicker([result.message]);
-                        
-                        showToast('✅ แชร์สำเร็จ!');
-                        
-                        setTimeout(() => {
-                            if (liff.isInClient()) {
-                                liff.closeWindow();
-                            }
-                        }, 1500);
+                item.onclick = () => {
+                    if (selectMode) {
+                        toggleImageSelection(index);
                     } else {
-                        throw new Error('Share target picker not available');
+                        viewer.open(index);
                     }
-                }
+                };
                 
-            } catch (error) {
-                console.error('Error confirming share:', error);
-                showToast('❌ เกิดข้อผิดพลาด: ' + error.message);
-                
-                const shareBtn = document.getElementById('shareBtn');
+                grid.appendChild(item);
+            });
+        }
+        
+        // Toggle select mode
+        function toggleSelectMode() {
+            selectMode = !selectMode;
+            selectedImages.clear();
+            
+            const selectBtn = document.getElementById('selectBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const grid = document.getElementById('imageGrid');
+            const counter = document.getElementById('selectionCounter');
+            
+            if (selectMode) {
+                grid.classList.add('select-mode');
+                selectBtn.innerHTML = '<span>❌</span><span>ยกเลิก</span>';
+                selectBtn.classList.remove('btn-secondary');
+                selectBtn.classList.add('btn-danger');
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
+                shareBtn.disabled = true;
+                counter.style.display = 'block';
+                updateSelectionCounter();
+                showToast('แตะเพื่อเลือกรูปที่ต้องการแชร์');
+            } else {
+                grid.classList.remove('select-mode');
+                selectBtn.innerHTML = '<span>📌</span><span>เลือกรูป</span>';
+                selectBtn.classList.remove('btn-danger');
+                selectBtn.classList.add('btn-secondary');
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ทั้งหมด</span>';
                 shareBtn.disabled = false;
-                shareBtn.innerHTML = `<span>📤</span><span>แชร์ไปยัง ${selectedChatName}</span>`;
-                isProcessing = false;
+                counter.style.display = 'none';
+                renderImages();
             }
         }
         
-        // Go back
-        function goBack() {
-            window.history.back();
+        // Toggle image selection
+        function toggleImageSelection(index) {
+            if (selectedImages.has(index)) {
+                selectedImages.delete(index);
+            } else {
+                selectedImages.add(index);
+            }
+            
+            const items = document.querySelectorAll('.image-item');
+            items[index].classList.toggle('selected');
+            
+            updateSelectionCounter();
+            
+            const shareBtn = document.getElementById('shareBtn');
+            if (selectedImages.size > 0) {
+                shareBtn.disabled = false;
+                shareBtn.innerHTML = `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
+            } else {
+                shareBtn.disabled = true;
+                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
+            }
+        }
+        
+        // Update selection counter
+        function updateSelectionCounter() {
+            const counter = document.getElementById('selectionCounter');
+            counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
+        }
+        
+        // Share images
+        async function shareImages() {
+            try {
+                let imagesToShare = [];
+                
+                if (selectMode && selectedImages.size > 0) {
+                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                } else {
+                    imagesToShare = images;
+                }
+                
+                if (imagesToShare.length === 0) {
+                    showToast('กรุณาเลือกรูปที่ต้องการแชร์');
+                    return;
+                }
+                
+                showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
+                
+                const imageIds = imagesToShare.map(img => img.image_id).join(',');
+                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
+                
+                window.location.href = shareUrl;
+                
+            } catch (error) {
+                console.error('Share error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการแชร์');
+            }
         }
         
         // Show error
-        function showError(message) {
+        function showError(message, details = null) {
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('chatList').style.display = 'none';
             document.getElementById('error').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
-        }
-        
-        // Show empty state
-        function showEmptyState() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('chatList').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = message.replace(/\n/g, '<br>');
+            
+            if (details) {
+                const detailsEl = document.getElementById('errorDetails');
+                detailsEl.style.display = 'block';
+                detailsEl.textContent = typeof details === 'string' ? details : JSON.stringify(details, null, 2);
+            }
         }
         
         // Show toast
