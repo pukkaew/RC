@@ -494,14 +494,35 @@
             z-index: 50;
         }
         
-        /* No Auth Notice */
-        .no-auth-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
+        /* Login State */
+        .login-notice {
+            background: #FFF3CD;
+            border: 1px solid #FFEAA7;
             color: #856404;
             padding: 10px;
             text-align: center;
             font-size: 12px;
+        }
+        
+        .login-btn {
+            background: #00B900;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+        
+        .login-btn:hover {
+            background: #00A000;
+        }
+        
+        .login-btn:active {
+            transform: scale(0.95);
         }
         
         /* Share Modal */
@@ -586,6 +607,8 @@
         .share-modal-footer {
             padding: 15px 20px;
             border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
         }
         
         .share-cancel-btn {
@@ -612,9 +635,9 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- No Auth Notice -->
-    <div class="no-auth-notice">
-        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
+    <!-- Login Notice -->
+    <div class="login-notice" id="loginNotice" style="display: none;">
+        💡 กรุณาเข้าสู่ระบบ LINE เพื่อใช้งานฟีเจอร์แชร์รูปภาพ
     </div>
     
     <!-- Selection Counter -->
@@ -639,6 +662,7 @@
             <h2>เกิดข้อผิดพลาด</h2>
             <p id="errorMessage">ไม่สามารถโหลดรูปภาพได้</p>
             <div class="error-details" id="errorDetails" style="display: none;"></div>
+            <button class="login-btn" id="retryBtn" onclick="retryLogin()" style="display: none;">ลองใหม่อีกครั้ง</button>
         </div>
     </div>
     
@@ -741,6 +765,7 @@
         let currentShareImages = [];
         let liffInitialized = false;
         let userProfile = null;
+        let isLoggedIn = false;
         
         // Image Viewer System
         const viewer = {
@@ -1145,25 +1170,66 @@
             }
         };
         
-        // Initialize LIFF
+        // Initialize LIFF with better error handling
         async function initializeLiff() {
             try {
-                await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                console.log('Starting LIFF initialization...');
+                
+                await liff.init({ 
+                    liffId: '2007575196-NWaXrZVE',
+                    withLoginOnExternalBrowser: true // Allow login on external browsers
+                });
+                
                 liffInitialized = true;
                 console.log('LIFF initialized successfully');
                 
-                // Get user profile if logged in
+                // Check login status
                 if (liff.isLoggedIn()) {
+                    isLoggedIn = true;
                     try {
                         userProfile = await liff.getProfile();
                         console.log('User profile:', userProfile);
                     } catch (err) {
                         console.warn('Could not get user profile:', err);
                     }
+                } else {
+                    isLoggedIn = false;
+                    console.log('User is not logged in');
+                    
+                    // Show login notice only if not already logged in
+                    document.getElementById('loginNotice').style.display = 'block';
                 }
+                
             } catch (error) {
                 console.error('LIFF initialization failed:', error);
                 liffInitialized = false;
+                
+                // If LIFF init fails, continue in limited mode
+                console.log('Continuing in limited mode without LIFF');
+            }
+        }
+        
+        // Retry login
+        async function retryLogin() {
+            try {
+                // Clear any cached data
+                if (liff && liff.isLoggedIn()) {
+                    await liff.logout();
+                }
+                
+                // Reinitialize LIFF
+                await initializeLiff();
+                
+                // If still not logged in, prompt login
+                if (!isLoggedIn && liffInitialized) {
+                    liff.login();
+                } else {
+                    // Reload the page
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Retry login failed:', error);
+                showToast('ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่');
             }
         }
         
@@ -1176,18 +1242,25 @@
                 imageDate = params.get('date') || '';
                 baseUrl = params.get('base_url') || window.location.origin;
                 
+                console.log('Parameters:', { lotNumber, imageDate, baseUrl });
+                
                 if (!lotNumber || !imageDate) {
-                    showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
+                    showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL', {
+                        url: window.location.href,
+                        params: { lot: lotNumber, date: imageDate }
+                    });
                     return;
                 }
                 
                 // Initialize viewer
                 viewer.init();
                 
-                // Initialize LIFF
-                await initializeLiff();
+                // Initialize LIFF (non-blocking)
+                initializeLiff().catch(err => {
+                    console.error('LIFF init error (non-blocking):', err);
+                });
                 
-                // Load images
+                // Load images regardless of LIFF status
                 await loadImages();
                 
             } catch (error) {
@@ -1200,13 +1273,19 @@
         async function loadImages() {
             try {
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
+                console.log('Loading images from:', apiUrl);
+                
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                console.log('API response:', data);
+                
                 images = data.images || [];
                 
                 if (images.length === 0) {
@@ -1223,7 +1302,10 @@
                 
             } catch (error) {
                 console.error('Error loading images:', error);
-                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
+                showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`, {
+                    error: error.message,
+                    url: window.location.href
+                });
             }
         }
         
@@ -1375,18 +1457,29 @@
         async function shareToChat() {
             try {
                 closeShareModal();
+                
+                // Check if logged in
+                if (!isLoggedIn || !liffInitialized) {
+                    showToast('กรุณาเข้าสู่ระบบ LINE ก่อนแชร์รูปภาพ');
+                    
+                    // Try to login
+                    if (liffInitialized && !isLoggedIn) {
+                        liff.login();
+                    }
+                    return;
+                }
+                
                 showToast(`กำลังเตรียมแชร์ ${currentShareImages.length} รูป...`);
                 
-                // Method 1: Share via LINE's native share
+                // Method 1: Try Share Target Picker
                 if (liff.isApiAvailable('shareTargetPicker')) {
-                    // Use LINE's share target picker
-                    const shareMessage = {
-                        type: 'flex',
-                        altText: `📸 รูปภาพ QC - Lot: ${lotNumber}`,
-                        contents: createShareFlexMessage()
-                    };
-                    
                     try {
+                        const shareMessage = {
+                            type: 'flex',
+                            altText: `📸 รูปภาพ QC - Lot: ${lotNumber}`,
+                            contents: createShareFlexMessage()
+                        };
+                        
                         const result = await liff.shareTargetPicker([shareMessage]);
                         if (result) {
                             showToast('✅ แชร์รูปภาพเรียบร้อยแล้ว');
@@ -1649,6 +1742,11 @@
                 const detailsEl = document.getElementById('errorDetails');
                 detailsEl.style.display = 'block';
                 detailsEl.textContent = typeof details === 'string' ? details : JSON.stringify(details, null, 2);
+            }
+            
+            // Show retry button if it's a login error
+            if (message.includes('400') || message.includes('Bad Request') || message.includes('Login')) {
+                document.getElementById('retryBtn').style.display = 'inline-block';
             }
         }
         
