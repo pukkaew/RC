@@ -1375,57 +1375,192 @@
         async function shareToChat() {
             try {
                 closeShareModal();
+                showToast(`กำลังเตรียมแชร์ ${currentShareImages.length} รูป...`);
                 
-                if (!liffInitialized) {
-                    showToast('❌ กรุณาเปิดใน LINE App เพื่อใช้ฟีเจอร์นี้');
-                    return;
-                }
-                
-                if (!liff.isInClient()) {
-                    showToast('❌ ฟีเจอร์นี้ใช้ได้เฉพาะใน LINE App เท่านั้น');
-                    return;
-                }
-                
-                showToast(`กำลังส่ง ${currentShareImages.length} รูป...`);
-                
-                // Get context
-                const context = liff.getContext();
-                console.log('LIFF Context:', context);
-                
-                // Prepare messages - send as native LINE image messages
-                const messages = [];
-                
-                // Add header message
-                messages.push({
-                    type: 'text',
-                    text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป`
-                });
-                
-                // Add images (max 5 messages due to LINE limitation)
-                const maxImages = Math.min(currentShareImages.length, 4); // 1 text + 4 images = 5 messages
-                for (let i = 0; i < maxImages; i++) {
-                    messages.push({
-                        type: 'image',
-                        originalContentUrl: currentShareImages[i].url,
-                        previewImageUrl: currentShareImages[i].url
-                    });
-                }
-                
-                // Send messages using LIFF sendMessages
-                await liff.sendMessages(messages);
-                
-                showToast(`✅ ส่ง ${maxImages} รูปเรียบร้อยแล้ว${currentShareImages.length > maxImages ? `\n(เหลืออีก ${currentShareImages.length - maxImages} รูป)` : ''}`);
-                
-                // If more than 5 images, inform user
-                if (currentShareImages.length > maxImages) {
-                    setTimeout(() => {
-                        showToast('💡 LINE จำกัดการส่งได้ครั้งละ 5 ข้อความ\nกรุณาแชร์รูปที่เหลือแยกอีกครั้ง');
-                    }, 2000);
+                // Method 1: Share via LINE's native share
+                if (liff.isApiAvailable('shareTargetPicker')) {
+                    // Use LINE's share target picker
+                    const shareMessage = {
+                        type: 'flex',
+                        altText: `📸 รูปภาพ QC - Lot: ${lotNumber}`,
+                        contents: createShareFlexMessage()
+                    };
+                    
+                    try {
+                        const result = await liff.shareTargetPicker([shareMessage]);
+                        if (result) {
+                            showToast('✅ แชร์รูปภาพเรียบร้อยแล้ว');
+                        }
+                    } catch (err) {
+                        console.log('Share target picker error:', err);
+                        // Fallback to URL share
+                        shareViaUrl();
+                    }
+                } else {
+                    // Fallback: Share via URL
+                    shareViaUrl();
                 }
                 
             } catch (error) {
                 console.error('Share to chat error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการส่งรูปภาพ\n' + error.message);
+                showToast('❌ เกิดข้อผิดพลาดในการแชร์');
+            }
+        }
+        
+        // Create flex message for sharing
+        function createShareFlexMessage() {
+            const imageCount = currentShareImages.length;
+            const previewImages = currentShareImages.slice(0, 9);
+            
+            // Create image boxes for preview
+            const imageBoxes = previewImages.map(image => ({
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    {
+                        type: "image",
+                        url: image.url,
+                        size: "full",
+                        aspectMode: "cover",
+                        aspectRatio: "1:1"
+                    }
+                ],
+                cornerRadius: "5px",
+                margin: "2px"
+            }));
+            
+            // Fill empty slots if less than 9
+            while (imageBoxes.length < 9) {
+                imageBoxes.push({
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                        {
+                            type: "box",
+                            layout: "vertical",
+                            contents: [],
+                            backgroundColor: "#F0F0F0"
+                        }
+                    ],
+                    cornerRadius: "5px",
+                    margin: "2px"
+                });
+            }
+            
+            // Create 3x3 grid
+            const rows = [];
+            for (let i = 0; i < 9; i += 3) {
+                rows.push({
+                    type: "box",
+                    layout: "horizontal",
+                    contents: imageBoxes.slice(i, i + 3),
+                    spacing: "xs"
+                });
+            }
+            
+            return {
+                type: "bubble",
+                size: "mega",
+                header: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                        {
+                            type: "text",
+                            text: "📸 แชร์รูปภาพ QC",
+                            size: "xl",
+                            weight: "bold",
+                            color: "#00B900"
+                        },
+                        {
+                            type: "text",
+                            text: `📦 Lot: ${lotNumber} | 📅 ${new Date(imageDate).toLocaleDateString('th-TH')}`,
+                            size: "sm",
+                            color: "#666666",
+                            margin: "sm"
+                        },
+                        {
+                            type: "text",
+                            text: `🖼️ ${imageCount} รูป`,
+                            size: "md",
+                            weight: "bold",
+                            color: "#333333",
+                            margin: "xs"
+                        }
+                    ],
+                    paddingAll: "15px",
+                    backgroundColor: "#F8FFF8"
+                },
+                body: {
+                    type: "box",
+                    layout: "vertical",
+                    contents: [
+                        {
+                            type: "box",
+                            layout: "vertical",
+                            contents: rows,
+                            backgroundColor: "#FFFFFF",
+                            cornerRadius: "8px",
+                            paddingAll: "5px"
+                        }
+                    ],
+                    paddingAll: "10px",
+                    backgroundColor: "#FAFAFA"
+                },
+                footer: {
+                    type: "box",
+                    layout: "vertical",
+                    spacing: "sm",
+                    contents: [
+                        {
+                            type: "button",
+                            style: "primary",
+                            height: "md",
+                            action: {
+                                type: "uri",
+                                label: "🔍 ดูรูปภาพทั้งหมด",
+                                uri: window.location.href
+                            },
+                            color: "#00B900"
+                        }
+                    ],
+                    paddingAll: "15px"
+                }
+            };
+        }
+        
+        // Share via URL (fallback method)
+        function shareViaUrl() {
+            const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป\n\n🔗 ดูรูปภาพ:\n${window.location.href}`;
+            
+            // Try to use Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: `รูปภาพ QC - Lot: ${lotNumber}`,
+                    text: shareText,
+                    url: window.location.href
+                }).then(() => {
+                    showToast('✅ แชร์เรียบร้อยแล้ว');
+                }).catch(err => {
+                    console.log('Web share cancelled:', err);
+                });
+            } else {
+                // Copy to clipboard as fallback
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareText).then(() => {
+                        showToast('✅ คัดลอกลิงก์แล้ว\nวางในห้องแชทที่ต้องการ');
+                    });
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareText;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    showToast('✅ คัดลอกลิงก์แล้ว\nวางในห้องแชทที่ต้องการ');
+                }
             }
         }
         
