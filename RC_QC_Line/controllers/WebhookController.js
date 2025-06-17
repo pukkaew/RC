@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated for Multi-Chat Support
+// Controller for handling LINE webhook events - Updated with viewtoday command
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -245,6 +245,9 @@ class WebhookController {
             await uploadController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === lineConfig.userActions.view) {
             await imageController.processLotNumber(userId, lotNumber, replyToken, chatContext);
+          } else if (data.action === 'viewtoday') {
+            // สำหรับ viewtoday ไม่ต้องแสดง date picker
+            await this.handleViewToday(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'delete') {
             await deleteController.processLotNumber(userId, lotNumber, replyToken, chatContext);
           } else if (data.action === 'correct') {
@@ -312,6 +315,18 @@ class WebhookController {
             }
             break;
             
+          case 'viewToday':
+          case 'viewTodayShort':
+            // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #viewtoday ABC123)
+            if (commandInfo.args.length > 0) {
+              const lotNumber = commandInfo.args[0];
+              await this.handleViewToday(userId, lotNumber, replyToken, chatContext);
+            } else {
+              // กรณีไม่ระบุ Lot - ถามเลข Lot
+              await this.requestLotNumberForViewToday(userId, replyToken, chatContext);
+            }
+            break;
+            
           case 'delete':
           case 'deleteShort':
             // กรณีระบุ Lot มาพร้อมกับคำสั่ง (เช่น #del ABC123)
@@ -358,6 +373,11 @@ class WebhookController {
                   replyToken,
                   lineService.createTextMessage(commandConfig.helpText.view)
                 );
+              } else if (helpType === 'viewtoday' || helpType === 'vt' || helpType === 'วันนี้') {
+                await lineService.replyMessage(
+                  replyToken,
+                  lineService.createTextMessage(commandConfig.helpText.viewtoday)
+                );
               } else if (helpType === 'delete' || helpType === 'del' || helpType === 'ลบ') {
                 await lineService.replyMessage(
                   replyToken,
@@ -390,6 +410,67 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling text message:', error);
+      throw error;
+    }
+  }
+
+  // Request Lot number for viewtoday
+  async requestLotNumberForViewToday(userId, replyToken, chatContext) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Set user state to waiting for Lot number with chat context
+      lineService.setUserState(userId, lineConfig.userStates.waitingForLot, {
+        action: 'viewtoday'
+      }, chatId);
+      
+      // Ask for Lot number
+      const requestMessage = {
+        type: 'text',
+        text: '📅 ดูรูปภาพวันนี้\nกรุณาระบุเลข Lot ที่ต้องการดู'
+      };
+      
+      await lineService.replyMessage(replyToken, requestMessage);
+    } catch (error) {
+      logger.error('Error requesting Lot number for viewtoday:', error);
+      throw error;
+    }
+  }
+
+  // Handle viewtoday command
+  async handleViewToday(userId, lotNumber, replyToken, chatContext) {
+    try {
+      const chatId = chatContext?.chatId || 'direct';
+      
+      // Validate lot number
+      if (!lotNumber || lotNumber.trim() === '') {
+        await lineService.replyMessage(
+          replyToken, 
+          lineService.createTextMessage('เลข Lot ไม่ถูกต้อง กรุณาระบุเลข Lot อีกครั้ง')
+        );
+        return;
+      }
+      
+      // Get current date
+      const today = new Date();
+      const dateFormatter = require('../utils/DateFormatter');
+      const todayISO = dateFormatter.formatISODate(today);
+      
+      logger.info(`ViewToday: User ${userId} viewing Lot ${lotNumber} for date ${todayISO}`);
+      
+      // Reset user state
+      lineService.setUserState(userId, lineConfig.userStates.idle, {}, chatId);
+      
+      // Process date selection directly (skip date picker)
+      await imageController.processDateSelection(userId, lotNumber.trim(), todayISO, replyToken, chatContext);
+      
+    } catch (error) {
+      logger.error('Error handling viewtoday:', error);
+      
+      // Reply with error message
+      const errorMessage = 'เกิดข้อผิดพลาดในการดึงรูปภาพวันนี้ โปรดลองใหม่อีกครั้ง';
+      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
+      
       throw error;
     }
   }
@@ -549,6 +630,7 @@ class WebhookController {
         'คำสั่งที่ใช้ได้:\n' +
         `• ${commandConfig.prefixes.upload} [LOT] - อัปโหลดรูปภาพ\n` +
         `• ${commandConfig.prefixes.view} [LOT] - ดูรูปภาพ\n` +
+        `• ${commandConfig.prefixes.viewToday} [LOT] - ดูรูปวันนี้\n` +
         `• ${commandConfig.prefixes.delete} [LOT] - ลบรูปภาพ\n` +
         `• ${commandConfig.prefixes.correct} [OLD] [NEW] - แก้ไขเลข Lot\n` +
         `• ${commandConfig.prefixes.help} - วิธีใช้งาน`;
