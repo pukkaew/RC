@@ -42,54 +42,6 @@
             opacity: 0.9;
         }
         
-        /* Auth Section */
-        .auth-section {
-            background: white;
-            margin: 15px;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .auth-status {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-        }
-        
-        .auth-status.success {
-            color: #00B900;
-        }
-        
-        .auth-status.error {
-            color: #FF0000;
-        }
-        
-        .auth-btn {
-            background: #00B900;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .auth-btn:hover {
-            background: #00A000;
-        }
-        
-        .auth-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .auth-btn.logout {
-            background: #666;
-        }
-        
         /* Loading */
         .loading {
             text-align: center;
@@ -111,38 +63,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-        
-        /* Debug Info */
-        .debug-info {
-            background: #f0f0f0;
-            margin: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-break: break-all;
-            display: none;
-        }
-        
-        .debug-info.show {
-            display: block;
-        }
-        
-        /* Toggle Debug Button */
-        .debug-toggle {
-            position: fixed;
-            bottom: 70px;
-            right: 15px;
-            background: #333;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            z-index: 100;
         }
         
         /* Image Grid */
@@ -264,6 +184,218 @@
             transform: scale(1);
         }
         
+        /* Select Mode */
+        .select-mode .image-item::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 28px;
+            height: 28px;
+            border: 3px solid white;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1;
+        }
+        
+        /* Modal Container */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+        
+        .modal.show {
+            opacity: 1;
+        }
+        
+        /* Image Viewer Container */
+        .viewer-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        /* Image Wrapper for Transform */
+        .viewer-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            will-change: transform;
+        }
+        
+        /* Viewer Image */
+        .viewer-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        
+        /* UI Controls */
+        .viewer-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        /* Close Button */
+        .viewer-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: all 0.2s ease-out;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viewer-close:active {
+            transform: scale(0.9);
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Navigation Arrows */
+        .viewer-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 88px;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+        
+        .viewer-nav:active {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .viewer-nav.prev {
+            left: 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .viewer-nav.next {
+            right: 0;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .viewer-nav:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        
+        /* Counter */
+        .viewer-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Zoom Controls */
+        .viewer-zoom-controls {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 25px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            pointer-events: auto;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .viewer-zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-out;
+        }
+        
+        .viewer-zoom-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.9);
+        }
+        
+        .viewer-zoom-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        
+        /* Loading Indicator */
+        .viewer-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        
         /* Error State */
         .error {
             text-align: center;
@@ -319,7 +451,24 @@
             }
         }
         
-        /* No Auth Mode Notice */
+        /* Selection counter */
+        .selection-counter {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00B900;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 50;
+        }
+        
+        /* No Auth Notice */
         .no-auth-notice {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -329,47 +478,9 @@
             font-size: 12px;
         }
         
-        /* Modal for image viewer */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #000;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease-out;
-        }
-        
-        .modal.show {
-            opacity: 1;
-        }
-        
-        /* Status Badge */
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-left: 10px;
-        }
-        
-        .status-badge.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-badge.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status-badge.loading {
-            background: #cce5ff;
-            color: #004085;
+        /* Prevent iOS bounce */
+        html, body {
+            overscroll-behavior-y: contain;
         }
     </style>
 </head>
@@ -380,20 +491,18 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- Auth Section -->
-    <div class="auth-section" id="authSection">
-        <div class="auth-status" id="authStatus">กำลังตรวจสอบสถานะ...</div>
-        <button class="auth-btn" id="authBtn" onclick="handleAuth()" style="display: none;">Login with LINE</button>
+    <!-- No Auth Notice -->
+    <div class="no-auth-notice">
+        💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
     </div>
     
-    <!-- Debug Toggle -->
-    <button class="debug-toggle" onclick="toggleDebug()">🐛 Debug</button>
-    
-    <!-- Debug Info -->
-    <div class="debug-info" id="debugInfo"></div>
+    <!-- Selection Counter -->
+    <div class="selection-counter" id="selectionCounter">
+        เลือกแล้ว 0 รูป
+    </div>
     
     <!-- Content -->
-    <div id="content" style="display: none;">
+    <div id="content">
         <!-- Loading State -->
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
@@ -424,8 +533,33 @@
         </button>
     </div>
     
-    <!-- Include LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Image Viewer Modal -->
+    <div class="modal" id="imageModal">
+        <div class="viewer-container" id="viewerContainer">
+            <div class="viewer-wrapper" id="viewerWrapper">
+                <img class="viewer-image" id="viewerImage" alt="">
+            </div>
+            
+            <div class="viewer-loading" id="viewerLoading" style="display: none;">
+                <div class="loading-spinner"></div>
+            </div>
+            
+            <div class="viewer-ui">
+                <button class="viewer-close" onclick="viewer.close()">✕</button>
+                
+                <button class="viewer-nav prev" id="navPrev" onclick="viewer.prev()">‹</button>
+                <button class="viewer-nav next" id="navNext" onclick="viewer.next()">›</button>
+                
+                <div class="viewer-counter" id="viewerCounter">1 / 1</div>
+                
+                <div class="viewer-zoom-controls">
+                    <button class="viewer-zoom-btn" id="zoomOut" onclick="viewer.zoomOut()">−</button>
+                    <button class="viewer-zoom-btn" onclick="viewer.resetZoom()">⟲</button>
+                    <button class="viewer-zoom-btn" id="zoomIn" onclick="viewer.zoomIn()">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Global variables
@@ -435,293 +569,440 @@
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
-        let liffInitialized = false;
-        let userProfile = null;
-        let debugMode = false;
-        let authMode = 'checking'; // checking, authenticated, guest
         
-        // Debug logging
-        function debug(message, data = null) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logMessage = `[${timestamp}] ${message}`;
-            console.log(logMessage, data || '');
+        // Image Viewer System
+        const viewer = {
+            // State
+            isOpen: false,
+            currentIndex: 0,
+            scale: 1,
+            minScale: 1,
+            maxScale: 5,
+            x: 0,
+            y: 0,
             
-            // Update debug panel
-            const debugInfo = document.getElementById('debugInfo');
-            if (debugInfo) {
-                const currentLog = debugInfo.textContent;
-                const newLog = data ? `${logMessage}\n${JSON.stringify(data, null, 2)}` : logMessage;
-                debugInfo.textContent = currentLog + '\n' + newLog;
+            // Touch/Mouse tracking
+            startX: 0,
+            startY: 0,
+            startDistance: 0,
+            isDragging: false,
+            isPinching: false,
+            lastTap: 0,
+            
+            // Elements
+            modal: null,
+            container: null,
+            wrapper: null,
+            image: null,
+            
+            // Initialize
+            init() {
+                this.modal = document.getElementById('imageModal');
+                this.container = document.getElementById('viewerContainer');
+                this.wrapper = document.getElementById('viewerWrapper');
+                this.image = document.getElementById('viewerImage');
                 
-                // Keep only last 50 lines
-                const lines = debugInfo.textContent.split('\n');
-                if (lines.length > 50) {
-                    debugInfo.textContent = lines.slice(-50).join('\n');
-                }
-            }
-        }
-        
-        // Toggle debug panel
-        function toggleDebug() {
-            debugMode = !debugMode;
-            const debugInfo = document.getElementById('debugInfo');
-            debugInfo.classList.toggle('show', debugMode);
-        }
-        
-        // Clear all LIFF data and force re-authentication
-        async function clearLiffData() {
-            debug('Clearing LIFF data...');
+                this.setupEventListeners();
+            },
             
-            try {
-                // Clear localStorage
-                if (typeof localStorage !== 'undefined') {
-                    const keysToRemove = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && (key.includes('liff') || key.includes('line'))) {
-                            keysToRemove.push(key);
+            // Setup event listeners
+            setupEventListeners() {
+                // Touch events
+                this.container.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+                this.container.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+                this.container.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+                
+                // Mouse events
+                this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+                
+                // Keyboard
+                document.addEventListener('keydown', this.handleKeydown.bind(this));
+                
+                // Prevent iOS bounce
+                this.modal.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+            },
+            
+            // Open viewer
+            open(index) {
+                this.currentIndex = index;
+                this.isOpen = true;
+                this.resetTransform();
+                
+                // Show modal with animation
+                this.modal.style.display = 'block';
+                setTimeout(() => this.modal.classList.add('show'), 10);
+                
+                // Load image
+                this.loadImage(index);
+                
+                // Update UI
+                this.updateUI();
+                
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            },
+            
+            // Close viewer
+            close() {
+                this.isOpen = false;
+                this.modal.classList.remove('show');
+                
+                setTimeout(() => {
+                    this.modal.style.display = 'none';
+                    this.resetTransform();
+                }, 300);
+                
+                document.body.style.overflow = '';
+            },
+            
+            // Load image
+            loadImage(index) {
+                const loading = document.getElementById('viewerLoading');
+                loading.style.display = 'block';
+                
+                const img = new Image();
+                img.onload = () => {
+                    this.image.src = images[index].url;
+                    loading.style.display = 'none';
+                };
+                img.onerror = () => {
+                    loading.style.display = 'none';
+                    showToast('ไม่สามารถโหลดรูปภาพได้');
+                };
+                img.src = images[index].url;
+            },
+            
+            // Navigate
+            prev() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.resetTransform();
+                    this.loadImage(this.currentIndex);
+                    this.updateUI();
+                }
+            },
+            
+            next() {
+                if (this.currentIndex < images.length - 1) {
+                    this.currentIndex++;
+                    this.resetTransform();
+                    this.loadImage(this.currentIndex);
+                    this.updateUI();
+                }
+            },
+            
+            // Touch handlers
+            handleTouchStart(e) {
+                e.preventDefault();
+                
+                if (e.touches.length === 1) {
+                    // Single touch - pan or double tap
+                    const touch = e.touches[0];
+                    this.startX = touch.clientX - this.x;
+                    this.startY = touch.clientY - this.y;
+                    this.isDragging = true;
+                    
+                    // Double tap detection
+                    const now = Date.now();
+                    if (now - this.lastTap < 300) {
+                        this.handleDoubleTap(touch);
+                    }
+                    this.lastTap = now;
+                    
+                } else if (e.touches.length === 2) {
+                    // Pinch zoom
+                    this.isPinching = true;
+                    this.isDragging = false;
+                    this.startDistance = this.getDistance(e.touches[0], e.touches[1]);
+                }
+            },
+            
+            handleTouchMove(e) {
+                e.preventDefault();
+                
+                if (this.isPinching && e.touches.length === 2) {
+                    // Pinch zoom
+                    const distance = this.getDistance(e.touches[0], e.touches[1]);
+                    const delta = distance / this.startDistance;
+                    this.setScale(this.scale * delta);
+                    this.startDistance = distance;
+                    
+                } else if (this.isDragging && e.touches.length === 1) {
+                    // Pan
+                    const touch = e.touches[0];
+                    this.x = touch.clientX - this.startX;
+                    this.y = touch.clientY - this.startY;
+                    
+                    // Swipe to navigate when not zoomed
+                    if (this.scale === 1) {
+                        const deltaX = this.x;
+                        if (Math.abs(deltaX) > 50) {
+                            this.wrapper.style.opacity = 1 - Math.abs(deltaX) / 300;
                         }
                     }
-                    keysToRemove.forEach(key => {
-                        localStorage.removeItem(key);
-                        debug(`Removed localStorage: ${key}`);
-                    });
-                }
-                
-                // Clear sessionStorage
-                if (typeof sessionStorage !== 'undefined') {
-                    sessionStorage.clear();
-                    debug('Cleared sessionStorage');
-                }
-                
-                // Clear cookies (limited capability)
-                document.cookie.split(";").forEach(function(c) { 
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-                });
-                debug('Cleared cookies');
-                
-            } catch (error) {
-                debug('Error clearing data:', error.message);
-            }
-        }
-        
-        // Initialize LIFF with better error handling
-        async function initializeLiff() {
-            debug('Starting LIFF initialization...');
-            
-            try {
-                // Check if LIFF SDK is loaded
-                if (typeof liff === 'undefined') {
-                    throw new Error('LIFF SDK not loaded');
-                }
-                
-                // Initialize LIFF
-                await liff.init({ 
-                    liffId: '2007575196-NWaXrZVE',
-                    withLoginOnExternalBrowser: true // Allow login on external browsers
-                });
-                
-                liffInitialized = true;
-                debug('LIFF initialized successfully', {
-                    isInClient: liff.isInClient(),
-                    isLoggedIn: liff.isLoggedIn(),
-                    os: liff.getOS(),
-                    language: liff.getLanguage()
-                });
-                
-                // Check login status
-                if (liff.isLoggedIn()) {
-                    debug('User is logged in');
                     
-                    try {
-                        // Get user profile
-                        userProfile = await liff.getProfile();
-                        debug('User profile retrieved:', {
-                            userId: userProfile.userId,
-                            displayName: userProfile.displayName
-                        });
-                        
-                        authMode = 'authenticated';
-                        updateAuthUI();
-                        
-                        // Proceed to load images
-                        await loadContent();
-                        
-                    } catch (profileError) {
-                        debug('Error getting profile:', profileError.message);
-                        
-                        // If can't get profile, try to logout and login again
-                        if (profileError.message.includes('401') || profileError.message.includes('403')) {
-                            debug('Authentication error, forcing re-login...');
-                            await handleLogout();
-                            await handleLogin();
-                        } else {
-                            // Use guest mode
-                            authMode = 'guest';
-                            updateAuthUI();
-                            await loadContent();
-                        }
+                    this.updateTransform();
+                }
+            },
+            
+            handleTouchEnd(e) {
+                if (this.scale === 1 && Math.abs(this.x) > 100) {
+                    // Swipe navigation
+                    if (this.x > 0 && this.currentIndex > 0) {
+                        this.prev();
+                    } else if (this.x < 0 && this.currentIndex < images.length - 1) {
+                        this.next();
+                    } else {
+                        this.animateToOrigin();
                     }
                 } else {
-                    debug('User is not logged in');
-                    authMode = 'guest';
-                    updateAuthUI();
-                    
-                    // Auto-login if in LINE app
-                    if (liff.isInClient()) {
-                        debug('In LINE app, attempting auto-login...');
-                        await handleLogin();
-                    }
+                    // Constrain position
+                    this.constrainPosition();
                 }
                 
-            } catch (error) {
-                debug('LIFF initialization error:', error.message);
-                liffInitialized = false;
-                authMode = 'guest';
-                updateAuthUI();
-                
-                // Try to load content anyway
-                await loadContent();
-            }
-        }
-        
-        // Update auth UI based on current state
-        function updateAuthUI() {
-            const authStatus = document.getElementById('authStatus');
-            const authBtn = document.getElementById('authBtn');
-            const authSection = document.getElementById('authSection');
+                this.isDragging = false;
+                this.isPinching = false;
+                this.wrapper.style.opacity = 1;
+            },
             
-            switch (authMode) {
-                case 'checking':
-                    authStatus.textContent = 'กำลังตรวจสอบสถานะ...';
-                    authStatus.className = 'auth-status';
-                    authBtn.style.display = 'none';
-                    break;
-                    
-                case 'authenticated':
-                    authStatus.innerHTML = `
-                        <span>✅ เข้าสู่ระบบแล้ว</span>
-                        <span class="status-badge success">${userProfile?.displayName || 'User'}</span>
-                    `;
-                    authStatus.className = 'auth-status success';
-                    authBtn.textContent = 'Logout';
-                    authBtn.className = 'auth-btn logout';
-                    authBtn.style.display = 'inline-block';
-                    
-                    // Hide auth section after 3 seconds
-                    setTimeout(() => {
-                        authSection.style.display = 'none';
-                    }, 3000);
-                    break;
-                    
-                case 'guest':
-                    authStatus.innerHTML = `
-                        <span>👤 โหมด Guest</span>
-                        <span class="status-badge loading">ไม่ต้องเข้าสู่ระบบ</span>
-                    `;
-                    authStatus.className = 'auth-status';
-                    authBtn.textContent = 'Login with LINE';
-                    authBtn.className = 'auth-btn';
-                    authBtn.style.display = liffInitialized ? 'inline-block' : 'none';
-                    break;
-            }
-        }
-        
-        // Handle authentication button click
-        async function handleAuth() {
-            if (authMode === 'authenticated') {
-                await handleLogout();
-            } else {
-                await handleLogin();
-            }
-        }
-        
-        // Handle login
-        async function handleLogin() {
-            debug('Starting login process...');
-            
-            try {
-                if (!liffInitialized) {
-                    showToast('❌ LIFF ยังไม่พร้อม กรุณารอสักครู่');
-                    return;
+            // Mouse handlers
+            handleMouseDown(e) {
+                if (e.button === 0) {
+                    this.startX = e.clientX - this.x;
+                    this.startY = e.clientY - this.y;
+                    this.isDragging = true;
+                    this.container.style.cursor = 'grabbing';
                 }
-                
-                // Clear old data first
-                await clearLiffData();
-                
-                // Start login
-                liff.login({
-                    redirectUri: window.location.href
-                });
-                
-            } catch (error) {
-                debug('Login error:', error.message);
-                showToast('❌ ไม่สามารถเข้าสู่ระบบได้');
-            }
-        }
-        
-        // Handle logout
-        async function handleLogout() {
-            debug('Starting logout process...');
+            },
             
-            try {
-                if (liffInitialized && liff.isLoggedIn()) {
-                    // Clear data first
-                    await clearLiffData();
-                    
-                    // Logout from LIFF
-                    liff.logout();
-                    
-                    // Reload page
-                    window.location.reload();
+            handleMouseMove(e) {
+                if (this.isDragging) {
+                    this.x = e.clientX - this.startX;
+                    this.y = e.clientY - this.startY;
+                    this.updateTransform();
+                }
+            },
+            
+            handleMouseUp(e) {
+                this.isDragging = false;
+                this.container.style.cursor = '';
+                this.constrainPosition();
+            },
+            
+            // Mouse wheel zoom
+            handleWheel(e) {
+                e.preventDefault();
+                
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * delta));
+                
+                // Zoom to cursor position
+                const rect = this.container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                this.zoomTo(newScale, x, y);
+            },
+            
+            // Keyboard
+            handleKeydown(e) {
+                if (!this.isOpen) return;
+                
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        this.prev();
+                        break;
+                    case 'ArrowRight':
+                        this.next();
+                        break;
+                    case 'Escape':
+                        this.close();
+                        break;
+                    case '+':
+                    case '=':
+                        this.zoomIn();
+                        break;
+                    case '-':
+                        this.zoomOut();
+                        break;
+                    case '0':
+                        this.resetZoom();
+                        break;
+                }
+            },
+            
+            // Double tap
+            handleDoubleTap(touch) {
+                const newScale = this.scale === 1 ? 2 : 1;
+                const rect = this.container.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                this.animateZoomTo(newScale, x, y);
+            },
+            
+            // Zoom controls
+            zoomIn() {
+                const newScale = Math.min(this.maxScale, this.scale * 1.5);
+                this.animateZoomTo(newScale);
+            },
+            
+            zoomOut() {
+                const newScale = Math.max(this.minScale, this.scale / 1.5);
+                this.animateZoomTo(newScale);
+            },
+            
+            resetZoom() {
+                this.animateZoomTo(1);
+            },
+            
+            // Set scale
+            setScale(scale) {
+                this.scale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Zoom to point
+            zoomTo(scale, x, y) {
+                const prevScale = this.scale;
+                this.scale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+                
+                // Adjust position to zoom to point
+                const scaleRatio = this.scale / prevScale;
+                this.x = x - (x - this.x) * scaleRatio;
+                this.y = y - (y - this.y) * scaleRatio;
+                
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Animate zoom
+            animateZoomTo(scale, x, y) {
+                const rect = this.container.getBoundingClientRect();
+                const centerX = x !== undefined ? x : rect.width / 2;
+                const centerY = y !== undefined ? y : rect.height / 2;
+                
+                this.wrapper.style.transition = 'transform 0.3s ease-out';
+                this.zoomTo(scale, centerX, centerY);
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                    this.constrainPosition();
+                }, 300);
+            },
+            
+            // Animate to origin
+            animateToOrigin() {
+                this.wrapper.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+                this.x = 0;
+                this.y = 0;
+                this.updateTransform();
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                }, 300);
+            },
+            
+            // Constrain position
+            constrainPosition() {
+                if (this.scale <= 1) {
+                    this.x = 0;
+                    this.y = 0;
                 } else {
-                    // Just reload if not logged in
-                    window.location.reload();
+                    const rect = this.container.getBoundingClientRect();
+                    const imgRect = this.image.getBoundingClientRect();
+                    
+                    const maxX = Math.max(0, (imgRect.width * this.scale - rect.width) / 2);
+                    const maxY = Math.max(0, (imgRect.height * this.scale - rect.height) / 2);
+                    
+                    this.x = Math.max(-maxX, Math.min(maxX, this.x));
+                    this.y = Math.max(-maxY, Math.min(maxY, this.y));
                 }
                 
-            } catch (error) {
-                debug('Logout error:', error.message);
-                // Force reload anyway
-                window.location.reload();
+                this.wrapper.style.transition = 'transform 0.2s ease-out';
+                this.updateTransform();
+                
+                setTimeout(() => {
+                    this.wrapper.style.transition = '';
+                }, 200);
+            },
+            
+            // Update transform
+            updateTransform() {
+                this.wrapper.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
+            },
+            
+            // Reset transform
+            resetTransform() {
+                this.scale = 1;
+                this.x = 0;
+                this.y = 0;
+                this.updateTransform();
+                this.updateZoomButtons();
+            },
+            
+            // Update UI
+            updateUI() {
+                // Counter
+                document.getElementById('viewerCounter').textContent = 
+                    `${this.currentIndex + 1} / ${images.length}`;
+                
+                // Navigation buttons
+                document.getElementById('navPrev').disabled = this.currentIndex === 0;
+                document.getElementById('navNext').disabled = this.currentIndex === images.length - 1;
+                
+                this.updateZoomButtons();
+            },
+            
+            // Update zoom buttons
+            updateZoomButtons() {
+                document.getElementById('zoomOut').disabled = this.scale <= this.minScale;
+                document.getElementById('zoomIn').disabled = this.scale >= this.maxScale;
+            },
+            
+            // Get distance between touches
+            getDistance(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
             }
-        }
+        };
         
-        // Load content (images)
-        async function loadContent() {
+        // Initialize
+        async function initialize() {
             try {
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
                 imageDate = params.get('date') || '';
-                baseUrl = window.location.origin;
-                
-                debug('Parameters:', { lotNumber, imageDate, baseUrl });
+                baseUrl = params.get('base_url') || window.location.origin;
                 
                 if (!lotNumber || !imageDate) {
                     showError('ไม่พบข้อมูล Lot หรือวันที่\n\nกรุณาตรวจสอบ URL');
                     return;
                 }
                 
-                // Show content area
-                document.getElementById('content').style.display = 'block';
+                // Initialize viewer
+                viewer.init();
                 
                 // Load images
                 await loadImages();
                 
             } catch (error) {
-                debug('Error loading content:', error.message);
-                showError('ไม่สามารถโหลดข้อมูลได้', error.message);
+                console.error('Initialization failed:', error);
+                showError('ไม่สามารถเริ่มต้นระบบได้', error.message);
             }
         }
         
-        // Load images from API
+        // Load images
         async function loadImages() {
             try {
-                document.getElementById('loading').style.display = 'block';
-                
                 const apiUrl = `${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`;
-                debug('Loading images from:', apiUrl);
-                
                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
@@ -729,11 +1010,6 @@
                 }
                 
                 const data = await response.json();
-                debug('API Response:', {
-                    success: data.success,
-                    count: data.images?.length || 0
-                });
-                
                 images = data.images || [];
                 
                 if (images.length === 0) {
@@ -749,7 +1025,7 @@
                 document.getElementById('bottomBar').style.display = 'flex';
                 
             } catch (error) {
-                debug('Error loading images:', error.message);
+                console.error('Error loading images:', error);
                 showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
             }
         }
@@ -784,7 +1060,7 @@
                     if (selectMode) {
                         toggleImageSelection(index);
                     } else {
-                        viewImage(index);
+                        viewer.open(index);
                     }
                 };
                 
@@ -800,6 +1076,7 @@
             const selectBtn = document.getElementById('selectBtn');
             const shareBtn = document.getElementById('shareBtn');
             const grid = document.getElementById('imageGrid');
+            const counter = document.getElementById('selectionCounter');
             
             if (selectMode) {
                 grid.classList.add('select-mode');
@@ -808,6 +1085,8 @@
                 selectBtn.classList.add('btn-danger');
                 shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
                 shareBtn.disabled = true;
+                counter.style.display = 'block';
+                updateSelectionCounter();
                 showToast('แตะเพื่อเลือกรูปที่ต้องการแชร์');
             } else {
                 grid.classList.remove('select-mode');
@@ -816,6 +1095,7 @@
                 selectBtn.classList.add('btn-secondary');
                 shareBtn.innerHTML = '<span>📤</span><span>แชร์ทั้งหมด</span>';
                 shareBtn.disabled = false;
+                counter.style.display = 'none';
                 renderImages();
             }
         }
@@ -831,6 +1111,8 @@
             const items = document.querySelectorAll('.image-item');
             items[index].classList.toggle('selected');
             
+            updateSelectionCounter();
+            
             const shareBtn = document.getElementById('shareBtn');
             if (selectedImages.size > 0) {
                 shareBtn.disabled = false;
@@ -841,10 +1123,10 @@
             }
         }
         
-        // View single image
-        function viewImage(index) {
-            // Simple implementation - open in new window
-            window.open(images[index].url, '_blank');
+        // Update selection counter
+        function updateSelectionCounter() {
+            const counter = document.getElementById('selectionCounter');
+            counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
         // Share images
@@ -858,53 +1140,21 @@
                     imagesToShare = images;
                 }
                 
-                debug('Sharing images:', imagesToShare.length);
-                
-                // If authenticated, can use advanced sharing
-                if (authMode === 'authenticated' && liffInitialized) {
-                    // Use LIFF share
-                    if (liff.isApiAvailable('shareTargetPicker')) {
-                        const messages = [{
-                            type: 'text',
-                            text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${imagesToShare.length} รูป\n\n🔗 ${window.location.href}`
-                        }];
-                        
-                        const result = await liff.shareTargetPicker(messages);
-                        if (result) {
-                            showToast('✅ แชร์เรียบร้อยแล้ว');
-                        }
-                    } else {
-                        copyShareLink();
-                    }
-                } else {
-                    // Guest mode - just copy link
-                    copyShareLink();
+                if (imagesToShare.length === 0) {
+                    showToast('กรุณาเลือกรูปที่ต้องการแชร์');
+                    return;
                 }
                 
+                showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
+                
+                const imageIds = imagesToShare.map(img => img.image_id).join(',');
+                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
+                
+                window.location.href = shareUrl;
+                
             } catch (error) {
-                debug('Share error:', error.message);
+                console.error('Share error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการแชร์');
-            }
-        }
-        
-        // Copy share link
-        function copyShareLink() {
-            const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${images.length} รูป\n\n🔗 ${window.location.href}`;
-            
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(shareText).then(() => {
-                    showToast('✅ คัดลอกลิงก์แล้ว');
-                });
-            } else {
-                const textarea = document.createElement('textarea');
-                textarea.value = shareText;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast('✅ คัดลอกลิงก์แล้ว');
             }
         }
         
@@ -939,51 +1189,7 @@
         }
         
         // Initialize on load
-        window.addEventListener('load', async () => {
-            debug('Page loaded, starting initialization...');
-            
-            // Check URL parameters first
-            const params = new URLSearchParams(window.location.search);
-            
-            // Check for OAuth error
-            if (params.get('error') || params.get('error_description')) {
-                debug('OAuth error detected:', {
-                    error: params.get('error'),
-                    description: params.get('error_description')
-                });
-                
-                // Clear error parameters and reload
-                const cleanUrl = window.location.origin + window.location.pathname;
-                const cleanParams = new URLSearchParams();
-                if (params.get('lot')) cleanParams.set('lot', params.get('lot'));
-                if (params.get('date')) cleanParams.set('date', params.get('date'));
-                
-                window.location.replace(`${cleanUrl}?${cleanParams.toString()}`);
-                return;
-            }
-            
-            // Initialize LIFF
-            await initializeLiff();
-        });
-        
-        // Handle page visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                debug('Page became visible');
-                // You can refresh data here if needed
-            }
-        });
-        
-        // Handle online/offline
-        window.addEventListener('online', () => {
-            debug('Network: online');
-            showToast('✅ กลับมาออนไลน์แล้ว');
-        });
-        
-        window.addEventListener('offline', () => {
-            debug('Network: offline');
-            showToast('❌ ไม่มีการเชื่อมต่ออินเทอร์เน็ต');
-        });
+        window.addEventListener('load', initialize);
     </script>
 </body>
 </html>
