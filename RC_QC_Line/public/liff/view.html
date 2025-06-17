@@ -696,11 +696,11 @@
             </div>
             
             <div class="share-modal-body">
-                <div class="share-option" onclick="shareToLine()">
+                <div class="share-option" onclick="shareToChat()">
                     <div class="share-option-icon">💬</div>
                     <div class="share-option-text">
-                        <div class="share-option-title">แชร์ผ่าน LINE</div>
-                        <div class="share-option-desc">ส่งรูปไปยังแชทอื่นได้ทันที</div>
+                        <div class="share-option-title">แชร์ไปยังแชท</div>
+                        <div class="share-option-desc">ส่งรูปไปยังแชทนี้แล้ว forward ต่อ</div>
                     </div>
                 </div>
                 
@@ -727,6 +727,9 @@
         </div>
     </div>
     
+    <!-- Include LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
     <script>
         // Global variables
         let images = [];
@@ -736,6 +739,8 @@
         let imageDate = '';
         let baseUrl = '';
         let currentShareImages = [];
+        let liffInitialized = false;
+        let userProfile = null;
         
         // Image Viewer System
         const viewer = {
@@ -1140,6 +1145,28 @@
             }
         };
         
+        // Initialize LIFF
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                liffInitialized = true;
+                console.log('LIFF initialized successfully');
+                
+                // Get user profile if logged in
+                if (liff.isLoggedIn()) {
+                    try {
+                        userProfile = await liff.getProfile();
+                        console.log('User profile:', userProfile);
+                    } catch (err) {
+                        console.warn('Could not get user profile:', err);
+                    }
+                }
+            } catch (error) {
+                console.error('LIFF initialization failed:', error);
+                liffInitialized = false;
+            }
+        }
+        
         // Initialize
         async function initialize() {
             try {
@@ -1156,6 +1183,9 @@
                 
                 // Initialize viewer
                 viewer.init();
+                
+                // Initialize LIFF
+                await initializeLiff();
                 
                 // Load images
                 await loadImages();
@@ -1341,48 +1371,61 @@
             }
         }
         
-        // Share to LINE
-        async function shareToLine() {
+        // Share to chat (send images to current chat)
+        async function shareToChat() {
             try {
                 closeShareModal();
-                showToast(`กำลังเตรียมแชร์ ${currentShareImages.length} รูป...`);
                 
-                // Use the bot share API endpoint
-                const response = await fetch(`${baseUrl}/api/bot-share`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: 'direct-share',
-                        lotNumber: lotNumber,
-                        imageDate: imageDate,
-                        imageIds: currentShareImages.map(img => img.image_id)
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!liffInitialized) {
+                    showToast('❌ กรุณาเปิดใน LINE App เพื่อใช้ฟีเจอร์นี้');
+                    return;
                 }
                 
-                const result = await response.json();
+                if (!liff.isInClient()) {
+                    showToast('❌ ฟีเจอร์นี้ใช้ได้เฉพาะใน LINE App เท่านั้น');
+                    return;
+                }
                 
-                if (result.success) {
-                    showToast(`✅ เตรียมแชร์ ${result.count} รูปเรียบร้อยแล้ว\nกรุณาเลือกห้องแชทที่ต้องการส่ง`);
-                    
-                    // Generate share links for LINE
-                    const shareText = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป`;
-                    const shareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`;
-                    
-                    // Open LINE share
-                    window.open(shareUrl, '_blank');
-                } else {
-                    throw new Error(result.message || 'Failed to prepare share');
+                showToast(`กำลังส่ง ${currentShareImages.length} รูป...`);
+                
+                // Get context
+                const context = liff.getContext();
+                console.log('LIFF Context:', context);
+                
+                // Prepare messages - send as native LINE image messages
+                const messages = [];
+                
+                // Add header message
+                messages.push({
+                    type: 'text',
+                    text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${currentShareImages.length} รูป`
+                });
+                
+                // Add images (max 5 messages due to LINE limitation)
+                const maxImages = Math.min(currentShareImages.length, 4); // 1 text + 4 images = 5 messages
+                for (let i = 0; i < maxImages; i++) {
+                    messages.push({
+                        type: 'image',
+                        originalContentUrl: currentShareImages[i].url,
+                        previewImageUrl: currentShareImages[i].url
+                    });
+                }
+                
+                // Send messages using LIFF sendMessages
+                await liff.sendMessages(messages);
+                
+                showToast(`✅ ส่ง ${maxImages} รูปเรียบร้อยแล้ว${currentShareImages.length > maxImages ? `\n(เหลืออีก ${currentShareImages.length - maxImages} รูป)` : ''}`);
+                
+                // If more than 5 images, inform user
+                if (currentShareImages.length > maxImages) {
+                    setTimeout(() => {
+                        showToast('💡 LINE จำกัดการส่งได้ครั้งละ 5 ข้อความ\nกรุณาแชร์รูปที่เหลือแยกอีกครั้ง');
+                    }, 2000);
                 }
                 
             } catch (error) {
-                console.error('LINE share error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์ผ่าน LINE');
+                console.error('Share to chat error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการส่งรูปภาพ\n' + error.message);
             }
         }
         
