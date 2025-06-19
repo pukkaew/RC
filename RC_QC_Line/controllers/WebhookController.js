@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated with viewtoday command and Flex Share
+// Controller for handling LINE webhook events - Updated with viewtoday command and Simple Share
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -554,6 +554,17 @@ class WebhookController {
         // Handle reshare card request
         const sessionId = params.get('session');
         await this.handleReshareCard(userId, sessionId, replyToken);
+      } else if (action === 'create_simple_share') {
+        // Handle simple share creation
+        await this.handleCreateSimpleShare(userId, lotNumber, date, replyToken, chatContext);
+      } else if (action === 'receive_images') {
+        // Handle receive images from simple share
+        const sessionId = params.get('session');
+        await this.handleReceiveImages(sessionId, userId, replyToken);
+      } else if (action === 'copy_info') {
+        // Handle copy info from simple share
+        const sessionId = params.get('session');
+        await this.handleCopyInfo(sessionId, userId, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -564,6 +575,63 @@ class WebhookController {
     } catch (error) {
       logger.error('Error handling postback event:', error);
       throw error;
+    }
+  }
+
+  // Handle create simple share
+  async handleCreateSimpleShare(userId, lotNumber, imageDate, replyToken, chatContext) {
+    try {
+      const simpleShareService = require('../services/SimpleCardShareService');
+      
+      // Create simple share session
+      const result = await simpleShareService.createSimpleShareSession(
+        userId,
+        lotNumber,
+        imageDate
+      );
+      
+      // Get session for card
+      const session = simpleShareService.getSession(result.sessionId);
+      
+      // Create shareable card
+      const flexCard = simpleShareService.createShareableFlexCard(session);
+      
+      // Reply with card
+      await lineService.replyMessage(replyToken, [
+        {
+          type: 'text',
+          text: '✨ การ์ดแชร์พร้อมแล้ว! สามารถส่งต่อให้เพื่อนได้เลย'
+        },
+        flexCard
+      ]);
+      
+    } catch (error) {
+      logger.error('Error creating simple share:', error);
+      
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: '❌ เกิดข้อผิดพลาดในการสร้างการ์ดแชร์'
+      });
+    }
+  }
+
+  // Handle receive images
+  async handleReceiveImages(sessionId, userId, replyToken) {
+    try {
+      const simpleShareService = require('../services/SimpleCardShareService');
+      await simpleShareService.handleReceiveImages(sessionId, userId, replyToken);
+    } catch (error) {
+      logger.error('Error receiving images:', error);
+    }
+  }
+
+  // Handle copy info
+  async handleCopyInfo(sessionId, userId, replyToken) {
+    try {
+      const simpleShareService = require('../services/SimpleCardShareService');
+      await simpleShareService.handleCopyInfo(sessionId, userId, replyToken);
+    } catch (error) {
+      logger.error('Error copying info:', error);
     }
   }
 
