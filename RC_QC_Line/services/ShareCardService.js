@@ -1,4 +1,4 @@
-// Service for creating and managing beautiful share cards
+// Service for creating and managing beautiful share cards - FIXED VERSION
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
 const path = require('path');
@@ -105,19 +105,19 @@ class ShareCardService {
           <!-- Header -->
           <text x="${cardWidth/2}" y="100" font-family="Arial, sans-serif" 
                 font-size="36" font-weight="bold" text-anchor="middle" fill="#00B900">
-            📸 อัลบั้มรูปภาพ QC
+            อัลบั้มรูปภาพ QC
           </text>
           
           <!-- Lot info -->
           <text x="${cardWidth/2}" y="160" font-family="Arial, sans-serif" 
                 font-size="28" text-anchor="middle" fill="#333">
-            📦 Lot: ${lotNumber}
+            Lot: ${lotNumber}
           </text>
           
           <!-- Date info -->
           <text x="${cardWidth/2}" y="210" font-family="Arial, sans-serif" 
                 font-size="24" text-anchor="middle" fill="#666">
-            📅 ${new Date(imageDate).toLocaleDateString('th-TH')}
+            ${new Date(imageDate).toLocaleDateString('th-TH')}
           </text>
           
           <!-- Image count circle -->
@@ -162,7 +162,7 @@ class ShareCardService {
     }
   }
   
-  // Create Flex Message Share Card
+  // Create Flex Message Share Card - FIXED VERSION
   createFlexShareCard(cardId, lotNumber, imageDate, images, cardImageUrl) {
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
     const fullCardImageUrl = `${baseUrl}${cardImageUrl}`;
@@ -216,7 +216,7 @@ class ShareCardService {
     
     return {
       type: "flex",
-      altText: `📸 แชร์รูปภาพ QC - Lot: ${lotNumber}`,
+      altText: `แชร์รูปภาพ QC - Lot: ${lotNumber}`,
       contents: {
         type: "bubble",
         size: "giga",
@@ -241,7 +241,7 @@ class ShareCardService {
               contents: [
                 {
                   type: "text",
-                  text: "📸 อัลบั้มรูปภาพ QC",
+                  text: "อัลบั้มรูปภาพ QC",
                   size: "xl",
                   weight: "bold",
                   color: "#00B900"
@@ -252,14 +252,14 @@ class ShareCardService {
                   contents: [
                     {
                       type: "text",
-                      text: `📦 Lot: ${lotNumber}`,
+                      text: `Lot: ${lotNumber}`,
                       size: "sm",
                       color: "#666666",
                       flex: 1
                     },
                     {
                       type: "text",
-                      text: `📅 ${formattedDate}`,
+                      text: formattedDate,
                       size: "sm",
                       color: "#666666",
                       align: "end",
@@ -270,7 +270,7 @@ class ShareCardService {
                 },
                 {
                   type: "text",
-                  text: `🖼️ ทั้งหมด ${images.length} รูป`,
+                  text: `ทั้งหมด ${images.length} รูป`,
                   size: "md",
                   weight: "bold",
                   color: "#333333",
@@ -313,7 +313,7 @@ class ShareCardService {
               height: "md",
               action: {
                 type: "uri",
-                label: "📸 ดูรูปภาพทั้งหมด",
+                label: "ดูรูปภาพทั้งหมด",
                 uri: `${baseUrl}/share/view/${cardId}`
               },
               color: "#00B900"
@@ -324,7 +324,7 @@ class ShareCardService {
               height: "sm",
               action: {
                 type: "uri",
-                label: "💾 ดาวน์โหลด ZIP",
+                label: "ดาวน์โหลด ZIP",
                 uri: `${baseUrl}/api/share/${cardId}/download`
               }
             },
@@ -338,8 +338,8 @@ class ShareCardService {
                   height: "sm",
                   action: {
                     type: "uri",
-                    label: "📤 แชร์ต่อ",
-                    uri: `https://line.me/R/msg/text/?${encodeURIComponent(`📸 แชร์รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${formattedDate}\n🖼️ ${images.length} รูป\n\n🔗 ดูรูปภาพ:\n${baseUrl}/share/view/${cardId}`)}`
+                    label: "แชร์ต่อ",
+                    uri: `https://line.me/R/msg/text/?${encodeURIComponent(`แชร์รูปภาพ QC\nLot: ${lotNumber}\nวันที่: ${formattedDate}\nจำนวน: ${images.length} รูป\n\nดูรูปภาพ:\n${baseUrl}/share/view/${cardId}`)}`
                   },
                   flex: 1
                 },
@@ -355,6 +355,7 @@ class ShareCardService {
                     type: "clipboard",
                     clipboardText: `${baseUrl}/share/view/${cardId}`
                   },
+                  label: "คัดลอกลิงก์",
                   flex: 1
                 }
               ],
