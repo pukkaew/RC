@@ -532,8 +532,8 @@ class WebhookController {
         // Handle delete cancellation
         await deleteController.handleDeleteCancellation(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'send_to_chat') {
-        // This action is deprecated - we now open LIFF directly
-        logger.warn('Deprecated action: send_to_chat');
+        // Handle send images to chat
+        await imageController.handleSendToChat(userId, lotNumber, date, replyToken, chatContext);
       } else if (action === 'carousel_share') {
         // Handle carousel sharing
         await this.handleCarouselSharing(userId, params, replyToken, chatContext);
@@ -550,6 +550,10 @@ class WebhookController {
         const chatId = params.get('chat');
         const chatType = params.get('type');
         await this.handleShareToChat(userId, sessionId, chatId, chatType, replyToken);
+      } else if (action === 'reshare_card') {
+        // Handle reshare card request
+        const sessionId = params.get('session');
+        await this.handleReshareCard(userId, sessionId, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -576,22 +580,101 @@ class WebhookController {
         imageIds.length > 0 ? imageIds : null
       );
       
-      // Get available chats
-      const chats = await flexShareService.getUserChats(userId);
+      // Get session to create card
+      const session = flexShareService.getSession(result.sessionId);
       
-      // If only one option (self), send directly
-      if (chats.length === 1) {
-        await flexShareService.sendCardToChat(result.sessionId, userId, 'user');
-        
-        await lineService.replyMessage(replyToken, {
-          type: 'text',
-          text: '✅ ส่งการ์ดรูปภาพให้คุณเรียบร้อยแล้ว!'
-        });
-      } else {
-        // Show chat selector
-        const selectorMessage = flexShareService.createChatSelectorMessage(result.sessionId, chats);
-        await lineService.replyMessage(replyToken, selectorMessage);
-      }
+      // Create shareable flex card
+      const flexCard = flexShareService.createFlexCard(session);
+      
+      // Create share instructions message
+      const shareInstructions = {
+        type: "flex",
+        altText: "วิธีแชร์การ์ดรูปภาพ",
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "📤 แชร์การ์ดรูปภาพ",
+                size: "lg",
+                weight: "bold",
+                color: "#00B900"
+              }
+            ],
+            paddingAll: "15px"
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "วิธีแชร์:",
+                weight: "bold",
+                size: "md",
+                margin: "md"
+              },
+              {
+                type: "text",
+                text: "1. กดค้างที่การ์ดด้านล่าง",
+                size: "sm",
+                margin: "sm",
+                color: "#666666"
+              },
+              {
+                type: "text",
+                text: "2. เลือก 'Forward' หรือ 'ส่งต่อ'",
+                size: "sm",
+                margin: "sm",
+                color: "#666666"
+              },
+              {
+                type: "text",
+                text: "3. เลือกห้องแชทที่ต้องการส่ง",
+                size: "sm",
+                margin: "sm",
+                color: "#666666"
+              },
+              {
+                type: "separator",
+                margin: "lg"
+              },
+              {
+                type: "text",
+                text: "หรือ",
+                align: "center",
+                size: "sm",
+                color: "#999999",
+                margin: "md"
+              },
+              {
+                type: "button",
+                style: "primary",
+                action: {
+                  type: "uri",
+                  label: "🔗 คัดลอกลิงก์แชร์",
+                  uri: `line://msg/text/?${encodeURIComponent(`📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ ${session.images.length} รูป\n\n🔍 ดูรูปภาพ:\nhttps://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}`)}`
+                },
+                color: "#00B900",
+                margin: "lg"
+              }
+            ],
+            paddingAll: "20px"
+          }
+        }
+      };
+      
+      // Send both messages
+      await lineService.replyMessage(replyToken, [shareInstructions, flexCard]);
+      
+      // Also send the card to user's chat for easy forwarding
+      await lineService.pushMessage(userId, {
+        type: 'text',
+        text: '⬇️ การ์ดรูปภาพของคุณ (กดค้าง → Forward เพื่อส่งต่อ)'
+      });
       
     } catch (error) {
       logger.error('Error handling flex card share:', error);
@@ -599,6 +682,42 @@ class WebhookController {
       await lineService.replyMessage(replyToken, {
         type: 'text',
         text: '❌ เกิดข้อผิดพลาดในการสร้างการ์ดแชร์'
+      });
+    }
+  }
+
+  // Handle reshare card request
+  async handleReshareCard(userId, sessionId, replyToken) {
+    try {
+      const flexShareService = require('../services/FlexShareService');
+      const session = flexShareService.getSession(sessionId);
+      
+      if (!session) {
+        await lineService.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ ลิงก์หมดอายุ กรุณาสร้างการ์ดใหม่'
+        });
+        return;
+      }
+      
+      // Create flex card
+      const flexCard = flexShareService.createFlexCard(session);
+      
+      // Send instructions and card
+      await lineService.replyMessage(replyToken, [
+        {
+          type: 'text',
+          text: '📤 กดค้างที่การ์ดด้านล่าง → เลือก Forward → เลือกห้องแชทที่ต้องการส่ง'
+        },
+        flexCard
+      ]);
+      
+    } catch (error) {
+      logger.error('Error resharing card:', error);
+      
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: '❌ เกิดข้อผิดพลาดในการแชร์การ์ด'
       });
     }
   }

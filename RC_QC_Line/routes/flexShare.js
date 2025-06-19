@@ -170,29 +170,48 @@ router.get('/flex-share/:sessionId/download', async (req, res) => {
       zlib: { level: 9 }
     });
     
+    const fs = require('fs');
+    const path = require('path');
+    const https = require('https');
+    const http = require('http');
+    
     res.attachment(`QC_${session.lotNumber}_${session.imageDate}.zip`);
     archive.pipe(res);
     
-    // Add images to ZIP
-    session.images.forEach((image, index) => {
-      const filename = `QC_${session.lotNumber}_${index + 1}.jpg`;
-      const imagePath = image.file_path || image.url;
+    // Process each image
+    for (let i = 0; i < session.images.length; i++) {
+      const image = session.images[i];
+      const filename = `QC_${session.lotNumber}_${i + 1}.jpg`;
+      
+      // Determine image path
+      let imagePath = image.file_path || image.url;
       
       if (imagePath.startsWith('http')) {
         // Download from URL
-        const https = require('https');
-        https.get(imagePath, (response) => {
-          archive.append(response, { name: filename });
+        const protocol = imagePath.startsWith('https') ? https : http;
+        
+        await new Promise((resolve, reject) => {
+          protocol.get(imagePath, (response) => {
+            archive.append(response, { name: filename });
+            response.on('end', resolve);
+            response.on('error', reject);
+          });
         });
       } else {
         // Add from file system
-        const fs = require('fs');
-        const fullPath = require('path').join(__dirname, '..', imagePath);
-        archive.append(fs.createReadStream(fullPath), { name: filename });
+        const fullPath = imagePath.startsWith('/') 
+          ? path.join(__dirname, '..', 'public', imagePath)
+          : path.join(__dirname, '..', imagePath);
+          
+        if (fs.existsSync(fullPath)) {
+          archive.append(fs.createReadStream(fullPath), { name: filename });
+        } else {
+          logger.warn(`File not found: ${fullPath}`);
+        }
       }
-    });
+    }
     
-    archive.finalize();
+    await archive.finalize();
     
   } catch (error) {
     logger.error('Error downloading images:', error);

@@ -211,7 +211,7 @@ class FlexShareService {
                   action: {
                     type: "uri",
                     label: "💾 ดาวน์โหลด",
-                    uri: `${baseUrl}/api/share/${session.id}/download`
+                    uri: `${baseUrl}/api/flex-share/${session.id}/download`
                   },
                   flex: 1
                 },
@@ -224,9 +224,10 @@ class FlexShareService {
                   style: "link",
                   height: "sm",
                   action: {
-                    type: "uri",
+                    type: "postback",
                     label: "📤 แชร์ต่อ",
-                    uri: `https://liff.line.me/2007575196-NWaXrZVE?page=reshare&session=${session.id}`
+                    data: `action=reshare_card&session=${session.id}`,
+                    displayText: "แชร์การ์ดนี้ต่อ"
                   },
                   flex: 1
                 }
