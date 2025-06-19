@@ -1,4 +1,4 @@
-// Main application file - Updated with Share Routes
+// Main application file - Updated with Share Routes and Flex Share
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -69,7 +69,8 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
-const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
+const shareApiRoutes = require('./routes/shareApi'); // Enhanced share API routes
+const flexShareRoutes = require('./routes/flexShare'); // NEW: Flex card share routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -78,7 +79,8 @@ app.post('/webhook', webhookController.handleWebhook);
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
 app.use('/api', shareRoutes); // This will handle /api/share/* routes
-app.use('/api', shareApiRoutes); // NEW enhanced share API routes
+app.use('/api', shareApiRoutes); // Enhanced share API routes
+app.use('/api', flexShareRoutes); // NEW: Flex card share routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -86,7 +88,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'RC_QC_Line',
-    version: '2.0.0'
+    version: '2.1.0'
   });
 });
 
@@ -116,6 +118,13 @@ setInterval(() => {
     const cleanedStates = lineService.cleanupExpiredStates();
     if (cleanedStates > 0) {
       logger.info(`Cleaned up ${cleanedStates} expired user states`);
+    }
+    
+    // Clean up expired flex share sessions
+    const flexShareService = require('./services/FlexShareService');
+    const cleanedSessions = flexShareService.cleanExpiredSessions();
+    if (cleanedSessions > 0) {
+      logger.info(`Cleaned up ${cleanedSessions} expired flex share sessions`);
     }
     
     // Log system statistics periodically (every hour)
@@ -187,6 +196,7 @@ app.listen(PORT, () => {
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
   logger.info('Enhanced image sharing enabled');
+  logger.info('Flex card sharing enabled (NEW)');
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -206,6 +216,12 @@ app.listen(PORT, () => {
   logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
   logger.info('- GET /api/share/chats/:userId (Get user chats)');
   logger.info('- POST /api/share/cleanup (Cleanup temp files)');
+  logger.info('- POST /api/flex-share/create (Create flex card share session)');
+  logger.info('- GET /api/flex-share/chats/:userId (Get chats for flex share)');
+  logger.info('- POST /api/flex-share/send (Send flex card to chat)');
+  logger.info('- POST /api/flex-share/options (Show chat selector)');
+  logger.info('- POST /api/flex-share/postback (Handle share postback)');
+  logger.info('- GET /api/flex-share/:sessionId/download (Download images as ZIP)');
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
@@ -237,6 +253,13 @@ process.on('SIGTERM', () => {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
     }
+    
+    // Clean up flex share sessions
+    const flexShareService = require('./services/FlexShareService');
+    if (flexShareService && flexShareService.cleanExpiredSessions) {
+      flexShareService.cleanExpiredSessions();
+      logger.info('Cleaned up flex share sessions');
+    }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);
   }
@@ -258,6 +281,13 @@ process.on('SIGINT', () => {
     if (imageShareService && imageShareService.cleanExpiredSessions) {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
+    }
+    
+    // Clean up flex share sessions
+    const flexShareService = require('./services/FlexShareService');
+    if (flexShareService && flexShareService.cleanExpiredSessions) {
+      flexShareService.cleanExpiredSessions();
+      logger.info('Cleaned up flex share sessions');
     }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);

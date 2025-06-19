@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Album Preview Version
+// Controller for image retrieval and viewing - Album Preview Version with Flex Share
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -109,7 +109,7 @@ class ImageController {
     }
   }
 
-  // Build album preview message with thumbnails
+  // Build album preview message with thumbnails and share options
   buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
@@ -270,18 +270,43 @@ class ImageController {
             },
             {
               type: "box",
+              layout: "horizontal",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "button",
+                  style: "secondary",
+                  height: "sm",
+                  action: {
+                    type: "postback",
+                    label: "🎴 แชร์การ์ด",
+                    data: `action=share_flex_card&lot=${lotNumber}&date=${date}`,
+                    displayText: "แชร์เป็นการ์ดสวยงาม"
+                  },
+                  flex: 1
+                },
+                {
+                  type: "button",
+                  style: "secondary",
+                  height: "sm",
+                  action: {
+                    type: "postback",
+                    label: "📤 ส่งรูป",
+                    data: `action=send_to_chat&lot=${lotNumber}&date=${date}`,
+                    displayText: "ส่งรูปภาพ"
+                  },
+                  flex: 1
+                }
+              ],
+              margin: "sm"
+            },
+            {
+              type: "box",
               layout: "vertical",
               contents: [
                 {
                   type: "text",
-                  text: "💡 กดปุ่มด้านบนเพื่อดูรูปภาพขนาดเต็ม",
-                  size: "xs",
-                  color: "#999999",
-                  align: "center"
-                },
-                {
-                  type: "text",
-                  text: "และเลือกแชร์รูปที่ต้องการ",
+                  text: "💡 เลือกวิธีแชร์ที่ต้องการ",
                   size: "xs",
                   color: "#999999",
                   align: "center"

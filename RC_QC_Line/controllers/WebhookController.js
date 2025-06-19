@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated with viewtoday command
+// Controller for handling LINE webhook events - Updated with viewtoday command and Flex Share
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -540,6 +540,16 @@ class WebhookController {
       } else if (action === 'smart_share') {
         // Handle smart grid sharing
         await this.handleSmartSharing(userId, params, replyToken, chatContext);
+      } else if (action === 'share_flex_card') {
+        // Handle flex card sharing request
+        const imageIds = params.get('imageIds')?.split(',') || [];
+        await this.handleFlexCardShare(userId, lotNumber, date, imageIds, replyToken, chatContext);
+      } else if (action === 'share_to_chat') {
+        // Handle share to specific chat
+        const sessionId = params.get('session');
+        const chatId = params.get('chat');
+        const chatType = params.get('type');
+        await this.handleShareToChat(userId, sessionId, chatId, chatType, replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -550,6 +560,69 @@ class WebhookController {
     } catch (error) {
       logger.error('Error handling postback event:', error);
       throw error;
+    }
+  }
+
+  // Handle flex card share request
+  async handleFlexCardShare(userId, lotNumber, imageDate, imageIds, replyToken, chatContext) {
+    try {
+      const flexShareService = require('../services/FlexShareService');
+      
+      // Create share session
+      const result = await flexShareService.createCardShareSession(
+        userId,
+        lotNumber,
+        imageDate,
+        imageIds.length > 0 ? imageIds : null
+      );
+      
+      // Get available chats
+      const chats = await flexShareService.getUserChats(userId);
+      
+      // If only one option (self), send directly
+      if (chats.length === 1) {
+        await flexShareService.sendCardToChat(result.sessionId, userId, 'user');
+        
+        await lineService.replyMessage(replyToken, {
+          type: 'text',
+          text: '✅ ส่งการ์ดรูปภาพให้คุณเรียบร้อยแล้ว!'
+        });
+      } else {
+        // Show chat selector
+        const selectorMessage = flexShareService.createChatSelectorMessage(result.sessionId, chats);
+        await lineService.replyMessage(replyToken, selectorMessage);
+      }
+      
+    } catch (error) {
+      logger.error('Error handling flex card share:', error);
+      
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: '❌ เกิดข้อผิดพลาดในการสร้างการ์ดแชร์'
+      });
+    }
+  }
+
+  // Handle share to specific chat
+  async handleShareToChat(userId, sessionId, chatId, chatType, replyToken) {
+    try {
+      const flexShareService = require('../services/FlexShareService');
+      
+      // Send card to selected chat
+      await flexShareService.sendCardToChat(sessionId, chatId, chatType);
+      
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: '✅ แชร์การ์ดรูปภาพเรียบร้อยแล้ว!'
+      });
+      
+    } catch (error) {
+      logger.error('Error sharing to chat:', error);
+      
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: '❌ เกิดข้อผิดพลาดในการแชร์'
+      });
     }
   }
 
