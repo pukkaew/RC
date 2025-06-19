@@ -1,4 +1,3 @@
-// Service for creating and managing beautiful share cards - FIXED VERSION
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
 const path = require('path');
@@ -162,69 +161,27 @@ class ShareCardService {
     }
   }
   
-  // Create Flex Message Share Card - FIXED VERSION
+  // Create Flex Message Share Card - FIXED VERSION WITH SMALLER SIZE
   createFlexShareCard(cardId, lotNumber, imageDate, images, cardImageUrl) {
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
     const fullCardImageUrl = `${baseUrl}${cardImageUrl}`;
     const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
     
-    // Create image grid preview (max 9 images)
-    const previewImages = images.slice(0, 9);
-    const imageBoxes = previewImages.map((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "image",
-            url: imageUrl,
-            size: "full",
-            aspectMode: "cover",
-            aspectRatio: "1:1"
-          }
-        ],
-        cornerRadius: "8px",
-        backgroundColor: "#f0f0f0"
-      };
-    });
+    // Create simplified preview (max 6 images to reduce size)
+    const previewImages = images.slice(0, 6);
     
-    // Fill empty slots if less than 9
-    while (imageBoxes.length < 9) {
-      imageBoxes.push({
-        type: "box",
-        layout: "vertical",
-        contents: [],
-        backgroundColor: "#f8f8f8",
-        cornerRadius: "8px"
-      });
-    }
-    
-    // Create 3x3 grid
-    const imageGrid = [];
-    for (let i = 0; i < 9; i += 3) {
-      imageGrid.push({
-        type: "box",
-        layout: "horizontal",
-        contents: imageBoxes.slice(i, i + 3),
-        spacing: "xs"
-      });
-    }
-    
+    // Build simplified Flex Message to avoid 400 error
     return {
       type: "flex",
       altText: `แชร์รูปภาพ QC - Lot: ${lotNumber}`,
       contents: {
         type: "bubble",
-        size: "giga",
+        size: "mega", // Changed from "giga" to "mega"
         hero: {
           type: "image",
           url: fullCardImageUrl,
           size: "full",
-          aspectRatio: "20:15",
+          aspectRatio: "4:3", // Changed from "20:15" to standard ratio
           aspectMode: "cover",
           action: {
             type: "uri",
@@ -236,71 +193,29 @@ class ShareCardService {
           layout: "vertical",
           contents: [
             {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                {
-                  type: "text",
-                  text: "อัลบั้มรูปภาพ QC",
-                  size: "xl",
-                  weight: "bold",
-                  color: "#00B900"
-                },
-                {
-                  type: "box",
-                  layout: "horizontal",
-                  contents: [
-                    {
-                      type: "text",
-                      text: `Lot: ${lotNumber}`,
-                      size: "sm",
-                      color: "#666666",
-                      flex: 1
-                    },
-                    {
-                      type: "text",
-                      text: formattedDate,
-                      size: "sm",
-                      color: "#666666",
-                      align: "end",
-                      flex: 1
-                    }
-                  ],
-                  margin: "md"
-                },
-                {
-                  type: "text",
-                  text: `ทั้งหมด ${images.length} รูป`,
-                  size: "md",
-                  weight: "bold",
-                  color: "#333333",
-                  margin: "sm"
-                }
-              ],
-              paddingAll: "20px",
-              backgroundColor: "#FAFFFE",
-              cornerRadius: "12px"
-            },
-            {
-              type: "separator",
-              margin: "xl"
+              type: "text",
+              text: "📸 อัลบั้มรูปภาพ QC",
+              size: "xl",
+              weight: "bold",
+              color: "#00B900"
             },
             {
               type: "text",
-              text: "ตัวอย่างรูปภาพ",
+              text: `Lot: ${lotNumber} | ${formattedDate}`,
               size: "sm",
-              color: "#999999",
-              margin: "xl"
+              color: "#666666",
+              margin: "md"
             },
             {
-              type: "box",
-              layout: "vertical",
-              contents: imageGrid,
-              margin: "lg",
-              spacing: "xs"
+              type: "text",
+              text: `จำนวน ${images.length} รูป`,
+              size: "md",
+              weight: "bold",
+              color: "#333333",
+              margin: "sm"
             }
           ],
-          paddingAll: "0px"
+          paddingAll: "20px"
         },
         footer: {
           type: "box",
@@ -327,52 +242,23 @@ class ShareCardService {
                 label: "ดาวน์โหลด ZIP",
                 uri: `${baseUrl}/api/share/${cardId}/download`
               }
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: {
-                    type: "uri",
-                    label: "แชร์ต่อ",
-                    uri: `https://line.me/R/msg/text/?${encodeURIComponent(`แชร์รูปภาพ QC\nLot: ${lotNumber}\nวันที่: ${formattedDate}\nจำนวน: ${images.length} รูป\n\nดูรูปภาพ:\n${baseUrl}/share/view/${cardId}`)}`
-                  },
-                  flex: 1
-                },
-                {
-                  type: "separator",
-                  margin: "md"
-                },
-                {
-                  type: "button",
-                  style: "link",
-                  height: "sm",
-                  action: {
-                    type: "clipboard",
-                    clipboardText: `${baseUrl}/share/view/${cardId}`
-                  },
-                  label: "คัดลอกลิงก์",
-                  flex: 1
-                }
-              ],
-              margin: "md"
             }
           ],
           paddingAll: "20px"
-        },
-        styles: {
-          hero: {
-            separator: false
-          },
-          body: {
-            separator: false
-          }
         }
       }
+    };
+  }
+  
+  // Alternative: Create simpler text-based share message if Flex fails
+  createSimpleShareMessage(cardId, lotNumber, imageDate, images) {
+    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
+    const shareUrl = `${baseUrl}/share/view/${cardId}`;
+    const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
+    
+    return {
+      type: 'text',
+      text: `📸 แชร์รูปภาพ QC\n\n📦 Lot: ${lotNumber}\n📅 วันที่: ${formattedDate}\n🖼️ จำนวน: ${images.length} รูป\n\n🔗 ดูรูปภาพ:\n${shareUrl}\n\n💾 ดาวน์โหลด:\n${baseUrl}/api/share/${cardId}/download`
     };
   }
   
