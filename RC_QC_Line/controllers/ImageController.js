@@ -1,4 +1,4 @@
-// RC_QC_Line/controllers/ImageController.js - SIMPLE VERSION
+// RC_QC_Line/controllers/ImageController.js - DIRECT IMAGE VERSION (NO FLEX)
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -72,7 +72,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show simple preview
+  // Process date selection and send images directly
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
@@ -92,80 +92,45 @@ class ImageController {
         return;
       }
       
-      // Option 1: Send simple flex card with direct image preview
-      const shareCardService = require('../services/ShareCardService');
-      const shareCard = await shareCardService.createShareCard(
-        lotNumber,
-        date,
-        result.images
-      );
-      
-      await lineService.replyMessage(replyToken, shareCard.flexMessage);
-      
-      // Option 2: If you want to send actual images right away (like carousel)
-      // Uncomment below to send images as carousel instead
-      /*
-      const carouselMessage = shareCardService.createImageCarousel(
-        lotNumber,
-        date,
-        result.images
-      );
-      await lineService.replyMessage(replyToken, carouselMessage);
-      */
-      
-      // Option 3: Send all images directly (most simple)
-      // Uncomment below to send all images directly
-      /*
-      await this.sendAllImagesDirectly(userId, lotNumber, date, result.images, replyToken, chatContext);
-      */
-      
-      // Log success
-      logger.info(`Sent simple preview for Lot: ${lotNumber}, Date: ${date}, Images: ${result.images.length}`);
-      
-    } catch (error) {
-      logger.error('Error processing date selection for viewing:', error);
-      
-      // Reply with error message
-      const errorMessage = 'เกิดข้อผิดพลาดในการดึงรูปภาพ โปรดลองใหม่อีกครั้ง';
-      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
-      
-      throw error;
-    }
-  }
-
-  // Send all images directly (simplest approach)
-  async sendAllImagesDirectly(userId, lotNumber, date, images, replyToken, chatContext) {
-    try {
+      // DIRECT SEND - No Flex Messages, just send images directly
       const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
       const formattedDate = new Date(date).toLocaleDateString('th-TH');
       
-      // Header message
-      const headerMessage = {
-        type: 'text',
-        text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${formattedDate}\n🖼️ ทั้งหมด ${images.length} รูป`
-      };
+      // Prepare messages
+      const messages = [];
       
-      // Prepare image messages (max 5 per reply)
-      const imageMessages = images.slice(0, 5).map(image => {
+      // Add header text message
+      messages.push({
+        type: 'text',
+        text: `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${formattedDate}\n🖼️ ทั้งหมด ${result.images.length} รูป`
+      });
+      
+      // Add images (max 4 images with header = 5 messages total for reply)
+      const firstBatchImages = result.images.slice(0, 4);
+      firstBatchImages.forEach(image => {
         const imageUrl = image.url.startsWith('http') 
           ? image.url 
           : `${baseUrl}${image.url}`;
         
-        return {
+        messages.push({
           type: 'image',
           originalContentUrl: imageUrl,
           previewImageUrl: imageUrl
-        };
+        });
       });
       
-      // Send first batch with header
-      const firstBatch = [headerMessage, ...imageMessages];
-      await lineService.replyMessage(replyToken, firstBatch);
+      // Send first batch with reply token
+      await lineService.replyMessage(replyToken, messages);
       
-      // Send remaining images via push message
-      if (images.length > 5) {
-        for (let i = 5; i < images.length; i += 5) {
-          const batch = images.slice(i, i + 5).map(image => {
+      // Send remaining images via push message if any
+      if (result.images.length > 4) {
+        // Wait a moment before sending more
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Send remaining images in batches of 5
+        for (let i = 4; i < result.images.length; i += 5) {
+          const batch = result.images.slice(i, i + 5);
+          const batchMessages = batch.map(image => {
             const imageUrl = image.url.startsWith('http') 
               ? image.url 
               : `${baseUrl}${image.url}`;
@@ -177,33 +142,56 @@ class ImageController {
             };
           });
           
+          // Send batch
           if (chatContext?.isGroupChat) {
-            await lineService.pushMessageToChat(chatContext.chatId, batch, chatContext.chatType);
+            await lineService.pushMessageToChat(chatContext.chatId, batchMessages, chatContext.chatType);
           } else {
-            await lineService.pushMessage(userId, batch);
+            await lineService.pushMessage(userId, batchMessages);
           }
           
           // Small delay between batches
-          if (i + 5 < images.length) {
+          if (i + 5 < result.images.length) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
         }
         
-        // Send completion message
-        const completionMessage = {
-          type: 'text',
-          text: `✅ แสดงครบทั้ง ${images.length} รูปแล้ว`
-        };
-        
-        if (chatContext?.isGroupChat) {
-          await lineService.pushMessageToChat(chatContext.chatId, completionMessage, chatContext.chatType);
-        } else {
-          await lineService.pushMessage(userId, completionMessage);
+        // Send completion message for large sets
+        if (result.images.length > 10) {
+          const completionMessage = {
+            type: 'text',
+            text: `✅ แสดงครบทั้ง ${result.images.length} รูปแล้ว`
+          };
+          
+          if (chatContext?.isGroupChat) {
+            await lineService.pushMessageToChat(chatContext.chatId, completionMessage, chatContext.chatType);
+          } else {
+            await lineService.pushMessage(userId, completionMessage);
+          }
         }
       }
       
+      // Log success
+      logger.info(`Sent ${result.images.length} images directly for Lot: ${lotNumber}, Date: ${date}`);
+      
     } catch (error) {
-      logger.error('Error sending images directly:', error);
+      logger.error('Error processing date selection for viewing:', error);
+      
+      // Reply with error message
+      const errorMessage = 'เกิดข้อผิดพลาดในการดึงรูปภาพ โปรดลองใหม่อีกครั้ง';
+      
+      try {
+        // Try to send error message
+        await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
+      } catch (replyError) {
+        // If reply fails, try push message
+        logger.error('Failed to reply with error message:', replyError);
+        if (chatContext?.isGroupChat) {
+          await lineService.pushMessageToChat(chatContext.chatId, lineService.createTextMessage(errorMessage), chatContext.chatType);
+        } else {
+          await lineService.pushMessage(userId, lineService.createTextMessage(errorMessage));
+        }
+      }
+      
       throw error;
     }
   }
