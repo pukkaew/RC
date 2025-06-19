@@ -1,4 +1,4 @@
-// Main application file - Updated with Share Routes
+// Main application file - Updated with Share Card Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -60,6 +60,11 @@ app.get('/share/:sessionId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/share/index.html'));
 });
 
+// Share card view route
+app.get('/share/view/:cardId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/share/view.html'));
+});
+
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
@@ -69,7 +74,8 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
-const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
+const shareApiRoutes = require('./routes/shareApi'); // Enhanced share API routes
+const shareCardRoutes = require('./routes/shareCard'); // NEW share card routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
@@ -78,7 +84,8 @@ app.post('/webhook', webhookController.handleWebhook);
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
 app.use('/api', shareRoutes); // This will handle /api/share/* routes
-app.use('/api', shareApiRoutes); // NEW enhanced share API routes
+app.use('/api', shareApiRoutes); // Enhanced share API routes
+app.use('/api', shareCardRoutes); // NEW share card routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -172,6 +179,19 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000); // 1 hour
 
+// Cleanup share cards (every 30 minutes)
+setInterval(async () => {
+  try {
+    const shareCardService = require('./services/ShareCardService');
+    const cleaned = await shareCardService.cleanExpiredCards();
+    if (cleaned > 0) {
+      logger.info(`Cleaned ${cleaned} expired share cards`);
+    }
+  } catch (error) {
+    logger.error('Error during share card cleanup:', error);
+  }
+}, 30 * 60 * 1000); // 30 minutes
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -187,6 +207,7 @@ app.listen(PORT, () => {
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
   logger.info('Enhanced image sharing enabled');
+  logger.info('Share card system enabled');
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -206,6 +227,10 @@ app.listen(PORT, () => {
   logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
   logger.info('- GET /api/share/chats/:userId (Get user chats)');
   logger.info('- POST /api/share/cleanup (Cleanup temp files)');
+  logger.info('- POST /api/share/create-card (Create share card)');
+  logger.info('- GET /api/share/card/:cardId (Get share card)');
+  logger.info('- GET /api/share/:cardId/download (Download share card images)');
+  logger.info('- GET /share/view/:cardId (Share card view page)');
   logger.info('- Static /uploads/* (Image files)');
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
@@ -237,6 +262,13 @@ process.on('SIGTERM', () => {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
     }
+    
+    // Clean up share cards
+    const shareCardService = require('./services/ShareCardService');
+    if (shareCardService) {
+      shareCardService.cleanExpiredCards();
+      logger.info('Cleaned up share cards');
+    }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);
   }
@@ -258,6 +290,13 @@ process.on('SIGINT', () => {
     if (imageShareService && imageShareService.cleanExpiredSessions) {
       imageShareService.cleanExpiredSessions();
       logger.info('Cleaned up share sessions');
+    }
+    
+    // Clean up share cards
+    const shareCardService = require('./services/ShareCardService');
+    if (shareCardService) {
+      shareCardService.cleanExpiredCards();
+      logger.info('Cleaned up share cards');
     }
   } catch (error) {
     logger.error('Error during shutdown cleanup:', error);

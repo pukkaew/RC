@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Album Preview Version
+// Controller for image retrieval and viewing - Share Card Version
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -72,7 +72,7 @@ class ImageController {
     }
   }
 
-  // Process date selection and show album preview
+  // Process date selection and show share card
   async processDateSelection(userId, lotNumber, date, replyToken, chatContext = null) {
     try {
       const chatId = chatContext?.chatId || 'direct';
@@ -92,11 +92,19 @@ class ImageController {
         return;
       }
       
-      // Build album preview message
-      const albumMessage = this.buildAlbumPreviewMessage(lotNumber, date, result.images);
+      // Create share card for beautiful sharing
+      const shareCardService = require('../services/ShareCardService');
+      const shareCard = await shareCardService.createShareCard(
+        lotNumber,
+        date,
+        result.images
+      );
       
-      // Send album preview
-      await lineService.replyMessage(replyToken, albumMessage);
+      // Send the share card instead of album preview
+      await lineService.replyMessage(replyToken, shareCard.flexMessage);
+      
+      // Log success
+      logger.info(`Sent share card for Lot: ${lotNumber}, Date: ${date}, Images: ${result.images.length}`);
       
     } catch (error) {
       logger.error('Error processing date selection for viewing:', error);
@@ -109,7 +117,7 @@ class ImageController {
     }
   }
 
-  // Build album preview message with thumbnails
+  // Build album preview message with thumbnails (kept for backward compatibility)
   buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
