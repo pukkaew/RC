@@ -80,20 +80,61 @@ router.post('/simple-share/receive', async (req, res) => {
   }
 });
 
-// Handle copy info postback
-router.post('/simple-share/copy-info', async (req, res) => {
+// Handle forward share postback
+router.post('/simple-share/forward', async (req, res) => {
   try {
     const { sessionId, userId, replyToken } = req.body;
     
-    await simpleShareService.handleCopyInfo(sessionId, userId, replyToken);
+    await simpleShareService.handleForwardShare(sessionId, userId, replyToken);
     
     res.json({
       success: true,
-      message: 'Info sent'
+      message: 'Showing chat selector'
     });
     
   } catch (error) {
-    logger.error('Error copying info:', error);
+    logger.error('Error handling forward share:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Handle share to selected chat
+router.post('/simple-share/send-to-chat', async (req, res) => {
+  try {
+    const { sessionId, chatId, chatType, userId, replyToken } = req.body;
+    
+    await simpleShareService.sendCardToSelectedChat(sessionId, chatId, chatType, userId, replyToken);
+    
+    res.json({
+      success: true,
+      message: 'Card sent to selected chat'
+    });
+    
+  } catch (error) {
+    logger.error('Error sending to chat:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get available chats
+router.get('/simple-share/chats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const chats = simpleShareService.getAvailableChats(userId);
+    
+    res.json({
+      success: true,
+      chats: chats
+    });
+    
+  } catch (error) {
+    logger.error('Error getting chats:', error);
     res.status(500).json({
       success: false,
       message: error.message

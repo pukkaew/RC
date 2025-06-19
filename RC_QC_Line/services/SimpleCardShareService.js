@@ -1,5 +1,5 @@
 // SimpleCardShareService.js
-// Service for simple card sharing without downloads
+// Service for simple card sharing with chat selection
 const line = require('@line/bot-sdk');
 const logger = require('../utils/Logger');
 const { v4: uuidv4 } = require('uuid');
@@ -13,6 +13,40 @@ class SimpleCardShareService {
     
     // Store share sessions
     this.shareSessions = new Map();
+    
+    // Mock chat list (ในระบบจริงต้องดึงจาก LINE API)
+    this.mockChats = [
+      {
+        id: 'personal',
+        name: 'ส่งให้ตัวเอง',
+        type: 'user',
+        icon: '👤'
+      },
+      {
+        id: 'Cxxxxxxxxxxxxxx1',
+        name: 'ทีม QC',
+        type: 'group',
+        icon: '👥'
+      },
+      {
+        id: 'Cxxxxxxxxxxxxxx2',
+        name: 'Production Team',
+        type: 'group',
+        icon: '👥'
+      },
+      {
+        id: 'Cxxxxxxxxxxxxxx3',
+        name: 'หัวหน้างาน',
+        type: 'group',
+        icon: '👥'
+      },
+      {
+        id: 'Rxxxxxxxxxxxxxx1',
+        name: 'ห้องประชุม QC',
+        type: 'room',
+        icon: '🏠'
+      }
+    ];
   }
 
   // Create simple share session
@@ -56,7 +90,8 @@ class SimpleCardShareService {
       
       return {
         sessionId: sessionId,
-        imageCount: imagesToShare.length
+        imageCount: imagesToShare.length,
+        session: session
       };
       
     } catch (error) {
@@ -65,8 +100,8 @@ class SimpleCardShareService {
     }
   }
 
-  // Create shareable flex card
-  createShareableFlexCard(session) {
+  // Create shareable flex card (same format for both original and shared)
+  createShareableFlexCard(session, isForwarded = false) {
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
     const formattedDate = new Date(session.imageDate).toLocaleDateString('th-TH');
     
@@ -139,6 +174,24 @@ class SimpleCardShareService {
               color: "#999999",
               align: "center",
               margin: "md"
+            } : null,
+            isForwarded ? {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "separator",
+                  margin: "md"
+                },
+                {
+                  type: "text",
+                  text: "📤 แชร์มาจากเพื่อน",
+                  size: "xs",
+                  color: "#00B900",
+                  align: "center",
+                  margin: "sm"
+                }
+              ]
             } : null
           ].filter(Boolean),
           paddingAll: "10px",
@@ -183,25 +236,13 @@ class SimpleCardShareService {
                   height: "sm",
                   action: {
                     type: "postback",
-                    label: "📋 คัดลอกข้อมูล",
-                    data: `action=copy_info&session=${session.id}`,
-                    displayText: "คัดลอกข้อมูล"
+                    label: "📤 แชร์ต่อ",
+                    data: `action=forward_share&session=${session.id}`,
+                    displayText: "แชร์ต่อ"
                   },
                   flex: 1
                 }
               ],
-              margin: "sm"
-            },
-            {
-              type: "separator",
-              margin: "md"
-            },
-            {
-              type: "text",
-              text: "💡 ส่งต่อการ์ดนี้ให้เพื่อนได้",
-              size: "xs",
-              color: "#999999",
-              align: "center",
               margin: "sm"
             }
           ],
@@ -262,6 +303,208 @@ class SimpleCardShareService {
       cornerRadius: "8px",
       paddingAll: "5px"
     };
+  }
+
+  // Create chat selector
+  createChatSelector(sessionId, userId) {
+    // Get available chats (mock data)
+    const availableChats = this.getAvailableChats(userId);
+    
+    // Create buttons for each chat
+    const chatButtons = availableChats.map(chat => ({
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "text",
+          text: chat.icon,
+          size: "lg",
+          flex: 0,
+          margin: "none"
+        },
+        {
+          type: "text",
+          text: chat.name,
+          size: "md",
+          color: "#333333",
+          margin: "md",
+          flex: 1
+        }
+      ],
+      action: {
+        type: "postback",
+        label: chat.name,
+        data: `action=share_to_selected_chat&session=${sessionId}&chatId=${chat.id}&chatType=${chat.type}`,
+        displayText: `แชร์ไปที่ ${chat.name}`
+      },
+      backgroundColor: "#F8F8F8",
+      cornerRadius: "8px",
+      paddingAll: "12px",
+      margin: "sm"
+    }));
+    
+    return {
+      type: "flex",
+      altText: "เลือกห้องแชทที่จะแชร์",
+      contents: {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "📤 เลือกห้องแชทที่จะแชร์",
+              size: "lg",
+              weight: "bold",
+              color: "#00B900"
+            }
+          ],
+          paddingAll: "15px",
+          backgroundColor: "#F8FFF8"
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "เลือกห้องแชทที่ต้องการส่งการ์ดรูปภาพ:",
+              size: "sm",
+              color: "#666666",
+              margin: "md"
+            },
+            {
+              type: "separator",
+              margin: "lg"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              contents: chatButtons,
+              margin: "lg",
+              spacing: "xs"
+            }
+          ],
+          paddingAll: "15px"
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "button",
+              style: "secondary",
+              height: "sm",
+              action: {
+                type: "postback",
+                label: "ยกเลิก",
+                data: `action=cancel_share`,
+                displayText: "ยกเลิกการแชร์"
+              }
+            }
+          ],
+          paddingAll: "15px"
+        }
+      }
+    };
+  }
+
+  // Get available chats for user
+  getAvailableChats(userId) {
+    // ในระบบจริง ควรดึงข้อมูลจาก database หรือ cache
+    // ที่เก็บข้อมูลห้องแชทที่ bot อยู่
+    return this.mockChats;
+  }
+
+  // Handle forward share request
+  async handleForwardShare(sessionId, userId, replyToken) {
+    try {
+      const session = this.shareSessions.get(sessionId);
+      
+      if (!session) {
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ ลิงก์หมดอายุหรือไม่ถูกต้อง'
+        });
+        return;
+      }
+      
+      // Create and send chat selector
+      const chatSelector = this.createChatSelector(sessionId, userId);
+      await this.client.replyMessage(replyToken, chatSelector);
+      
+    } catch (error) {
+      logger.error('Error handling forward share:', error);
+      
+      if (replyToken) {
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ เกิดข้อผิดพลาดในการแชร์'
+        });
+      }
+    }
+  }
+
+  // Send card to selected chat
+  async sendCardToSelectedChat(sessionId, chatId, chatType, userId, replyToken) {
+    try {
+      const session = this.shareSessions.get(sessionId);
+      
+      if (!session) {
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ ลิงก์หมดอายุหรือไม่ถูกต้อง'
+        });
+        return;
+      }
+      
+      // Create forwarded card (with indicator)
+      const forwardedCard = this.createShareableFlexCard(session, true);
+      
+      // Send to selected chat
+      let targetId = chatId;
+      if (chatId === 'personal') {
+        targetId = userId;
+      }
+      
+      try {
+        await this.client.pushMessage(targetId, [
+          {
+            type: 'text',
+            text: '📸 มีคนแชร์รูปภาพ QC มาให้'
+          },
+          forwardedCard
+        ]);
+        
+        // Confirm to user
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '✅ แชร์การ์ดเรียบร้อยแล้ว!'
+        });
+        
+        logger.info(`Card shared to ${chatType}: ${targetId}`);
+        
+      } catch (sendError) {
+        logger.error('Error sending to chat:', sendError);
+        
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ ไม่สามารถส่งไปยังห้องแชทที่เลือกได้\nอาจเป็นเพราะบอทไม่ได้อยู่ในห้องนั้น'
+        });
+      }
+      
+    } catch (error) {
+      logger.error('Error sending card to chat:', error);
+      
+      if (replyToken) {
+        await this.client.replyMessage(replyToken, {
+          type: 'text',
+          text: '❌ เกิดข้อผิดพลาด'
+        });
+      }
+    }
   }
 
   // Handle receive images request
@@ -330,50 +573,6 @@ class SimpleCardShareService {
         await this.client.replyMessage(replyToken, {
           type: 'text',
           text: '❌ เกิดข้อผิดพลาดในการส่งรูปภาพ'
-        });
-      }
-    }
-  }
-
-  // Handle copy info request
-  async handleCopyInfo(sessionId, userId, replyToken) {
-    try {
-      const session = this.shareSessions.get(sessionId);
-      
-      if (!session) {
-        await this.client.replyMessage(replyToken, {
-          type: 'text',
-          text: '❌ ไม่พบข้อมูล'
-        });
-        return;
-      }
-      
-      const infoText = `📸 รูปภาพ QC
-📦 Lot: ${session.lotNumber}
-📅 วันที่: ${new Date(session.imageDate).toLocaleDateString('th-TH')}
-🖼️ จำนวน: ${session.images.length} รูป
-
-🔗 ดูออนไลน์:
-https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(session.lotNumber)}&date=${encodeURIComponent(session.imageDate)}`;
-      
-      await this.client.replyMessage(replyToken, [
-        {
-          type: 'text',
-          text: '✅ คัดลอกข้อความด้านล่างได้เลย'
-        },
-        {
-          type: 'text',
-          text: infoText
-        }
-      ]);
-      
-    } catch (error) {
-      logger.error('Error handling copy info:', error);
-      
-      if (replyToken) {
-        await this.client.replyMessage(replyToken, {
-          type: 'text',
-          text: '❌ เกิดข้อผิดพลาด'
         });
       }
     }

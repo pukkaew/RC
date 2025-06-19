@@ -565,6 +565,19 @@ class WebhookController {
         // Handle copy info from simple share
         const sessionId = params.get('session');
         await this.handleCopyInfo(sessionId, userId, replyToken);
+      } else if (action === 'forward_share') {
+        // Handle forward share request
+        const sessionId = params.get('session');
+        await this.handleForwardShare(sessionId, userId, replyToken);
+      } else if (action === 'share_to_selected_chat') {
+        // Handle share to selected chat
+        const sessionId = params.get('session');
+        const chatId = params.get('chatId');
+        const chatType = params.get('chatType');
+        await this.handleShareToSelectedChat(sessionId, chatId, chatType, userId, replyToken);
+      } else if (action === 'cancel_share') {
+        // Handle cancel share
+        await this.handleCancelShare(replyToken);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -625,13 +638,35 @@ class WebhookController {
     }
   }
 
-  // Handle copy info
-  async handleCopyInfo(sessionId, userId, replyToken) {
+  // Handle forward share
+  async handleForwardShare(sessionId, userId, replyToken) {
     try {
       const simpleShareService = require('../services/SimpleCardShareService');
-      await simpleShareService.handleCopyInfo(sessionId, userId, replyToken);
+      await simpleShareService.handleForwardShare(sessionId, userId, replyToken);
     } catch (error) {
-      logger.error('Error copying info:', error);
+      logger.error('Error handling forward share:', error);
+    }
+  }
+
+  // Handle share to selected chat
+  async handleShareToSelectedChat(sessionId, chatId, chatType, userId, replyToken) {
+    try {
+      const simpleShareService = require('../services/SimpleCardShareService');
+      await simpleShareService.sendCardToSelectedChat(sessionId, chatId, chatType, userId, replyToken);
+    } catch (error) {
+      logger.error('Error sharing to selected chat:', error);
+    }
+  }
+
+  // Handle cancel share
+  async handleCancelShare(replyToken) {
+    try {
+      await lineService.replyMessage(replyToken, {
+        type: 'text',
+        text: 'ยกเลิกการแชร์แล้ว'
+      });
+    } catch (error) {
+      logger.error('Error canceling share:', error);
     }
   }
 
