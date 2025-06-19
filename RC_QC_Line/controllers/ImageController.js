@@ -1,4 +1,4 @@
-// Controller for image retrieval and viewing - Album Preview Version with Simple Share
+// Controller for image retrieval and viewing - Album Preview Version
 const lineConfig = require('../config/line');
 const lineService = require('../services/LineService');
 const imageService = require('../services/ImageService');
@@ -109,7 +109,7 @@ class ImageController {
     }
   }
 
-  // Build album preview message with simple share options
+  // Build album preview message with thumbnails
   buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
@@ -257,62 +257,32 @@ class ImageController {
           layout: "vertical",
           spacing: "sm",
           contents: [
-            // Main action buttons
-            {
-              type: "box",
-              layout: "horizontal",
-              spacing: "sm",
-              contents: [
-                {
-                  type: "button",
-                  style: "primary",
-                  height: "md",
-                  action: {
-                    type: "uri",
-                    label: "🔍 ดูทั้งหมด",
-                    uri: liffUrl
-                  },
-                  color: "#00B900",
-                  flex: 1
-                },
-                {
-                  type: "button",
-                  style: "primary",
-                  height: "md",
-                  action: {
-                    type: "postback",
-                    label: "📤 แชร์การ์ด",
-                    data: `action=create_simple_share&lot=${lotNumber}&date=${date}`,
-                    displayText: "สร้างการ์ดแชร์"
-                  },
-                  color: "#0084FF",
-                  flex: 1
-                }
-              ],
-              margin: "none"
-            },
-            // Secondary action
             {
               type: "button",
-              style: "secondary",
-              height: "sm",
+              style: "primary",
+              height: "md",
               action: {
-                type: "postback",
-                label: "📲 ส่งรูปไปแชท",
-                data: `action=send_to_chat&lot=${lotNumber}&date=${date}`,
-                displayText: "ส่งรูปภาพ"
+                type: "uri",
+                label: "🔍 ดูรูปภาพทั้งหมด",
+                uri: liffUrl
               },
-              margin: "sm"
+              color: "#00B900"
             },
-            // Help text
             {
               type: "box",
               layout: "vertical",
               contents: [
                 {
                   type: "text",
-                  text: "💡 แชร์การ์ด = ส่งการ์ดให้เพื่อนกดรับรูป",
-                  size: "xxs",
+                  text: "💡 กดปุ่มด้านบนเพื่อดูรูปภาพขนาดเต็ม",
+                  size: "xs",
+                  color: "#999999",
+                  align: "center"
+                },
+                {
+                  type: "text",
+                  text: "และเลือกแชร์รูปที่ต้องการ",
+                  size: "xs",
                   color: "#999999",
                   align: "center"
                 }
