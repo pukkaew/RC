@@ -6,19 +6,18 @@ class ShareCardService {
     this.shareCards = new Map();
   }
   
-  // Create a simple share card with direct image preview
+  // Create share card exactly like screenshot
   async createShareCard(lotNumber, imageDate, images) {
     try {
       const cardId = uuidv4();
       
-      // Create simple LINE Flex Message with actual images
-      const flexMessage = this.createSimpleFlexShareCard(
+      // Create flex message exactly like screenshot
+      const flexMessage = this.createExactFlexCard(
         lotNumber,
         imageDate,
         images
       );
       
-      // Store card session (simplified)
       const shareCard = {
         id: cardId,
         lotNumber: lotNumber,
@@ -30,7 +29,7 @@ class ShareCardService {
       
       this.shareCards.set(cardId, shareCard);
       
-      logger.info(`Created simple share card: ${cardId}`);
+      logger.info(`Created exact share card: ${cardId}`);
       
       return shareCard;
       
@@ -40,29 +39,27 @@ class ShareCardService {
     }
   }
   
-  // Create Simple Flex Message with Direct Images (like your last image)
-  createSimpleFlexShareCard(lotNumber, imageDate, images) {
+  // Create Exact Flex Message Like Screenshot
+  createExactFlexCard(lotNumber, imageDate, images) {
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
     const formattedDate = new Date(imageDate).toLocaleDateString('th-TH');
     
-    // Limit to first 2 images for preview
-    const previewImages = images.slice(0, 2);
-    const imageBoxes = previewImages.map((image) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return {
-        type: "image",
-        url: imageUrl,
-        size: "full",
-        aspectMode: "cover",
-        aspectRatio: "1:1",
-        margin: "md"
-      };
-    });
+    // Get first 2 images for preview
+    const previewImages = images.slice(0, 2).map(img => ({
+      type: "image",
+      url: img.url.startsWith('http') ? img.url : `${baseUrl}${img.url}`,
+      size: "full",
+      aspectMode: "cover",
+      aspectRatio: "4:3"
+    }));
     
-    // Build simple flex message
+    // Fill empty slots if less than 2 images
+    while (previewImages.length < 2) {
+      previewImages.push({
+        type: "filler"
+      });
+    }
+    
     return {
       type: "flex",
       altText: `อัลบั้มรูปภาพ QC - Lot: ${lotNumber}`,
@@ -77,126 +74,58 @@ class ShareCardService {
               text: "📸 อัลบั้มรูปภาพ QC",
               weight: "bold",
               size: "lg",
-              color: "#00B900"
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                {
-                  type: "text",
-                  text: "📦",
-                  flex: 0
-                },
-                {
-                  type: "text",
-                  text: `Lot: ${lotNumber}`,
-                  margin: "sm",
-                  flex: 0
-                },
-                {
-                  type: "text",
-                  text: "📅",
-                  margin: "lg",
-                  flex: 0
-                },
-                {
-                  type: "text",
-                  text: formattedDate,
-                  margin: "sm"
-                }
-              ],
-              margin: "md"
-            },
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: [
-                {
-                  type: "text",
-                  text: "🖼️",
-                  flex: 0
-                },
-                {
-                  type: "text",
-                  text: `ทั้งหมด ${images.length} รูป`,
-                  margin: "sm",
-                  weight: "bold"
-                }
-              ],
-              margin: "sm"
-            },
-            {
-              type: "separator",
-              margin: "lg"
-            },
-            // Direct image preview
-            {
-              type: "box",
-              layout: "horizontal",
-              contents: imageBoxes,
-              margin: "lg",
-              spacing: "md"
+              color: "#1DB446"
             },
             {
               type: "text",
-              text: images.length > 2 ? `และอีก ${images.length - 2} รูป...` : "",
+              text: `📦 Lot: ${lotNumber} 📅 ${formattedDate}`,
               size: "sm",
-              color: "#999999",
-              align: "center",
-              margin: "md"
+              color: "#666666",
+              margin: "sm"
+            },
+            {
+              type: "text",
+              text: `🖼️ ทั้งหมด ${images.length} รูป`,
+              size: "sm",
+              color: "#666666",
+              margin: "sm"
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              margin: "lg",
+              spacing: "sm",
+              contents: previewImages
             }
-          ],
-          paddingAll: "20px"
+          ]
         },
         footer: {
           type: "box",
           layout: "vertical",
+          spacing: "sm",
           contents: [
             {
               type: "button",
               style: "primary",
-              height: "md",
+              height: "sm",
               action: {
                 type: "message",
                 label: "ดูรูปภาพทั้งหมด",
                 text: `#view ${lotNumber}`
               },
               color: "#00B900"
+            },
+            {
+              type: "text",
+              text: "กดปุ่มด้านบนเพื่อดูรูปภาพทั้งหมด\nและสามารถแชร์ต่อได้ง่ายๆ",
+              size: "xxs",
+              color: "#aaaaaa",
+              align: "center",
+              margin: "sm",
+              wrap: true
             }
-          ],
-          paddingAll: "15px"
+          ]
         }
-      }
-    };
-  }
-  
-  // Alternative: Create even simpler carousel of images
-  createImageCarousel(lotNumber, imageDate, images) {
-    const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-    
-    // Create carousel columns (max 10)
-    const carouselColumns = images.slice(0, 10).map((image, index) => {
-      const imageUrl = image.url.startsWith('http') 
-        ? image.url 
-        : `${baseUrl}${image.url}`;
-      
-      return {
-        imageUrl: imageUrl,
-        action: {
-          type: "postback",
-          label: "view",
-          data: `action=view_image&index=${index}&lot=${lotNumber}`
-        }
-      };
-    });
-    
-    return {
-      type: "template",
-      altText: `รูปภาพ QC - Lot: ${lotNumber} (${images.length} รูป)`,
-      template: {
-        type: "image_carousel",
-        columns: carouselColumns
       }
     };
   }
