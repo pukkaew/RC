@@ -670,7 +670,7 @@ class WebhookController {
       // Send both messages
       await lineService.replyMessage(replyToken, [shareInstructions, flexCard]);
       
-      // Also send the card to user's chat for easy forwarding
+      // Also send reminder message
       await lineService.pushMessage(userId, {
         type: 'text',
         text: '⬇️ การ์ดรูปภาพของคุณ (กดค้าง → Forward เพื่อส่งต่อ)'
@@ -722,7 +722,7 @@ class WebhookController {
     }
   }
 
-  // Handle share to specific chat
+  // Handle share to specific chat (kept for compatibility)
   async handleShareToChat(userId, sessionId, chatId, chatType, replyToken) {
     try {
       const flexShareService = require('../services/FlexShareService');
