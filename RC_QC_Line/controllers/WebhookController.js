@@ -1,4 +1,4 @@
-// Controller for handling LINE webhook events - Updated with viewtoday command and share card
+// Controller for handling LINE webhook events - Updated with viewtoday command
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
@@ -540,9 +540,6 @@ class WebhookController {
       } else if (action === 'smart_share') {
         // Handle smart grid sharing
         await this.handleSmartSharing(userId, params, replyToken, chatContext);
-      } else if (action === 'share_card') {
-        // Handle share card actions
-        await this.handleShareCardAction(userId, params, replyToken, chatContext);
       } else {
         logger.warn(`Unknown postback action: ${action}`);
         await lineService.replyMessage(
@@ -619,80 +616,6 @@ class WebhookController {
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
       
       throw error;
-    }
-  }
-
-  // Send share card when user completes image viewing
-  async sendShareCard(userId, lotNumber, imageDate, images, chatContext) {
-    try {
-      // Create share card
-      const shareCardService = require('../services/ShareCardService');
-      const shareCard = await shareCardService.createShareCard(
-        lotNumber,
-        imageDate,
-        images
-      );
-      
-      // Send the flex message
-      if (chatContext?.isGroupChat) {
-        await lineService.pushMessageToChat(
-          chatContext.chatId, 
-          shareCard.flexMessage, 
-          chatContext.chatType
-        );
-      } else {
-        await lineService.pushMessage(userId, shareCard.flexMessage);
-      }
-      
-      logger.info(`Sent share card to user ${userId} for Lot ${lotNumber}`);
-      
-    } catch (error) {
-      logger.error('Error sending share card:', error);
-    }
-  }
-
-  // Handle share card actions (if needed for future enhancements)
-  async handleShareCardAction(userId, params, replyToken, chatContext = null) {
-    try {
-      const action = params.get('share_action');
-      const cardId = params.get('card_id');
-      
-      logger.info(`Share card action: ${action}, Card ID: ${cardId}`);
-      
-      switch (action) {
-        case 'view_all':
-          // User clicked view all images
-          await lineService.replyMessage(
-            replyToken,
-            lineService.createTextMessage('กำลังเปิดหน้าดูรูปภาพ...')
-          );
-          break;
-          
-        case 'download':
-          // User clicked download
-          await lineService.replyMessage(
-            replyToken,
-            lineService.createTextMessage('กำลังเตรียมไฟล์ดาวน์โหลด...')
-          );
-          break;
-          
-        case 'share':
-          // User clicked share
-          await lineService.replyMessage(
-            replyToken,
-            lineService.createTextMessage('คัดลอกลิงก์เพื่อแชร์ต่อได้เลย')
-          );
-          break;
-          
-        default:
-          logger.warn(`Unknown share card action: ${action}`);
-      }
-      
-    } catch (error) {
-      logger.error('Error handling share card action:', error);
-      
-      const errorMessage = 'เกิดข้อผิดพลาดในการดำเนินการ';
-      await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
     }
   }
 
