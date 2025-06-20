@@ -14,7 +14,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             background: #f5f5f5;
-            padding-bottom: 60px;
+            padding-bottom: 80px;
         }
         
         /* Header */
@@ -62,77 +62,64 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* Progress Bar */
-        .progress-container {
-            background: white;
-            padding: 20px;
-            margin: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: none;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: #00B900;
-            transition: width 0.3s;
-            border-radius: 10px;
-        }
-        
-        .progress-text {
-            text-align: center;
-            font-size: 14px;
-            color: #666;
-            margin-top: 10px;
-        }
-        
         /* Share Container */
         .share-container {
             padding: 15px;
             display: none;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
         .share-section {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 20px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .share-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
             color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        /* Preview Section */
-        .preview-grid {
+        /* Image Gallery */
+        .image-gallery {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
-            margin-top: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
         }
         
-        .preview-item {
+        @media (min-width: 768px) {
+            .image-gallery {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+            }
+        }
+        
+        .image-item {
             position: relative;
             padding-bottom: 100%;
             background: #e0e0e0;
-            border-radius: 4px;
+            border-radius: 8px;
             overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
-        .preview-item img {
+        .image-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .image-item img {
             position: absolute;
             top: 0;
             left: 0;
@@ -141,28 +128,231 @@
             object-fit: cover;
         }
         
-        .preview-more {
-            background: rgba(0,0,0,0.7);
+        .image-number {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0,0,0,0.8);
             color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Share Methods */
+        .share-methods {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .method-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #444;
+        }
+        
+        .share-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        
+        .share-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .share-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .share-btn.line {
+            background: #00B900;
+        }
+        
+        .share-btn.download {
+            background: #F5A623;
+        }
+        
+        .share-btn.copy {
+            background: #4A90E2;
+        }
+        
+        .share-btn.liff {
+            background: #6C63FF;
+        }
+        
+        .share-btn-icon {
+            font-size: 32px;
+        }
+        
+        .share-btn-text {
+            font-size: 14px;
+        }
+        
+        /* Share Link Section */
+        .share-link-section {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #2196f3;
+        }
+        
+        .share-link-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+        
+        .share-link-box {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 14px;
+            word-break: break-all;
+            margin-bottom: 10px;
+            border: 1px solid #bbdefb;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .copy-link-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .copy-link-btn:hover {
+            background: #1976d2;
+        }
+        
+        .copy-link-btn.copied {
+            background: #4caf50;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            margin: auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
+            min-height: 100%;
         }
         
-        /* Share Result */
-        .share-result {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
+        .modal-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        
+        .modal-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 50%;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        
+        .modal-nav {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 40px;
+            padding: 20px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .modal-nav:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .modal-prev {
+            left: 20px;
+        }
+        
+        .modal-next {
+            right: 20px;
+        }
+        
+        .modal-counter {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-size: 14px;
-            line-height: 1.8;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 400px;
-            overflow-y: auto;
-            display: none;
+            backdrop-filter: blur(10px);
         }
         
         /* Bottom Actions */
@@ -208,11 +398,6 @@
             color: #333;
         }
         
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
         /* Error State */
         .error {
             text-align: center;
@@ -229,16 +414,17 @@
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 80px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
+            padding: 15px 30px;
+            border-radius: 30px;
             font-size: 14px;
             z-index: 2000;
             animation: slideUp 0.3s;
+            backdrop-filter: blur(10px);
         }
         
         @keyframes slideUp {
@@ -252,14 +438,34 @@
             }
         }
         
-        /* No Auth Notice */
-        .no-auth-notice {
+        /* Instructions */
+        .instructions {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
             color: #856404;
-            padding: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .instructions-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* No Auth Notice */
+        .no-auth-notice {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1565c0;
+            padding: 12px;
             text-align: center;
-            font-size: 12px;
+            font-size: 13px;
             margin: 10px 15px;
             border-radius: 8px;
         }
@@ -283,27 +489,67 @@
         <div>กำลังเตรียมข้อมูล...</div>
     </div>
     
-    <!-- Progress Container -->
-    <div class="progress-container" id="progressContainer">
-        <h3>กำลังเตรียมรูปภาพ</h3>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-        </div>
-        <div class="progress-text" id="progressText">0%</div>
-    </div>
-    
     <!-- Share Container -->
     <div class="share-container" id="shareContainer">
-        <!-- Preview Section -->
+        <!-- Image Gallery Section -->
         <div class="share-section">
-            <div class="share-title">รูปภาพที่จะแชร์</div>
-            <div class="preview-grid" id="previewGrid"></div>
+            <div class="share-title">
+                <span>🖼️</span>
+                <span>รูปภาพที่จะแชร์</span>
+                <span id="imageCount" style="font-size: 14px; color: #666;"></span>
+            </div>
+            <div class="image-gallery" id="imageGallery"></div>
         </div>
         
-        <!-- Share Result -->
+        <!-- Share Methods -->
         <div class="share-section">
-            <div class="share-title">ลิงก์สำหรับแชร์</div>
-            <div class="share-result" id="shareResult"></div>
+            <div class="share-title">
+                <span>📤</span>
+                <span>วิธีการแชร์</span>
+            </div>
+            
+            <div class="instructions">
+                <div class="instructions-title">
+                    <span>💡</span>
+                    <span>วิธีที่แนะนำ:</span>
+                </div>
+                <ol style="margin: 0; padding-left: 20px;">
+                    <li><strong>แชร์ผ่าน LIFF:</strong> กดปุ่ม "เปิดใน LINE" เพื่อส่งรูปภาพไปยังแชทที่ต้องการ</li>
+                    <li><strong>ดาวน์โหลด:</strong> บันทึกรูปภาพทั้งหมดเป็น ZIP แล้วส่งไฟล์</li>
+                    <li><strong>คัดลอกลิงก์:</strong> สำหรับแชร์ให้คนอื่นมาดาวน์โหลดเอง</li>
+                </ol>
+            </div>
+            
+            <div class="share-buttons">
+                <button class="share-btn liff" onclick="openInLIFF()">
+                    <div class="share-btn-icon">💬</div>
+                    <div class="share-btn-text">เปิดใน LINE</div>
+                </button>
+                
+                <button class="share-btn download" onclick="downloadAllImages()">
+                    <div class="share-btn-icon">💾</div>
+                    <div class="share-btn-text">ดาวน์โหลด ZIP</div>
+                </button>
+                
+                <button class="share-btn copy" onclick="copyShareableLink()">
+                    <div class="share-btn-icon">📋</div>
+                    <div class="share-btn-text">คัดลอกลิงก์แชร์</div>
+                </button>
+                
+                <a href="#" class="share-btn line" id="lineShareBtn">
+                    <div class="share-btn-icon">📱</div>
+                    <div class="share-btn-text">แชร์ไปยัง LINE</div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Share Link Section -->
+        <div class="share-link-section">
+            <div class="share-link-title">🔗 ลิงก์สำหรับแชร์</div>
+            <div class="share-link-box" id="shareLinkBox"></div>
+            <button class="copy-link-btn" id="copyLinkBtn" onclick="copyShareLink()">
+                📋 คัดลอกลิงก์
+            </button>
         </div>
     </div>
     
@@ -320,25 +566,36 @@
             <span>🔙</span>
             <span>กลับ</span>
         </button>
-        <button class="btn btn-primary" id="copyBtn" onclick="copyLinks()">
-            <span>📋</span>
-            <span>คัดลอกลิงก์</span>
-        </button>
     </div>
+    
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <img class="modal-image" id="modalImage" alt="">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <button class="modal-nav modal-prev" onclick="navigateImage(-1)">‹</button>
+            <button class="modal-nav modal-next" onclick="navigateImage(1)">›</button>
+            <div class="modal-counter" id="modalCounter">1 / 1</div>
+        </div>
+    </div>
+    
+    <!-- Include JSZip for downloading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <script>
         // Global variables
         let images = [];
-        let downloadedImages = [];
+        let currentImageIndex = 0;
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
-        let shareLinks = '';
+        let shareableLink = '';
         
-        // Initialize (No Authentication)
+        // Initialize
         async function initialize() {
             try {
-                console.log('=== No-Auth Share Page ===');
+                console.log('=== Share Page Initialize ===');
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
@@ -371,8 +628,6 @@
         // Load images
         async function loadImages(imageIds) {
             try {
-                document.getElementById('loading').style.display = 'block';
-                
                 // Fetch images from API
                 const response = await fetch(`${baseUrl}/api/images/${encodeURIComponent(lotNumber)}/${encodeURIComponent(imageDate)}`);
                 
@@ -397,8 +652,22 @@
                 
                 console.log(`Loaded ${images.length} images`);
                 
-                // Prepare share links
-                await prepareShareLinks();
+                // Update image count
+                document.getElementById('imageCount').textContent = `(${images.length} รูป)`;
+                
+                // Render image gallery
+                renderImageGallery();
+                
+                // Generate shareable link
+                generateShareableLink();
+                
+                // Setup LINE share button
+                setupLineShareButton();
+                
+                // Show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('shareContainer').style.display = 'block';
+                document.getElementById('bottomActions').style.display = 'flex';
                 
             } catch (error) {
                 console.error('Error loading images:', error);
@@ -406,133 +675,190 @@
             }
         }
         
-        // Prepare share links
-        async function prepareShareLinks() {
-            try {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('progressContainer').style.display = 'block';
-                
-                downloadedImages = [];
-                const totalImages = images.length;
-                
-                // Prepare links
-                const links = [];
-                
-                for (let i = 0; i < totalImages; i++) {
-                    const image = images[i];
-                    const progress = ((i + 1) / totalImages) * 100;
-                    
-                    updateProgress(progress, `กำลังเตรียมรูปที่ ${i + 1}/${totalImages}`);
-                    
-                    // Create download link
-                    const imageUrl = image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`;
-                    
-                    downloadedImages.push({
-                        ...image,
-                        downloadUrl: imageUrl,
-                        filename: `QC_${lotNumber}_${i + 1}.jpg`
-                    });
-                    
-                    links.push(`${i + 1}. รูปที่ ${i + 1}\n${imageUrl}`);
-                    
-                    // Small delay for UI update
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                }
-                
-                // Create share message
-                const shareMessage = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${totalImages} รูป\n\n🔗 ลิงก์ดาวน์โหลด:\n\n${links.join('\n\n')}`;
-                
-                shareLinks = shareMessage;
-                
-                // Hide progress and show result
-                document.getElementById('progressContainer').style.display = 'none';
-                showShareResult();
-                
-            } catch (error) {
-                console.error('Error preparing share links:', error);
-                showError('เกิดข้อผิดพลาดในการเตรียมลิงก์: ' + error.message);
-            }
-        }
-        
-        // Update progress
-        function updateProgress(percent, text) {
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressText').textContent = text || Math.round(percent) + '%';
-        }
-        
-        // Show share result
-        function showShareResult() {
-            // Render preview
-            renderPreview();
+        // Render image gallery
+        function renderImageGallery() {
+            const gallery = document.getElementById('imageGallery');
+            gallery.innerHTML = '';
             
-            // Show share links
-            document.getElementById('shareResult').textContent = shareLinks;
-            document.getElementById('shareResult').style.display = 'block';
-            
-            // Show containers
-            document.getElementById('shareContainer').style.display = 'block';
-            document.getElementById('bottomActions').style.display = 'flex';
-        }
-        
-        // Render preview grid
-        function renderPreview() {
-            const grid = document.getElementById('previewGrid');
-            grid.innerHTML = '';
-            
-            const maxPreview = 8;
-            const previewImages = downloadedImages.slice(0, maxPreview);
-            
-            previewImages.forEach((image, index) => {
+            images.forEach((image, index) => {
+                const imageUrl = image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`;
+                
                 const item = document.createElement('div');
-                item.className = 'preview-item';
+                item.className = 'image-item';
+                item.onclick = () => openModal(index);
                 
-                if (index === maxPreview - 1 && downloadedImages.length > maxPreview) {
-                    // Show +N more
-                    item.classList.add('preview-more');
-                    item.innerHTML = `+${downloadedImages.length - maxPreview + 1}`;
-                } else {
-                    const img = document.createElement('img');
-                    img.src = image.downloadUrl;
-                    img.alt = `Image ${index + 1}`;
-                    item.appendChild(img);
-                }
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = `Image ${index + 1}`;
+                img.loading = 'lazy';
                 
-                grid.appendChild(item);
+                const number = document.createElement('div');
+                number.className = 'image-number';
+                number.textContent = index + 1;
+                
+                item.appendChild(img);
+                item.appendChild(number);
+                gallery.appendChild(item);
             });
         }
         
-        // Copy links
-        async function copyLinks() {
+        // Generate shareable link with view page
+        function generateShareableLink() {
+            // Create a view page link instead of direct image links
+            const viewPageUrl = `${baseUrl}/view?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}`;
+            
+            shareableLink = `📸 รูปภาพ QC\n📦 Lot: ${lotNumber}\n📅 ${new Date(imageDate).toLocaleDateString('th-TH')}\n🖼️ จำนวน ${images.length} รูป\n\n🔗 คลิกเพื่อดูและดาวน์โหลด:\n${viewPageUrl}`;
+            
+            document.getElementById('shareLinkBox').textContent = shareableLink;
+        }
+        
+        // Setup LINE share button
+        function setupLineShareButton() {
+            const lineShareBtn = document.getElementById('lineShareBtn');
+            const encodedText = encodeURIComponent(shareableLink);
+            lineShareBtn.href = `https://line.me/R/msg/text/?${encodedText}`;
+        }
+        
+        // Open in LIFF for sending actual images
+        function openInLIFF() {
             try {
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(shareLinks);
-                } else {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = shareLinks;
-                    textarea.style.position = 'fixed';
-                    textarea.style.opacity = '0';
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                }
+                // Create LIFF URL with parameters to trigger bot share
+                const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?action=botshare&lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}`;
                 
-                showToast('✅ คัดลอกลิงก์แล้ว');
+                // Try to open in LINE app
+                window.location.href = liffUrl;
                 
-                // Change button text
-                const copyBtn = document.getElementById('copyBtn');
-                copyBtn.innerHTML = '<span>✅</span><span>คัดลอกแล้ว</span>';
-                
-                // Reset after 2 seconds
-                setTimeout(() => {
-                    copyBtn.innerHTML = '<span>📋</span><span>คัดลอกลิงก์</span>';
-                }, 2000);
-                
-            } catch (err) {
-                console.error('Failed to copy:', err);
+                showToast('กำลังเปิด LINE...');
+            } catch (error) {
+                console.error('Error opening LIFF:', error);
+                showToast('❌ ไม่สามารถเปิด LINE ได้');
+            }
+        }
+        
+        // Copy shareable link (view page link)
+        async function copyShareableLink() {
+            try {
+                await copyToClipboard(shareableLink);
+                showToast('✅ คัดลอกลิงก์แชร์แล้ว');
+            } catch (error) {
                 showToast('❌ ไม่สามารถคัดลอกได้');
             }
+        }
+        
+        // Copy share link
+        async function copyShareLink() {
+            try {
+                await copyToClipboard(shareableLink);
+                
+                const btn = document.getElementById('copyLinkBtn');
+                btn.textContent = '✅ คัดลอกแล้ว';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = '📋 คัดลอกลิงก์';
+                    btn.classList.remove('copied');
+                }, 2000);
+                
+            } catch (error) {
+                showToast('❌ ไม่สามารถคัดลอกได้');
+            }
+        }
+        
+        // Copy to clipboard helper
+        async function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+        }
+        
+        // Download all images as ZIP
+        async function downloadAllImages() {
+            try {
+                showToast('กำลังเตรียมไฟล์ ZIP...');
+                
+                const zip = new JSZip();
+                const folder = zip.folder(`QC_${lotNumber}_${imageDate}`);
+                
+                // Download each image
+                for (let i = 0; i < images.length; i++) {
+                    const image = images[i];
+                    const imageUrl = image.url.startsWith('http') ? image.url : `${baseUrl}${image.url}`;
+                    
+                    try {
+                        const response = await fetch(imageUrl);
+                        const blob = await response.blob();
+                        const filename = `QC_${lotNumber}_${i + 1}.jpg`;
+                        
+                        folder.file(filename, blob);
+                    } catch (error) {
+                        console.error(`Error downloading image ${i + 1}:`, error);
+                    }
+                }
+                
+                // Generate ZIP
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, `QC_${lotNumber}_${imageDate}.zip`);
+                
+                showToast('✅ ดาวน์โหลดเสร็จสิ้น');
+                
+            } catch (error) {
+                console.error('Error creating ZIP:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการสร้างไฟล์ ZIP');
+            }
+        }
+        
+        // Image modal functions
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalCounter = document.getElementById('modalCounter');
+            
+            const imageUrl = images[index].url.startsWith('http') 
+                ? images[index].url 
+                : `${baseUrl}${images[index].url}`;
+            
+            modalImage.src = imageUrl;
+            modalCounter.textContent = `${index + 1} / ${images.length}`;
+            modal.style.display = 'block';
+            
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function navigateImage(direction) {
+            currentImageIndex += direction;
+            
+            if (currentImageIndex < 0) {
+                currentImageIndex = images.length - 1;
+            } else if (currentImageIndex >= images.length) {
+                currentImageIndex = 0;
+            }
+            
+            const modalImage = document.getElementById('modalImage');
+            const modalCounter = document.getElementById('modalCounter');
+            
+            const imageUrl = images[currentImageIndex].url.startsWith('http') 
+                ? images[currentImageIndex].url 
+                : `${baseUrl}${images[currentImageIndex].url}`;
+            
+            modalImage.src = imageUrl;
+            modalCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
         }
         
         // Go back
@@ -547,7 +873,6 @@
         // Show error
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('progressContainer').style.display = 'none';
             document.getElementById('shareContainer').style.display = 'none';
             document.getElementById('error').style.display = 'block';
             document.getElementById('errorMessage').textContent = message;
@@ -569,6 +894,20 @@
                 toast.remove();
             }, duration);
         }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('imageModal');
+            if (modal.style.display === 'block') {
+                if (e.key === 'ArrowLeft') {
+                    navigateImage(-1);
+                } else if (e.key === 'ArrowRight') {
+                    navigateImage(1);
+                } else if (e.key === 'Escape') {
+                    closeModal();
+                }
+            }
+        });
         
         // Initialize on load
         window.addEventListener('load', initialize);
