@@ -525,7 +525,7 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <h1>📸 รูปภาพ ${lotNumber}</h1>
+        <h1>📸 รูปภาพ</h1>
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
@@ -1060,6 +1060,9 @@
                     return;
                 }
                 
+                // Update header with lot number
+                document.querySelector('.header h1').textContent = `📸 รูปภาพ ${lotNumber}`;
+                
                 // Initialize viewer
                 viewer.init();
                 
@@ -1218,81 +1221,130 @@
                     return;
                 }
                 
-                showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
-                
-                // Download each image individually (works for both PC and mobile)
-                for (let i = 0; i < imagesToDownload.length; i++) {
-                    const image = imagesToDownload[i];
-                    const imageIndex = images.indexOf(image);
+                // For mobile devices - special handling
+                if (isMobileDevice()) {
+                    // Check if we're in LINE app
+                    const isInLineApp = /Line/i.test(navigator.userAgent);
                     
-                    try {
-                        // Fetch image as blob
-                        const response = await fetch(image.url);
-                        const blob = await response.blob();
+                    if (isInLineApp) {
+                        // For LINE app - use share API to save to gallery
+                        showToast('กำลังบันทึกรูปภาพ...');
                         
-                        // Create object URL from blob
-                        const blobUrl = URL.createObjectURL(blob);
-                        
-                        // Create download link
-                        const a = document.createElement('a');
-                        a.href = blobUrl;
-                        a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
-                        a.style.display = 'none';
-                        
-                        // Append to body and click
-                        document.body.appendChild(a);
-                        a.click();
-                        
-                        // Clean up
-                        setTimeout(() => {
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(blobUrl);
-                        }, 100);
-                        
-                        // Small delay between downloads to prevent issues
-                        if (i < imagesToDownload.length - 1) {
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                        }
-                        
-                    } catch (error) {
-                        console.error(`Error downloading image ${i + 1}:`, error);
-                        
-                        // Fallback method for mobile if blob download fails
-                        if (isMobileDevice()) {
+                        for (let i = 0; i < imagesToDownload.length; i++) {
+                            const image = imagesToDownload[i];
+                            const imageIndex = images.indexOf(image);
+                            
                             try {
-                                // Try alternative download method
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                const img = new Image();
-                                img.crossOrigin = 'anonymous';
+                                // Method 1: Try Web Share API (works on some devices)
+                                if (navigator.share && navigator.canShare) {
+                                    const response = await fetch(image.url);
+                                    const blob = await response.blob();
+                                    const file = new File([blob], `QC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
+                                    
+                                    if (navigator.canShare({ files: [file] })) {
+                                        await navigator.share({
+                                            files: [file],
+                                            title: `QC ${lotNumber}`,
+                                            text: `รูปภาพ QC ${lotNumber}`
+                                        });
+                                    }
+                                } else {
+                                    // Method 2: Open image in new window with save instruction
+                                    const win = window.open(image.url, '_blank');
+                                    if (i === 0) {
+                                        setTimeout(() => {
+                                            showToast('💡 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"');
+                                        }, 1000);
+                                    }
+                                }
                                 
-                                await new Promise((resolve, reject) => {
-                                    img.onload = resolve;
-                                    img.onerror = reject;
-                                    img.src = image.url;
-                                });
+                                // Delay between images
+                                if (i < imagesToDownload.length - 1) {
+                                    await new Promise(resolve => setTimeout(resolve, 300));
+                                }
                                 
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                ctx.drawImage(img, 0, 0);
-                                
-                                canvas.toBlob((blob) => {
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
-                                    a.click();
-                                    URL.revokeObjectURL(url);
-                                }, 'image/jpeg', 0.95);
-                                
-                            } catch (fallbackError) {
-                                console.error('Fallback download failed:', fallbackError);
+                            } catch (error) {
+                                console.error(`Error saving image ${i + 1}:`, error);
                             }
                         }
+                        
+                        showToast('✅ เปิดรูปภาพแล้ว กรุณากดค้างและบันทึก');
+                        
+                    } else {
+                        // For regular mobile browser
+                        showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+                        
+                        for (let i = 0; i < imagesToDownload.length; i++) {
+                            const image = imagesToDownload[i];
+                            const imageIndex = images.indexOf(image);
+                            
+                            try {
+                                const response = await fetch(image.url);
+                                const blob = await response.blob();
+                                const blobUrl = URL.createObjectURL(blob);
+                                
+                                const a = document.createElement('a');
+                                a.href = blobUrl;
+                                a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                                a.style.display = 'none';
+                                
+                                document.body.appendChild(a);
+                                a.click();
+                                
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(blobUrl);
+                                }, 100);
+                                
+                                if (i < imagesToDownload.length - 1) {
+                                    await new Promise(resolve => setTimeout(resolve, 200));
+                                }
+                                
+                            } catch (error) {
+                                console.error(`Error downloading image ${i + 1}:`, error);
+                            }
+                        }
+                        
+                        showToast('✅ ดาวน์โหลดเสร็จสิ้น\n📁 ตรวจสอบในโฟลเดอร์ Downloads');
                     }
+                    
+                } else {
+                    // For PC - multi file download
+                    showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+                    
+                    for (let i = 0; i < imagesToDownload.length; i++) {
+                        const image = imagesToDownload[i];
+                        const imageIndex = images.indexOf(image);
+                        
+                        try {
+                            const response = await fetch(image.url);
+                            const blob = await response.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+                            
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                            a.style.display = 'none';
+                            
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(blobUrl);
+                            }, 100);
+                            
+                            if (i < imagesToDownload.length - 1) {
+                                await new Promise(resolve => setTimeout(resolve, 200));
+                            }
+                            
+                        } catch (error) {
+                            console.error(`Error downloading image ${i + 1}:`, error);
+                        }
+                    }
+                    
+                    showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูปเสร็จสิ้น`);
                 }
-                
-                showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูปเสร็จสิ้น`);
                 
                 // Exit select mode if active
                 if (selectMode) {
