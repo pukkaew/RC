@@ -1,4 +1,4 @@
-// Main application file - Updated with Share Routes and View Route
+// Main application file - Updated with Share Routes
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -50,6 +50,16 @@ app.get('/', (req, res) => {
   }
 });
 
+// Web view route for PC browsers
+app.get('/view', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/liff/view-web.html'));
+});
+
+// Share page route
+app.get('/share/:sessionId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/share/index.html'));
+});
+
 // Import controllers
 const webhookController = require('./controllers/WebhookController');
 const uploadController = require('./controllers/UploadController');
@@ -59,25 +69,16 @@ const lineService = require('./services/LineService');
 const apiRoutes = require('./routes/api');
 const botShareRoutes = require('./routes/botShare');
 const shareRoutes = require('./routes/share');
-const shareApiRoutes = require('./routes/shareApi'); // Enhanced share API routes
-const viewRoute = require('./routes/viewRoute'); // NEW view route
+const shareApiRoutes = require('./routes/shareApi'); // NEW share API routes
 
 // Setup routes
 app.post('/webhook', webhookController.handleWebhook);
-
-// Web view route for PC browsers
-app.use('/view', viewRoute);
-
-// Share page route
-app.get('/share/:sessionId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/share/index.html'));
-});
 
 // API routes for LIFF
 app.use('/api', apiRoutes);
 app.use('/api', botShareRoutes);
 app.use('/api', shareRoutes); // This will handle /api/share/* routes
-app.use('/api', shareApiRoutes); // Enhanced share API routes
+app.use('/api', shareApiRoutes); // NEW enhanced share API routes
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,7 +86,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'RC_QC_Line',
-    version: '2.1.0'
+    version: '2.0.0'
   });
 });
 
@@ -155,6 +156,7 @@ setInterval(() => {
 // Cleanup share temp files (every hour)
 setInterval(async () => {
   try {
+    const shareApiRoutes = require('./routes/shareApi');
     const response = await fetch(`http://localhost:${PORT}/api/share/cleanup`, {
       method: 'POST'
     });
@@ -185,7 +187,6 @@ app.listen(PORT, () => {
   logger.info('LIFF photo viewer enabled');
   logger.info('PC browser support enabled');
   logger.info('Enhanced image sharing enabled');
-  logger.info('View page route enabled');
   
   // Log all available endpoints
   logger.info('\nAvailable endpoints:');
@@ -203,9 +204,6 @@ app.listen(PORT, () => {
   logger.info('- GET /api/share/:sessionId/download (Download as ZIP)');
   logger.info('- POST /api/share/prepare-image (Prepare image for sharing)');
   logger.info('- POST /api/share/send-to-chat (Send images to selected chat)');
-  logger.info('- POST /api/share/create-session (Create share session)');
-  logger.info('- POST /api/share/send-images (Send images via bot)');
-  logger.info('- POST /api/share/create-collage (Create image preview)');
   logger.info('- GET /api/share/chats/:userId (Get user chats)');
   logger.info('- POST /api/share/cleanup (Cleanup temp files)');
   logger.info('- Static /uploads/* (Image files)');
