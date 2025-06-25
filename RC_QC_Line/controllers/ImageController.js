@@ -175,7 +175,7 @@ class ImageController {
     
     return {
       type: "flex",
-      altText: `อัลบั้มรูปภาพ - Lot: ${lotNumber}`,
+      altText: `อัลบั้มรูปภาพ ${lotNumber}`,
       contents: {
         type: "bubble",
         size: "mega",
@@ -185,7 +185,7 @@ class ImageController {
           contents: [
             {
               type: "text",
-              text: "📸 อัลบั้มรูปภาพ QC",
+              text: `📸 อัลบั้มรูปภาพ ${lotNumber}`,
               size: "xl",
               weight: "bold",
               color: "#00B900"
@@ -196,17 +196,10 @@ class ImageController {
               contents: [
                 {
                   type: "text",
-                  text: `📦 Lot: ${lotNumber}`,
-                  size: "sm",
-                  color: "#666666",
-                  flex: 0
-                },
-                {
-                  type: "text",
                   text: `📅 ${formattedDate}`,
                   size: "sm",
                   color: "#666666",
-                  align: "end",
+                  align: "start",
                   flex: 0
                 }
               ],
