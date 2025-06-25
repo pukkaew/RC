@@ -261,18 +261,19 @@
             pointer-events: none;
         }
         
-        /* Close Button */
+        /* Close Button - Fixed for mobile */
         .viewer-close {
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 44px;
-            height: 44px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.7);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
             border-radius: 50%;
-            color: white;
-            font-size: 24px;
+            color: #333;
+            font-size: 28px;
+            font-weight: normal;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -281,11 +282,13 @@
             transition: all 0.2s ease-out;
             -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
         .viewer-close:active {
             transform: scale(0.9);
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(255, 255, 255, 1);
         }
         
         /* Navigation Arrows */
@@ -295,9 +298,9 @@
             transform: translateY(-50%);
             width: 44px;
             height: 88px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.8);
             border: none;
-            color: white;
+            color: #333;
             font-size: 24px;
             cursor: pointer;
             pointer-events: auto;
@@ -310,7 +313,7 @@
         }
         
         .viewer-nav:active {
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.9);
         }
         
         .viewer-nav.prev {
@@ -478,6 +481,36 @@
             font-size: 12px;
         }
         
+        /* Download Progress */
+        .download-progress {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 3000;
+            min-width: 250px;
+        }
+        
+        .download-progress .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .download-progress .progress-fill {
+            height: 100%;
+            background: #00B900;
+            transition: width 0.3s;
+        }
+        
         /* Prevent iOS bounce */
         html, body {
             overscroll-behavior-y: contain;
@@ -527,9 +560,9 @@
             <span>📌</span>
             <span>เลือกรูป</span>
         </button>
-        <button class="btn btn-primary" id="shareBtn" onclick="shareImages()">
-            <span>📤</span>
-            <span>แชร์</span>
+        <button class="btn btn-primary" id="downloadBtn" onclick="downloadImages()">
+            <span>💾</span>
+            <span>ดาวน์โหลด</span>
         </button>
     </div>
     
@@ -545,7 +578,7 @@
             </div>
             
             <div class="viewer-ui">
-                <button class="viewer-close" onclick="viewer.close()">✕</button>
+                <button class="viewer-close" onclick="viewer.close()">×</button>
                 
                 <button class="viewer-nav prev" id="navPrev" onclick="viewer.prev()">‹</button>
                 <button class="viewer-nav next" id="navNext" onclick="viewer.next()">›</button>
@@ -560,6 +593,10 @@
             </div>
         </div>
     </div>
+    
+    <!-- Include JSZip for downloading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <script>
         // Global variables
@@ -1074,7 +1111,7 @@
             selectedImages.clear();
             
             const selectBtn = document.getElementById('selectBtn');
-            const shareBtn = document.getElementById('shareBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
             const grid = document.getElementById('imageGrid');
             const counter = document.getElementById('selectionCounter');
             
@@ -1083,18 +1120,18 @@
                 selectBtn.innerHTML = '<span>❌</span><span>ยกเลิก</span>';
                 selectBtn.classList.remove('btn-secondary');
                 selectBtn.classList.add('btn-danger');
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
-                shareBtn.disabled = true;
+                downloadBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
+                downloadBtn.disabled = true;
                 counter.style.display = 'block';
                 updateSelectionCounter();
-                showToast('แตะเพื่อเลือกรูปที่ต้องการแชร์');
+                showToast('แตะเพื่อเลือกรูปที่ต้องการดาวน์โหลด');
             } else {
                 grid.classList.remove('select-mode');
                 selectBtn.innerHTML = '<span>📌</span><span>เลือกรูป</span>';
                 selectBtn.classList.remove('btn-danger');
                 selectBtn.classList.add('btn-secondary');
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ทั้งหมด</span>';
-                shareBtn.disabled = false;
+                downloadBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดทั้งหมด</span>';
+                downloadBtn.disabled = false;
                 counter.style.display = 'none';
                 renderImages();
             }
@@ -1113,13 +1150,13 @@
             
             updateSelectionCounter();
             
-            const shareBtn = document.getElementById('shareBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
             if (selectedImages.size > 0) {
-                shareBtn.disabled = false;
-                shareBtn.innerHTML = `<span>📤</span><span>แชร์ ${selectedImages.size} รูป</span>`;
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = `<span>💾</span><span>ดาวน์โหลด ${selectedImages.size} รูป</span>`;
             } else {
-                shareBtn.disabled = true;
-                shareBtn.innerHTML = '<span>📤</span><span>แชร์ที่เลือก</span>';
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<span>💾</span><span>ดาวน์โหลดที่เลือก</span>';
             }
         }
         
@@ -1129,32 +1166,92 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Share images
-        async function shareImages() {
+        // Download images
+        async function downloadImages() {
             try {
-                let imagesToShare = [];
+                let imagesToDownload = [];
                 
                 if (selectMode && selectedImages.size > 0) {
-                    imagesToShare = Array.from(selectedImages).map(index => images[index]);
+                    imagesToDownload = Array.from(selectedImages).map(index => images[index]);
                 } else {
-                    imagesToShare = images;
+                    imagesToDownload = images;
                 }
                 
-                if (imagesToShare.length === 0) {
-                    showToast('กรุณาเลือกรูปที่ต้องการแชร์');
+                if (imagesToDownload.length === 0) {
+                    showToast('กรุณาเลือกรูปที่ต้องการดาวน์โหลด');
                     return;
                 }
                 
-                showToast(`กำลังเตรียมแชร์ ${imagesToShare.length} รูป...`);
+                // Show progress
+                const progressDiv = document.createElement('div');
+                progressDiv.className = 'download-progress';
+                progressDiv.innerHTML = `
+                    <h3>กำลังดาวน์โหลด</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <p>0 / ${imagesToDownload.length}</p>
+                `;
+                document.body.appendChild(progressDiv);
                 
-                const imageIds = imagesToShare.map(img => img.image_id).join(',');
-                const shareUrl = `/liff/share.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(imageDate)}&imageIds=${encodeURIComponent(imageIds)}&base_url=${encodeURIComponent(baseUrl)}`;
+                const progressFill = progressDiv.querySelector('.progress-fill');
+                const progressText = progressDiv.querySelector('p');
                 
-                window.location.href = shareUrl;
+                try {
+                    if (imagesToDownload.length === 1) {
+                        // Single image download
+                        const image = imagesToDownload[0];
+                        const response = await fetch(image.url);
+                        const blob = await response.blob();
+                        const filename = `QC_${lotNumber}_${images.indexOf(image) + 1}.jpg`;
+                        
+                        saveAs(blob, filename);
+                        showToast('✅ ดาวน์โหลดเสร็จสิ้น');
+                    } else {
+                        // Multiple images - create ZIP
+                        const zip = new JSZip();
+                        const folder = zip.folder(`QC_${lotNumber}_${imageDate}`);
+                        
+                        for (let i = 0; i < imagesToDownload.length; i++) {
+                            const image = imagesToDownload[i];
+                            const imageIndex = images.indexOf(image);
+                            
+                            // Update progress
+                            const progress = ((i + 1) / imagesToDownload.length) * 100;
+                            progressFill.style.width = `${progress}%`;
+                            progressText.textContent = `${i + 1} / ${imagesToDownload.length}`;
+                            
+                            try {
+                                const response = await fetch(image.url);
+                                const blob = await response.blob();
+                                const filename = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                                
+                                folder.file(filename, blob);
+                            } catch (error) {
+                                console.error(`Error downloading image ${i + 1}:`, error);
+                            }
+                        }
+                        
+                        // Generate ZIP
+                        progressText.textContent = 'กำลังสร้างไฟล์ ZIP...';
+                        const content = await zip.generateAsync({type: "blob"});
+                        saveAs(content, `QC_${lotNumber}_${imageDate}.zip`);
+                        
+                        showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูป เสร็จสิ้น`);
+                    }
+                } finally {
+                    // Remove progress
+                    progressDiv.remove();
+                    
+                    // Exit select mode if active
+                    if (selectMode) {
+                        toggleSelectMode();
+                    }
+                }
                 
             } catch (error) {
-                console.error('Share error:', error);
-                showToast('❌ เกิดข้อผิดพลาดในการแชร์');
+                console.error('Download error:', error);
+                showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
             }
         }
         
