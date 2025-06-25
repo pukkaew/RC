@@ -342,10 +342,10 @@ class DatePickerService {
     });
     
     // Determine header text based on action
-    let headerText = "📸 ดูรูปภาพ QC";
+    let headerText = "📸 ดูอัลบั้มรูปภาพ";
     let headerColor = "#00B900";
     if (action === 'delete') {
-      headerText = "🗑️ ลบรูปภาพ QC";
+      headerText = "🗑️ ลบรูปภาพ";
       headerColor = "#FF0000";
     }
     
@@ -363,7 +363,7 @@ class DatePickerService {
               type: "text",
               text: headerText,
               weight: "bold",
-              size: "lg",
+              size: "xl",
               color: headerColor
             }
           ],

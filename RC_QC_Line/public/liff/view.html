@@ -1238,7 +1238,7 @@
                                 try {
                                     const response = await fetch(image.url);
                                     const blob = await response.blob();
-                                    const file = new File([blob], `QC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
+                                    const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
                                     files.push(file);
                                 } catch (error) {
                                     console.error(`Error preparing image ${i + 1}:`, error);
@@ -1303,7 +1303,7 @@
                             
                             const a = document.createElement('a');
                             a.href = blobUrl;
-                            a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                            a.download = `RC_${lotNumber}_${imageIndex + 1}.jpg`;
                             a.style.display = 'none';
                             
                             document.body.appendChild(a);
@@ -1349,7 +1349,7 @@
                     // Create download link
                     const a = document.createElement('a');
                     a.href = image.url;
-                    a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                    a.download = `RC_${lotNumber}_${imageIndex + 1}.jpg`;
                     a.style.display = 'none';
                     
                     document.body.appendChild(a);
