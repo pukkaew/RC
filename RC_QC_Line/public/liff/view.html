@@ -266,13 +266,13 @@
             position: fixed;
             top: env(safe-area-inset-top, 20px);
             right: 20px;
-            width: 60px;
-            height: 60px;
+            width: 44px;
+            height: 44px;
             background: white;
             border: none;
             border-radius: 50%;
             color: #000;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: normal;
             cursor: pointer;
             display: flex;
@@ -281,13 +281,13 @@
             pointer-events: auto !important;
             transition: all 0.2s ease-out;
             z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
         
         .viewer-close:active {
-            transform: scale(0.85);
+            transform: scale(0.9);
             background: #f0f0f0;
         }
         
@@ -296,12 +296,12 @@
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            width: 60px;
-            height: 100px;
+            width: 48px;
+            height: 80px;
             background: white;
             border: none;
             color: #000;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
             pointer-events: auto !important;
@@ -310,24 +310,25 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            opacity: 0.9;
         }
         
         .viewer-nav:active {
             background: #f0f0f0;
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
         
         .viewer-nav.prev {
             left: 10px;
-            border-radius: 0 30px 30px 0;
+            border-radius: 0 25px 25px 0;
         }
         
         .viewer-nav.next {
             right: 10px;
-            border-radius: 30px 0 0 30px;
+            border-radius: 25px 0 0 25px;
         }
         
         .viewer-nav:disabled {
@@ -583,19 +584,19 @@
             
             <div class="viewer-ui">
                 <button class="viewer-close" type="button" onclick="viewer.close()">
-                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-                        <path d="M22.5 7.5L7.5 22.5M7.5 7.5L22.5 22.5" stroke="black" stroke-width="3" stroke-linecap="round"/>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="black" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </button>
                 
                 <button class="viewer-nav prev" type="button" id="navPrev" onclick="viewer.prev()">
-                    <svg width="20" height="35" viewBox="0 0 20 35" fill="none">
-                        <path d="M17.5 2.5L2.5 17.5L17.5 32.5" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg width="14" height="24" viewBox="0 0 14 24" fill="none">
+                        <path d="M12 2L2 12L12 22" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
                 <button class="viewer-nav next" type="button" id="navNext" onclick="viewer.next()">
-                    <svg width="20" height="35" viewBox="0 0 20 35" fill="none">
-                        <path d="M2.5 2.5L17.5 17.5L2.5 32.5" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg width="14" height="24" viewBox="0 0 14 24" fill="none">
+                        <path d="M2 2L12 12L2 22" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
                 
@@ -1218,33 +1219,61 @@
                     return;
                 }
                 
-                // Show progress
-                const progressDiv = document.createElement('div');
-                progressDiv.className = 'download-progress';
-                progressDiv.innerHTML = `
-                    <h3>กำลังดาวน์โหลด</h3>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 0%"></div>
-                    </div>
-                    <p>0 / ${imagesToDownload.length}</p>
-                `;
-                document.body.appendChild(progressDiv);
-                
-                const progressFill = progressDiv.querySelector('.progress-fill');
-                const progressText = progressDiv.querySelector('p');
-                
-                try {
-                    if (imagesToDownload.length === 1) {
-                        // Single image download
-                        const image = imagesToDownload[0];
-                        const response = await fetch(image.url);
-                        const blob = await response.blob();
-                        const filename = `QC_${lotNumber}_${images.indexOf(image) + 1}.jpg`;
+                // For mobile devices - download individually
+                if (isMobileDevice()) {
+                    showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+                    
+                    // Download each image individually with delay
+                    for (let i = 0; i < imagesToDownload.length; i++) {
+                        const image = imagesToDownload[i];
+                        const imageIndex = images.indexOf(image);
                         
-                        saveAs(blob, filename);
-                        showToast('✅ ดาวน์โหลดเสร็จสิ้น');
-                    } else {
-                        // Multiple images - create ZIP
+                        try {
+                            // Create download link
+                            const a = document.createElement('a');
+                            a.href = image.url;
+                            a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                            a.target = '_blank';
+                            
+                            // For iOS/Safari
+                            if (isIOS()) {
+                                window.open(image.url, '_blank');
+                            } else {
+                                // For Android and others
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            }
+                            
+                            // Add delay between downloads to prevent blocking
+                            if (i < imagesToDownload.length - 1) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                            
+                        } catch (error) {
+                            console.error(`Error downloading image ${i + 1}:`, error);
+                        }
+                    }
+                    
+                    showToast(`✅ เปิดลิงก์ดาวน์โหลด ${imagesToDownload.length} รูป\nกรุณาบันทึกรูปจากแต่ละแท็บ`);
+                    
+                } else {
+                    // For desktop - use ZIP
+                    const progressDiv = document.createElement('div');
+                    progressDiv.className = 'download-progress';
+                    progressDiv.innerHTML = `
+                        <h3>กำลังดาวน์โหลด</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p>0 / ${imagesToDownload.length}</p>
+                    `;
+                    document.body.appendChild(progressDiv);
+                    
+                    const progressFill = progressDiv.querySelector('.progress-fill');
+                    const progressText = progressDiv.querySelector('p');
+                    
+                    try {
                         const zip = new JSZip();
                         const folder = zip.folder(`QC_${lotNumber}_${imageDate}`);
                         
@@ -1274,21 +1303,33 @@
                         saveAs(content, `QC_${lotNumber}_${imageDate}.zip`);
                         
                         showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูป เสร็จสิ้น`);
+                    } finally {
+                        // Remove progress
+                        progressDiv.remove();
                     }
-                } finally {
-                    // Remove progress
-                    progressDiv.remove();
-                    
-                    // Exit select mode if active
-                    if (selectMode) {
-                        toggleSelectMode();
-                    }
+                }
+                
+                // Exit select mode if active
+                if (selectMode) {
+                    toggleSelectMode();
                 }
                 
             } catch (error) {
                 console.error('Download error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
             }
+        }
+        
+        // Check if device is mobile
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+        
+        // Check if iOS
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
         
         // Show error
