@@ -1226,90 +1226,75 @@
                     // Check if we're in LINE app
                     const isInLineApp = /Line/i.test(navigator.userAgent);
                     
-                    if (isInLineApp) {
-                        // For LINE app - use share API to save to gallery
-                        showToast('กำลังบันทึกรูปภาพ...');
+                    if (isInLineApp || isIOS()) {
+                        // For LINE app or iOS - open each image in new tab
+                        showToast(`กำลังเปิด ${imagesToDownload.length} รูป...`);
+                        
+                        // Show instruction first
+                        setTimeout(() => {
+                            showToast('💡 กดค้างที่รูปแต่ละรูป > บันทึกรูปภาพ');
+                        }, 1500);
+                        
+                        // Open images with delay to prevent blocking
+                        for (let i = 0; i < imagesToDownload.length; i++) {
+                            const image = imagesToDownload[i];
+                            
+                            setTimeout(() => {
+                                window.open(image.url, '_blank');
+                            }, i * 1000); // 1 second delay between each image
+                        }
+                        
+                        // Final message
+                        setTimeout(() => {
+                            showToast(`✅ เปิด ${imagesToDownload.length} รูปแล้ว\n📱 กดค้าง > บันทึกรูปภาพ ในแต่ละแท็บ`);
+                        }, (imagesToDownload.length + 1) * 1000);
+                        
+                    } else {
+                        // For Android mobile browser - try direct download
+                        showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+                        
+                        let successCount = 0;
                         
                         for (let i = 0; i < imagesToDownload.length; i++) {
                             const image = imagesToDownload[i];
                             const imageIndex = images.indexOf(image);
                             
                             try {
-                                // Method 1: Try Web Share API (works on some devices)
-                                if (navigator.share && navigator.canShare) {
-                                    const response = await fetch(image.url);
-                                    const blob = await response.blob();
-                                    const file = new File([blob], `QC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
-                                    
-                                    if (navigator.canShare({ files: [file] })) {
-                                        await navigator.share({
-                                            files: [file],
-                                            title: `QC ${lotNumber}`,
-                                            text: `รูปภาพ QC ${lotNumber}`
-                                        });
-                                    }
-                                } else {
-                                    // Method 2: Open image in new window with save instruction
-                                    const win = window.open(image.url, '_blank');
-                                    if (i === 0) {
-                                        setTimeout(() => {
-                                            showToast('💡 กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ"');
-                                        }, 1000);
-                                    }
-                                }
+                                // Method 1: Try creating a download link
+                                const a = document.createElement('a');
+                                a.href = image.url;
+                                a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
                                 
-                                // Delay between images
+                                successCount++;
+                                
+                                // Small delay between downloads
                                 if (i < imagesToDownload.length - 1) {
                                     await new Promise(resolve => setTimeout(resolve, 300));
                                 }
                                 
                             } catch (error) {
-                                console.error(`Error saving image ${i + 1}:`, error);
-                            }
-                        }
-                        
-                        showToast('✅ เปิดรูปภาพแล้ว กรุณากดค้างและบันทึก');
-                        
-                    } else {
-                        // For regular mobile browser
-                        showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
-                        
-                        for (let i = 0; i < imagesToDownload.length; i++) {
-                            const image = imagesToDownload[i];
-                            const imageIndex = images.indexOf(image);
-                            
-                            try {
-                                const response = await fetch(image.url);
-                                const blob = await response.blob();
-                                const blobUrl = URL.createObjectURL(blob);
-                                
-                                const a = document.createElement('a');
-                                a.href = blobUrl;
-                                a.download = `QC_${lotNumber}_${imageIndex + 1}.jpg`;
-                                a.style.display = 'none';
-                                
-                                document.body.appendChild(a);
-                                a.click();
-                                
-                                setTimeout(() => {
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(blobUrl);
-                                }, 100);
-                                
-                                if (i < imagesToDownload.length - 1) {
-                                    await new Promise(resolve => setTimeout(resolve, 200));
-                                }
-                                
-                            } catch (error) {
                                 console.error(`Error downloading image ${i + 1}:`, error);
+                                
+                                // Method 2: Open in new tab if download fails
+                                setTimeout(() => {
+                                    window.open(image.url, '_blank');
+                                }, i * 500);
                             }
                         }
                         
-                        showToast('✅ ดาวน์โหลดเสร็จสิ้น\n📁 ตรวจสอบในโฟลเดอร์ Downloads');
+                        if (successCount === imagesToDownload.length) {
+                            showToast('✅ ดาวน์โหลดเสร็จสิ้น\n📁 ตรวจสอบในโฟลเดอร์ Downloads');
+                        } else {
+                            showToast('✅ เปิดรูปภาพแล้ว\n💡 กดค้าง > บันทึกรูปภาพ');
+                        }
                     }
                     
                 } else {
-                    // For PC - multi file download
+                    // For PC - multi file download (unchanged)
                     showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
                     
                     for (let i = 0; i < imagesToDownload.length; i++) {
@@ -1355,6 +1340,18 @@
                 console.error('Download error:', error);
                 showToast('❌ เกิดข้อผิดพลาดในการดาวน์โหลด');
             }
+        }
+        
+        // Check if device is mobile
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+        
+        // Check if iOS
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
         
         // Check if device is mobile
