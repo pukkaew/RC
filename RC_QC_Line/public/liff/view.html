@@ -1223,68 +1223,77 @@
                 
                 // For mobile devices - special handling
                 if (isMobileDevice()) {
-                    // Check if Web Share API is available
-                    if (navigator.share && navigator.canShare) {
-                        showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
-                        
-                        try {
-                            // Prepare all files
-                            const files = [];
+                    // Check if we're in LINE app
+                    const isInLineApp = /Line/i.test(navigator.userAgent);
+                    
+                    // For LINE app (both iOS and Android) - use Web Share API
+                    if (isInLineApp) {
+                        // Check if Web Share API is available
+                        if (navigator.share && navigator.canShare) {
+                            showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
                             
-                            for (let i = 0; i < imagesToDownload.length; i++) {
-                                const image = imagesToDownload[i];
-                                const imageIndex = images.indexOf(image);
+                            try {
+                                // Prepare all files
+                                const files = [];
                                 
-                                try {
-                                    const response = await fetch(image.url);
-                                    const blob = await response.blob();
-                                    const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
-                                    files.push(file);
-                                } catch (error) {
-                                    console.error(`Error preparing image ${i + 1}:`, error);
-                                }
-                            }
-                            
-                            // Check if we can share multiple files
-                            if (files.length > 0 && navigator.canShare({ files: files })) {
-                                // Share all files at once
-                                await navigator.share({
-                                    files: files
-                                });
-                                
-                                showToast('✅ บันทึกรูปภาพเรียบร้อย');
-                            } else {
-                                // Fallback: Share one by one
-                                showToast('กำลังบันทึกรูปภาพทีละรูป...');
-                                
-                                for (let i = 0; i < files.length; i++) {
+                                for (let i = 0; i < imagesToDownload.length; i++) {
+                                    const image = imagesToDownload[i];
+                                    const imageIndex = images.indexOf(image);
+                                    
                                     try {
-                                        await navigator.share({
-                                            files: [files[i]]
-                                        });
-                                        
-                                        // Small delay between shares
-                                        if (i < files.length - 1) {
-                                            await new Promise(resolve => setTimeout(resolve, 500));
-                                        }
+                                        const response = await fetch(image.url);
+                                        const blob = await response.blob();
+                                        const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
+                                        files.push(file);
                                     } catch (error) {
-                                        if (error.name !== 'AbortError') {
-                                            console.error(`Error sharing image ${i + 1}:`, error);
-                                        }
+                                        console.error(`Error preparing image ${i + 1}:`, error);
                                     }
                                 }
                                 
-                                showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
+                                // Check if we can share multiple files
+                                if (files.length > 0 && navigator.canShare({ files: files })) {
+                                    // Share all files at once
+                                    await navigator.share({
+                                        files: files
+                                    });
+                                    
+                                    showToast('✅ บันทึกรูปภาพเรียบร้อย');
+                                } else {
+                                    // Fallback: Share one by one
+                                    showToast('กำลังบันทึกรูปภาพทีละรูป...');
+                                    
+                                    for (let i = 0; i < files.length; i++) {
+                                        try {
+                                            await navigator.share({
+                                                files: [files[i]]
+                                            });
+                                            
+                                            // Small delay between shares
+                                            if (i < files.length - 1) {
+                                                await new Promise(resolve => setTimeout(resolve, 500));
+                                            }
+                                        } catch (error) {
+                                            if (error.name !== 'AbortError') {
+                                                console.error(`Error sharing image ${i + 1}:`, error);
+                                            }
+                                        }
+                                    }
+                                    
+                                    showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
+                                }
+                                
+                            } catch (error) {
+                                console.error('Share error:', error);
+                                // If share fails, show instruction
+                                showToast('⚠️ ไม่สามารถบันทึกอัตโนมัติได้\n💡 กรุณาเลือก "บันทึกรูปภาพ" หรือ "Save to device"');
                             }
-                            
-                        } catch (error) {
-                            console.error('Share error:', error);
-                            // Fallback to download method
-                            await downloadFallback(imagesToDownload);
+                        } else {
+                            // No Web Share API in LINE - show warning
+                            showToast('⚠️ LINE app ไม่รองรับการดาวน์โหลดตรง\n💡 กรุณาเปิดในเบราว์เซอร์แทน');
                         }
                         
                     } else {
-                        // No Web Share API - use fallback
+                        // Regular mobile browser - use standard download
                         await downloadFallback(imagesToDownload);
                     }
                     
