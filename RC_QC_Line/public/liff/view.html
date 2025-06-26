@@ -669,6 +669,9 @@
         </div>
     </div>
     
+    <!-- Include LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
     <!-- Include FileSaver for downloading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
@@ -695,28 +698,56 @@
             return isAndroid;
         }
         
-        // Close page function
+        // Close page function - Enhanced for LIFF
         function closePage() {
             try {
-                // Try LIFF close first
-                if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                console.log('Attempting to close page...');
+                
+                // Method 1: Try LIFF closeWindow if available
+                if (typeof liff !== 'undefined' && liff.closeWindow) {
+                    console.log('Using LIFF closeWindow');
                     liff.closeWindow();
-                } else {
-                    // Try to go back in history
-                    if (window.history.length > 1) {
-                        window.history.back();
-                    } else {
-                        // Last resort - try to close window
-                        window.close();
-                        // If still here, show message
-                        setTimeout(() => {
-                            showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
-                        }, 500);
-                    }
+                    return;
                 }
+                
+                // Method 2: For Android/iOS - navigate back
+                if (isAndroid || isIOS()) {
+                    console.log('Mobile device - going back');
+                    window.history.back();
+                    
+                    // If still here after 500ms, try other methods
+                    setTimeout(() => {
+                        // Try to navigate to LINE app
+                        window.location.href = 'line://';
+                        
+                        // Final fallback message
+                        setTimeout(() => {
+                            showToast('กรุณากดปุ่ม Back หรือปัดกลับเพื่อออก');
+                        }, 500);
+                    }, 500);
+                    return;
+                }
+                
+                // Method 3: For PC browsers
+                if (window.history.length > 1) {
+                    window.history.back();
+                } else {
+                    window.close();
+                    // If still here, show message
+                    setTimeout(() => {
+                        showToast('กรุณาปิดแท็บนี้ด้วยตนเอง');
+                    }, 500);
+                }
+                
             } catch (error) {
                 console.error('Error closing page:', error);
-                showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+                
+                // Last resort - try to go to LINE app
+                if (isAndroid || isIOS()) {
+                    window.location.href = 'line://';
+                } else {
+                    showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+                }
             }
         }
         
@@ -1150,6 +1181,16 @@
             try {
                 // Check Android first
                 checkAndroid();
+                
+                // Try to initialize LIFF if available
+                if (typeof liff !== 'undefined') {
+                    try {
+                        await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                        console.log('LIFF initialized successfully');
+                    } catch (liffError) {
+                        console.log('LIFF init failed, continuing without LIFF:', liffError);
+                    }
+                }
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
