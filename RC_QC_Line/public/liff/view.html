@@ -20,6 +20,11 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
+        /* Adjust padding for Android (no bottom bar) */
+        body.android {
+            padding-bottom: 10px;
+        }
+        
         /* Header */
         .header {
             background: #00B900;
@@ -40,6 +45,30 @@
         .header .info {
             font-size: 14px;
             opacity: 0.9;
+        }
+        
+        /* Close button for Android */
+        .close-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 50%;
+            color: #00B900;
+            font-size: 24px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 101;
+        }
+        
+        body.android .close-btn {
+            display: flex;
         }
         
         /* Loading */
@@ -128,7 +157,7 @@
             z-index: 1;
         }
         
-        /* Bottom Bar */
+        /* Bottom Bar - Hide on Android */
         .bottom-bar {
             position: fixed;
             bottom: 0;
@@ -140,6 +169,10 @@
             display: flex;
             gap: 10px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        body.android .bottom-bar {
+            display: none !important;
         }
         
         .btn {
@@ -184,7 +217,11 @@
             transform: scale(1);
         }
         
-        /* Select Mode */
+        /* Select Mode - Disabled on Android */
+        body.android .image-grid.select-mode .image-item::before {
+            display: none;
+        }
+        
         .select-mode .image-item::before {
             content: '';
             position: absolute;
@@ -448,6 +485,11 @@
             backdrop-filter: blur(10px);
         }
         
+        /* Adjust toast position for Android */
+        body.android .toast {
+            bottom: 20px;
+        }
+        
         @keyframes slideUp {
             from {
                 transform: translateX(-50%) translateY(100%);
@@ -459,7 +501,7 @@
             }
         }
         
-        /* Selection counter */
+        /* Selection counter - Hide on Android */
         .selection-counter {
             position: fixed;
             top: 70px;
@@ -476,6 +518,10 @@
             z-index: 50;
         }
         
+        body.android .selection-counter {
+            display: none !important;
+        }
+        
         /* No Auth Notice */
         .no-auth-notice {
             background: #fff3cd;
@@ -484,6 +530,23 @@
             padding: 10px;
             text-align: center;
             font-size: 12px;
+        }
+        
+        /* Android notice */
+        .android-notice {
+            display: none;
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1565c0;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            margin: 10px;
+            border-radius: 8px;
+        }
+        
+        body.android .android-notice {
+            display: block;
         }
         
         /* Download Progress */
@@ -529,9 +592,17 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
+    <!-- Close button for Android -->
+    <button class="close-btn" onclick="closePage()">✕</button>
+    
     <!-- No Auth Notice -->
     <div class="no-auth-notice">
         💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
+    </div>
+    
+    <!-- Android Notice -->
+    <div class="android-notice">
+        📱 อุปกรณ์ Android - แตะรูปเพื่อดูขนาดใหญ่ | ใช้ปุ่ม ✕ เพื่อปิดหน้านี้
     </div>
     
     <!-- Selection Counter -->
@@ -622,6 +693,45 @@
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
+        let isAndroid = false;
+        
+        // Check if device is Android
+        function checkAndroid() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            isAndroid = /android/i.test(userAgent);
+            
+            if (isAndroid) {
+                document.body.classList.add('android');
+                console.log('Android device detected');
+            }
+            
+            return isAndroid;
+        }
+        
+        // Close page function
+        function closePage() {
+            try {
+                // Try LIFF close first
+                if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    // Try to go back in history
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // Last resort - try to close window
+                        window.close();
+                        // If still here, show message
+                        setTimeout(() => {
+                            showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+                        }, 500);
+                    }
+                }
+            } catch (error) {
+                console.error('Error closing page:', error);
+                showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+            }
+        }
         
         // Image Viewer System
         const viewer = {
@@ -665,12 +775,14 @@
                 this.container.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
                 this.container.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
                 
-                // Mouse events
-                this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
-                this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
-                this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
-                this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
-                this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+                // Mouse events (not needed on Android but keep for compatibility)
+                if (!isAndroid) {
+                    this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                    this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                    this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                    this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                    this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+                }
                 
                 // Keyboard
                 document.addEventListener('keydown', this.handleKeydown.bind(this));
@@ -842,7 +954,7 @@
                 this.wrapper.style.opacity = 1;
             },
             
-            // Mouse handlers
+            // Mouse handlers (for non-Android)
             handleMouseDown(e) {
                 if (e.button === 0) {
                     this.startX = e.clientX - this.x;
@@ -1049,6 +1161,9 @@
         // Initialize
         async function initialize() {
             try {
+                // Check Android first
+                checkAndroid();
+                
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
@@ -1098,7 +1213,11 @@
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
-                document.getElementById('bottomBar').style.display = 'flex';
+                
+                // Show bottom bar only if not Android
+                if (!isAndroid) {
+                    document.getElementById('bottomBar').style.display = 'flex';
+                }
                 
             } catch (error) {
                 console.error('Error loading images:', error);
@@ -1133,7 +1252,7 @@
                 item.appendChild(img);
                 
                 item.onclick = () => {
-                    if (selectMode) {
+                    if (selectMode && !isAndroid) {
                         toggleImageSelection(index);
                     } else {
                         viewer.open(index);
@@ -1144,8 +1263,13 @@
             });
         }
         
-        // Toggle select mode
+        // Toggle select mode (disabled on Android)
         function toggleSelectMode() {
+            if (isAndroid) {
+                showToast('ฟังก์ชันนี้ไม่สามารถใช้งานบน Android');
+                return;
+            }
+            
             selectMode = !selectMode;
             selectedImages.clear();
             
@@ -1205,8 +1329,13 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Download images
+        // Download images (disabled on Android)
         async function downloadImages() {
+            if (isAndroid) {
+                showToast('การดาวน์โหลดไม่สามารถใช้งานบน Android\nกรุณาใช้งานผ่านคอมพิวเตอร์');
+                return;
+            }
+            
             try {
                 let imagesToDownload = [];
                 
@@ -1222,8 +1351,8 @@
                 }
                 
                 // For mobile devices - special handling
-                if (isMobileDevice()) {
-                    // Check if Web Share API is available
+                if (isMobileDevice() && !isAndroid) {
+                    // iOS handling
                     if (navigator.share && navigator.canShare) {
                         showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
                         
@@ -1289,7 +1418,7 @@
                     }
                     
                 } else {
-                    // For PC - multi file download (unchanged)
+                    // For PC - multi file download
                     showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
                     
                     for (let i = 0; i < imagesToDownload.length; i++) {
@@ -1378,12 +1507,6 @@
         // Check if iOS
         function isIOS() {
             return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        }
-        
-        // Check if device is mobile
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
         
