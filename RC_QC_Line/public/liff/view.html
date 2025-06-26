@@ -516,6 +516,69 @@
             transition: width 0.3s;
         }
         
+        /* Android specific styles */
+        .android-download-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .android-download-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .android-download-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .android-download-message {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .android-download-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .android-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .android-btn-primary {
+            background: #00B900;
+            color: white;
+        }
+        
+        .android-btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
         /* Prevent iOS bounce */
         html, body {
             overscroll-behavior-y: contain;
@@ -569,6 +632,10 @@
             <span>💾</span>
             <span>ดาวน์โหลด</span>
         </button>
+        <button class="btn btn-secondary" id="externalBtn" onclick="openExternal()" style="display: none;">
+            <span>🌐</span>
+            <span>เบราว์เซอร์</span>
+        </button>
     </div>
     
     <!-- Image Viewer Modal -->
@@ -611,6 +678,30 @@
         </div>
     </div>
     
+    <!-- Android Download Modal -->
+    <div class="android-download-modal" id="androidDownloadModal">
+        <div class="android-download-content">
+            <div class="android-download-title">เลือกวิธีดาวน์โหลด</div>
+            <div class="android-download-message" id="androidDownloadMessage">
+                เลือกวิธีการดาวน์โหลดรูปภาพ
+            </div>
+            <div class="android-download-buttons">
+                <button class="android-btn android-btn-primary" onclick="androidDownloadMethod('zip')">
+                    📦 ดาวน์โหลด ZIP
+                </button>
+                <button class="android-btn android-btn-primary" onclick="androidDownloadMethod('open')">
+                    📱 เปิดในเบราว์เซอร์
+                </button>
+                <button class="android-btn android-btn-primary" onclick="androidDownloadMethod('direct')">
+                    💾 ดาวน์โหลดตรง
+                </button>
+                <button class="android-btn android-btn-secondary" onclick="closeAndroidModal()">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Include FileSaver for downloading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
@@ -622,6 +713,8 @@
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
+        let isAndroid = false;
+        let pendingDownloadImages = [];
         
         // Image Viewer System
         const viewer = {
@@ -1049,6 +1142,15 @@
         // Initialize
         async function initialize() {
             try {
+                // Detect Android
+                isAndroid = /Android/i.test(navigator.userAgent);
+                console.log('Device:', isAndroid ? 'Android' : 'Other');
+                
+                // Show external browser button for Android
+                if (isAndroid) {
+                    document.getElementById('externalBtn').style.display = 'flex';
+                }
+                
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
@@ -1205,7 +1307,7 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Download images
+        // Download images - Enhanced for Android
         async function downloadImages() {
             try {
                 let imagesToDownload = [];
@@ -1221,114 +1323,12 @@
                     return;
                 }
                 
-                // For mobile devices - special handling
-                if (isMobileDevice()) {
-                    // Always try Web Share API first for all mobile devices
-                    if (navigator.share) {
-                        showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
-                        
-                        try {
-                            // Prepare all files
-                            const files = [];
-                            
-                            for (let i = 0; i < imagesToDownload.length; i++) {
-                                const image = imagesToDownload[i];
-                                const imageIndex = images.indexOf(image);
-                                
-                                try {
-                                    const response = await fetch(image.url);
-                                    const blob = await response.blob();
-                                    const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
-                                    files.push(file);
-                                } catch (error) {
-                                    console.error(`Error preparing image ${i + 1}:`, error);
-                                }
-                            }
-                            
-                            if (files.length > 0) {
-                                try {
-                                    // Try to share multiple files
-                                    if (navigator.canShare && navigator.canShare({ files: files })) {
-                                        await navigator.share({
-                                            files: files
-                                        });
-                                        showToast('✅ บันทึกรูปภาพเรียบร้อย');
-                                    } else {
-                                        // Share one by one
-                                        for (let i = 0; i < files.length; i++) {
-                                            await navigator.share({
-                                                files: [files[i]]
-                                            });
-                                            
-                                            if (i < files.length - 1) {
-                                                await new Promise(resolve => setTimeout(resolve, 300));
-                                            }
-                                        }
-                                        showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
-                                    }
-                                } catch (shareError) {
-                                    // If user cancels, it's ok
-                                    if (shareError.name === 'AbortError') {
-                                        showToast('ยกเลิกการบันทึก');
-                                    } else {
-                                        console.error('Share error:', shareError);
-                                        showToast('⚠️ เกิดข้อผิดพลาด กรุณาลองใหม่');
-                                    }
-                                }
-                            }
-                            
-                        } catch (error) {
-                            console.error('Error preparing files:', error);
-                            // Fallback for Android if Share API completely fails
-                            await downloadFallback(imagesToDownload);
-                        }
-                        
-                    } else {
-                        // No Share API - use direct download
-                        await downloadFallback(imagesToDownload);
-                    }
-                    
+                // For Android, use blob download method
+                if (isAndroid) {
+                    await androidBlobDownload(imagesToDownload);
                 } else {
-                    // For PC - multi file download (unchanged)
-                    showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
-                    
-                    for (let i = 0; i < imagesToDownload.length; i++) {
-                        const image = imagesToDownload[i];
-                        const imageIndex = images.indexOf(image);
-                        
-                        try {
-                            const response = await fetch(image.url);
-                            const blob = await response.blob();
-                            const blobUrl = URL.createObjectURL(blob);
-                            
-                            const a = document.createElement('a');
-                            a.href = blobUrl;
-                            a.download = `RC_${lotNumber}_${imageIndex + 1}.jpg`;
-                            a.style.display = 'none';
-                            
-                            document.body.appendChild(a);
-                            a.click();
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(blobUrl);
-                            }, 100);
-                            
-                            if (i < imagesToDownload.length - 1) {
-                                await new Promise(resolve => setTimeout(resolve, 200));
-                            }
-                            
-                        } catch (error) {
-                            console.error(`Error downloading image ${i + 1}:`, error);
-                        }
-                    }
-                    
-                    showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูปเสร็จสิ้น`);
-                }
-                
-                // Exit select mode if active
-                if (selectMode) {
-                    toggleSelectMode();
+                    // For iOS and others, use standard method
+                    await standardDownload(imagesToDownload);
                 }
                 
             } catch (error) {
@@ -1337,7 +1337,175 @@
             }
         }
         
-        // Fallback download method for mobile
+        // Android: Blob download method (works like iOS)
+        async function androidBlobDownload(imagesToDownload) {
+            showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
+            
+            // Check if we can use FileSaver.js
+            const useFileSaver = typeof saveAs !== 'undefined';
+            
+            for (let i = 0; i < imagesToDownload.length; i++) {
+                const image = imagesToDownload[i];
+                const imageIndex = images.indexOf(image);
+                const filename = `RC_${lotNumber}_${imageIndex + 1}.jpg`;
+                
+                try {
+                    // Fetch image as blob
+                    const response = await fetch(image.url);
+                    const blob = await response.blob();
+                    
+                    if (useFileSaver) {
+                        // Method 1: Use FileSaver.js (most reliable)
+                        saveAs(blob, filename);
+                    } else {
+                        // Method 2: Manual blob download
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = blobUrl;
+                        a.download = filename;
+                        a.setAttribute('download', filename); // Force download attribute
+                        
+                        document.body.appendChild(a);
+                        
+                        // Try multiple click methods
+                        if (a.click) {
+                            a.click();
+                        } else {
+                            const evt = document.createEvent('MouseEvents');
+                            evt.initEvent('click', true, true);
+                            a.dispatchEvent(evt);
+                        }
+                        
+                        // Clean up
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(blobUrl);
+                        }, 100);
+                    }
+                    
+                    // Alternative: Try data URI method for small images
+                    if (blob.size < 2 * 1024 * 1024) { // Less than 2MB
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            const dataUrl = reader.result;
+                            const a = document.createElement('a');
+                            a.href = dataUrl;
+                            a.download = filename;
+                            a.click();
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                    if (imagesToDownload.length > 1) {
+                        showToast(`ดาวน์โหลด ${i + 1}/${imagesToDownload.length}`, 1000);
+                    }
+                    
+                    // Small delay between downloads
+                    if (i < imagesToDownload.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error downloading image ${i + 1}:`, error);
+                    
+                    // Fallback: Try direct link
+                    try {
+                        const a = document.createElement('a');
+                        a.href = image.url;
+                        a.download = filename;
+                        a.target = '_blank';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch (fallbackError) {
+                        console.error('Fallback download also failed:', fallbackError);
+                    }
+                }
+            }
+            
+            showToast(`✅ ดาวน์โหลด ${imagesToDownload.length} รูปเสร็จสิ้น\n📁 ตรวจสอบในโฟลเดอร์ Downloads`);
+            
+            // Exit select mode if active
+            if (selectMode) {
+                toggleSelectMode();
+            }
+        }
+        
+        // Standard download for iOS
+        async function standardDownload(imagesToDownload) {
+            // For iOS - use Web Share API
+            if (navigator.share) {
+                showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
+                
+                try {
+                    // Prepare all files
+                    const files = [];
+                    
+                    for (let i = 0; i < imagesToDownload.length; i++) {
+                        const image = imagesToDownload[i];
+                        const imageIndex = images.indexOf(image);
+                        
+                        try {
+                            const response = await fetch(image.url);
+                            const blob = await response.blob();
+                            const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
+                            files.push(file);
+                        } catch (error) {
+                            console.error(`Error preparing image ${i + 1}:`, error);
+                        }
+                    }
+                    
+                    if (files.length > 0) {
+                        try {
+                            // Try to share multiple files
+                            if (navigator.canShare && navigator.canShare({ files: files })) {
+                                await navigator.share({
+                                    files: files
+                                });
+                                showToast('✅ บันทึกรูปภาพเรียบร้อย');
+                            } else {
+                                // Share one by one
+                                for (let i = 0; i < files.length; i++) {
+                                    await navigator.share({
+                                        files: [files[i]]
+                                    });
+                                    
+                                    if (i < files.length - 1) {
+                                        await new Promise(resolve => setTimeout(resolve, 300));
+                                    }
+                                }
+                                showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
+                            }
+                        } catch (shareError) {
+                            // If user cancels, it's ok
+                            if (shareError.name === 'AbortError') {
+                                showToast('ยกเลิกการบันทึก');
+                            } else {
+                                console.error('Share error:', shareError);
+                                showToast('⚠️ เกิดข้อผิดพลาด กรุณาลองใหม่');
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Error preparing files:', error);
+                    // Fallback
+                    await downloadFallback(imagesToDownload);
+                }
+                
+            } else {
+                // No Share API - use direct download
+                await downloadFallback(imagesToDownload);
+            }
+            
+            // Exit select mode if active
+            if (selectMode) {
+                toggleSelectMode();
+            }
+        }
+        
+        // Fallback download method
         async function downloadFallback(imagesToDownload) {
             showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
             
@@ -1381,12 +1549,6 @@
                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
         
-        // Check if device is mobile
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        }
-        
         // Show error
         function showError(message, details = null) {
             document.getElementById('loading').style.display = 'none';
@@ -1415,6 +1577,22 @@
             setTimeout(() => {
                 toast.remove();
             }, duration);
+        }
+        
+        // Open in external browser
+        function openExternal() {
+            const currentUrl = window.location.href;
+            // Use LIFF openWindow to open in external browser
+            if (window.liff && window.liff.openWindow) {
+                window.liff.openWindow({
+                    url: currentUrl,
+                    external: true
+                });
+            } else {
+                // Fallback - create a share-able link
+                const externalUrl = currentUrl.replace('liff.line.me', 'line.ruxchai.co.th');
+                window.open(externalUrl, '_blank');
+            }
         }
         
         // Initialize on load
