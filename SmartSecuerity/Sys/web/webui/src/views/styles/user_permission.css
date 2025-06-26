@@ -1,0 +1,193 @@
+.multiline-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+label[for="searchQuestion"] {
+  font-weight: normal;
+}
+
+.scrolling-container {
+  max-height: 600px;
+  /* But */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.btn-dan {
+  display: flex;
+  align-items: center;
+  height: 29px;
+}
+
+.btn-dan i {
+  margin-right: 5px;
+}
+
+.edit-button {
+  background-color: #2464b4;
+  border-color: #2464b4;
+  padding: 7px;
+  border-radius: 7px;
+  color: white;
+}
+
+.edit-button:hover {
+  background-color: #2465b4e8;
+  border-color: #2465b4e8;
+  transform: translateY(-2px);
+  transition: 0.5s ease;
+}
+
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  margin: 20px 0;
+}
+
+h3 {
+  color: #2c3e50;
+  font-weight: 600;
+  border-bottom: 2px solid #194f91;
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #e1e1e1;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: #194f91;
+  box-shadow: 0 0 0 0.2rem rgba(25, 79, 145, 0.1);
+}
+
+.scrolling-container {
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+  margin-bottom: 0;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+.table thead th {
+  background: #2464b4;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  padding: 15px;
+  border: none;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+/* .table tbody tr:hover {
+    background-color: #f8f9ff;
+    transform: scale(1.001);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  } */
+
+.table td {
+  padding: 12px 15px;
+  vertical-align: middle;
+  border-top: 1px solid #f0f0f0;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #f8fafc;
+}
+
+.page-item {
+  margin: 0 3px;
+}
+
+.page-link {
+  border: none;
+  padding: 8px 16px;
+  color: #194f91;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.page-item.active .page-link {
+  background-color: #194f91;
+  color: white;
+  box-shadow: 0 2px 5px rgba(25, 79, 145, 0.3);
+}
+
+.page-item:not(.active) .page-link:hover {
+  background-color: #e9ecef;
+  color: #194f91;
+  transform: translateY(-2px);
+}
+
+.page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  background-color: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+  .card-body {
+    padding: 15px;
+  }
+
+  .table thead th {
+    font-size: 0.8rem;
+    padding: 10px;
+  }
+
+  .table td {
+    font-size: 0.8rem;
+    padding: 10px;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-control {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
+.create-button {
+  background-color: #76bc43;
+  padding: 7px;
+  border-radius: 7px;
+  color: white;
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  transition: 0.5s;
+  background-color: #75bc43d2;
+}
