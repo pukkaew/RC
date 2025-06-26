@@ -47,29 +47,7 @@
             opacity: 0.9;
         }
         
-        /* Close button for Android */
-        .close-btn {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.9);
-            border: none;
-            border-radius: 50%;
-            color: #00B900;
-            font-size: 24px;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 101;
-        }
-        
-        body.android .close-btn {
-            display: flex;
-        }
+        /* Close button for Android - removed */
         
         /* Loading */
         .loading {
@@ -157,7 +135,7 @@
             z-index: 1;
         }
         
-        /* Bottom Bar - Hide on Android */
+        /* Bottom Bar */
         .bottom-bar {
             position: fixed;
             bottom: 0;
@@ -171,8 +149,28 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
         
+        /* Android-specific bottom bar */
         body.android .bottom-bar {
-            display: none !important;
+            justify-content: center;
+            padding: 15px;
+        }
+        
+        body.android .bottom-bar .btn:not(.btn-close) {
+            display: none;
+        }
+        
+        /* Close button for Android */
+        .btn-close {
+            display: none;
+            background: #FF0000;
+            color: white;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        body.android .btn-close {
+            display: flex;
         }
         
         .btn {
@@ -592,8 +590,7 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- Close button for Android -->
-    <button class="close-btn" onclick="closePage()">✕</button>
+    <!-- Close button for Android - removed -->
     
     <!-- No Auth Notice -->
     <div class="no-auth-notice">
@@ -602,7 +599,7 @@
     
     <!-- Android Notice -->
     <div class="android-notice">
-        📱 อุปกรณ์ Android - แตะรูปเพื่อดูขนาดใหญ่ | ใช้ปุ่ม ✕ เพื่อปิดหน้านี้
+        📱 อุปกรณ์ Android - แตะรูปเพื่อดูขนาดใหญ่ | กดปุ่มปิดด้านล่างเพื่อออก
     </div>
     
     <!-- Selection Counter -->
@@ -639,6 +636,10 @@
         <button class="btn btn-primary" id="downloadBtn" onclick="downloadImages()">
             <span>💾</span>
             <span>ดาวน์โหลด</span>
+        </button>
+        <button class="btn btn-close" onclick="closePage()">
+            <span>✖</span>
+            <span>ปิด</span>
         </button>
     </div>
     
@@ -1214,10 +1215,8 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
                 
-                // Show bottom bar only if not Android
-                if (!isAndroid) {
-                    document.getElementById('bottomBar').style.display = 'flex';
-                }
+                // Always show bottom bar
+                document.getElementById('bottomBar').style.display = 'flex';
                 
             } catch (error) {
                 console.error('Error loading images:', error);
