@@ -20,11 +20,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Adjust padding for Android (no bottom bar) */
-        body.android {
-            padding-bottom: 10px;
-        }
-        
         /* Header */
         .header {
             background: #00B900;
@@ -46,8 +41,6 @@
             font-size: 14px;
             opacity: 0.9;
         }
-        
-        /* Close button for Android - removed */
         
         /* Loading */
         .loading {
@@ -149,11 +142,6 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
         
-        /* Hide bottom bar on Android */
-        body.android .bottom-bar {
-            display: none !important;
-        }
-        
         .btn {
             flex: 1;
             padding: 12px;
@@ -196,11 +184,7 @@
             transform: scale(1);
         }
         
-        /* Select Mode - Disabled on Android */
-        body.android .image-grid.select-mode .image-item::before {
-            display: none;
-        }
-        
+        /* Select Mode */
         .select-mode .image-item::before {
             content: '';
             position: absolute;
@@ -464,11 +448,6 @@
             backdrop-filter: blur(10px);
         }
         
-        /* Adjust toast position for Android */
-        body.android .toast {
-            bottom: 20px;
-        }
-        
         @keyframes slideUp {
             from {
                 transform: translateX(-50%) translateY(100%);
@@ -480,7 +459,7 @@
             }
         }
         
-        /* Selection counter - Hide on Android */
+        /* Selection counter */
         .selection-counter {
             position: fixed;
             top: 70px;
@@ -497,10 +476,6 @@
             z-index: 50;
         }
         
-        body.android .selection-counter {
-            display: none !important;
-        }
-        
         /* No Auth Notice */
         .no-auth-notice {
             background: #fff3cd;
@@ -509,23 +484,6 @@
             padding: 10px;
             text-align: center;
             font-size: 12px;
-        }
-        
-        /* Android notice */
-        .android-notice {
-            display: none;
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            color: #1565c0;
-            padding: 10px;
-            text-align: center;
-            font-size: 12px;
-            margin: 10px;
-            border-radius: 8px;
-        }
-        
-        body.android .android-notice {
-            display: block;
         }
         
         /* Download Progress */
@@ -571,16 +529,9 @@
         <div class="info" id="headerInfo">กำลังโหลด...</div>
     </div>
     
-    <!-- Close button for Android - removed -->
-    
     <!-- No Auth Notice -->
     <div class="no-auth-notice">
         💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
-    </div>
-    
-    <!-- Android Notice -->
-    <div class="android-notice">
-        📱 อุปกรณ์ Android - แตะรูปเพื่อดูขนาดใหญ่ | ปัดกลับหรือกด Back เพื่อออก
     </div>
     
     <!-- Selection Counter -->
@@ -618,7 +569,6 @@
             <span>💾</span>
             <span>ดาวน์โหลด</span>
         </button>
-
     </div>
     
     <!-- Image Viewer Modal -->
@@ -661,9 +611,6 @@
         </div>
     </div>
     
-    <!-- Include LIFF SDK -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    
     <!-- Include FileSaver for downloading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
@@ -675,22 +622,6 @@
         let lotNumber = '';
         let imageDate = '';
         let baseUrl = '';
-        let isAndroid = false;
-        
-        // Check if device is Android
-        function checkAndroid() {
-            const userAgent = navigator.userAgent.toLowerCase();
-            isAndroid = /android/i.test(userAgent);
-            
-            if (isAndroid) {
-                document.body.classList.add('android');
-                console.log('Android device detected');
-            }
-            
-            return isAndroid;
-        }
-        
-        
         
         // Image Viewer System
         const viewer = {
@@ -734,14 +665,12 @@
                 this.container.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
                 this.container.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
                 
-                // Mouse events (not needed on Android but keep for compatibility)
-                if (!isAndroid) {
-                    this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
-                    this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
-                    this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
-                    this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
-                    this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
-                }
+                // Mouse events
+                this.container.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.container.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.container.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                this.container.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
                 
                 // Keyboard
                 document.addEventListener('keydown', this.handleKeydown.bind(this));
@@ -913,7 +842,7 @@
                 this.wrapper.style.opacity = 1;
             },
             
-            // Mouse handlers (for non-Android)
+            // Mouse handlers
             handleMouseDown(e) {
                 if (e.button === 0) {
                     this.startX = e.clientX - this.x;
@@ -1120,19 +1049,6 @@
         // Initialize
         async function initialize() {
             try {
-                // Check Android first
-                checkAndroid();
-                
-                // Try to initialize LIFF if available
-                if (typeof liff !== 'undefined') {
-                    try {
-                        await liff.init({ liffId: '2007575196-NWaXrZVE' });
-                        console.log('LIFF initialized successfully');
-                    } catch (liffError) {
-                        console.log('LIFF init failed, continuing without LIFF:', liffError);
-                    }
-                }
-                
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
                 lotNumber = params.get('lot') || '';
@@ -1182,11 +1098,7 @@
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
-                
-                // Show bottom bar only for iOS/PC
-                if (!isAndroid) {
-                    document.getElementById('bottomBar').style.display = 'flex';
-                }
+                document.getElementById('bottomBar').style.display = 'flex';
                 
             } catch (error) {
                 console.error('Error loading images:', error);
@@ -1221,7 +1133,7 @@
                 item.appendChild(img);
                 
                 item.onclick = () => {
-                    if (selectMode && !isAndroid) {
+                    if (selectMode) {
                         toggleImageSelection(index);
                     } else {
                         viewer.open(index);
@@ -1232,13 +1144,8 @@
             });
         }
         
-        // Toggle select mode (disabled on Android)
+        // Toggle select mode
         function toggleSelectMode() {
-            if (isAndroid) {
-                showToast('ฟังก์ชันนี้ไม่สามารถใช้งานบน Android');
-                return;
-            }
-            
             selectMode = !selectMode;
             selectedImages.clear();
             
@@ -1298,13 +1205,8 @@
             counter.textContent = `เลือกแล้ว ${selectedImages.size} รูป`;
         }
         
-        // Download images (disabled on Android)
+        // Download images
         async function downloadImages() {
-            if (isAndroid) {
-                showToast('การดาวน์โหลดไม่สามารถใช้งานบน Android\nกรุณาใช้งานผ่านคอมพิวเตอร์');
-                return;
-            }
-            
             try {
                 let imagesToDownload = [];
                 
@@ -1320,74 +1222,83 @@
                 }
                 
                 // For mobile devices - special handling
-                if (isMobileDevice() && !isAndroid) {
-                    // iOS handling
-                    if (navigator.share && navigator.canShare) {
-                        showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
-                        
-                        try {
-                            // Prepare all files
-                            const files = [];
+                if (isMobileDevice()) {
+                    // Check if we're in LINE app
+                    const isInLineApp = /Line/i.test(navigator.userAgent);
+                    
+                    // For LINE app (both iOS and Android) - use Web Share API
+                    if (isInLineApp) {
+                        // Check if Web Share API is available
+                        if (navigator.share && navigator.canShare) {
+                            showToast(`กำลังเตรียม ${imagesToDownload.length} รูป...`);
                             
-                            for (let i = 0; i < imagesToDownload.length; i++) {
-                                const image = imagesToDownload[i];
-                                const imageIndex = images.indexOf(image);
+                            try {
+                                // Prepare all files
+                                const files = [];
                                 
-                                try {
-                                    const response = await fetch(image.url);
-                                    const blob = await response.blob();
-                                    const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
-                                    files.push(file);
-                                } catch (error) {
-                                    console.error(`Error preparing image ${i + 1}:`, error);
-                                }
-                            }
-                            
-                            // Check if we can share multiple files
-                            if (files.length > 0 && navigator.canShare({ files: files })) {
-                                // Share all files at once
-                                await navigator.share({
-                                    files: files
-                                });
-                                
-                                showToast('✅ บันทึกรูปภาพเรียบร้อย');
-                            } else {
-                                // Fallback: Share one by one
-                                showToast('กำลังบันทึกรูปภาพทีละรูป...');
-                                
-                                for (let i = 0; i < files.length; i++) {
+                                for (let i = 0; i < imagesToDownload.length; i++) {
+                                    const image = imagesToDownload[i];
+                                    const imageIndex = images.indexOf(image);
+                                    
                                     try {
-                                        await navigator.share({
-                                            files: [files[i]]
-                                        });
-                                        
-                                        // Small delay between shares
-                                        if (i < files.length - 1) {
-                                            await new Promise(resolve => setTimeout(resolve, 500));
-                                        }
+                                        const response = await fetch(image.url);
+                                        const blob = await response.blob();
+                                        const file = new File([blob], `RC_${lotNumber}_${imageIndex + 1}.jpg`, { type: 'image/jpeg' });
+                                        files.push(file);
                                     } catch (error) {
-                                        if (error.name !== 'AbortError') {
-                                            console.error(`Error sharing image ${i + 1}:`, error);
-                                        }
+                                        console.error(`Error preparing image ${i + 1}:`, error);
                                     }
                                 }
                                 
-                                showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
+                                // Check if we can share multiple files
+                                if (files.length > 0 && navigator.canShare({ files: files })) {
+                                    // Share all files at once
+                                    await navigator.share({
+                                        files: files
+                                    });
+                                    
+                                    showToast('✅ บันทึกรูปภาพเรียบร้อย');
+                                } else {
+                                    // Fallback: Share one by one
+                                    showToast('กำลังบันทึกรูปภาพทีละรูป...');
+                                    
+                                    for (let i = 0; i < files.length; i++) {
+                                        try {
+                                            await navigator.share({
+                                                files: [files[i]]
+                                            });
+                                            
+                                            // Small delay between shares
+                                            if (i < files.length - 1) {
+                                                await new Promise(resolve => setTimeout(resolve, 500));
+                                            }
+                                        } catch (error) {
+                                            if (error.name !== 'AbortError') {
+                                                console.error(`Error sharing image ${i + 1}:`, error);
+                                            }
+                                        }
+                                    }
+                                    
+                                    showToast(`✅ บันทึก ${files.length} รูปเรียบร้อย`);
+                                }
+                                
+                            } catch (error) {
+                                console.error('Share error:', error);
+                                // If share fails, show instruction
+                                showToast('⚠️ ไม่สามารถบันทึกอัตโนมัติได้\n💡 กรุณาเลือก "บันทึกรูปภาพ" หรือ "Save to device"');
                             }
-                            
-                        } catch (error) {
-                            console.error('Share error:', error);
-                            // Fallback to download method
-                            await downloadFallback(imagesToDownload);
+                        } else {
+                            // No Web Share API in LINE - show warning
+                            showToast('⚠️ LINE app ไม่รองรับการดาวน์โหลดตรง\n💡 กรุณาเปิดในเบราว์เซอร์แทน');
                         }
                         
                     } else {
-                        // No Web Share API - use fallback
+                        // Regular mobile browser - use standard download
                         await downloadFallback(imagesToDownload);
                     }
                     
                 } else {
-                    // For PC - multi file download
+                    // For PC - multi file download (unchanged)
                     showToast(`กำลังดาวน์โหลด ${imagesToDownload.length} รูป...`);
                     
                     for (let i = 0; i < imagesToDownload.length; i++) {
@@ -1476,6 +1387,12 @@
         // Check if iOS
         function isIOS() {
             return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+        
+        // Check if device is mobile
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
         
