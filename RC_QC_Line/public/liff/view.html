@@ -159,26 +159,6 @@
             display: none;
         }
         
-        /* Close button for Android */
-        .btn-close {
-            display: none;
-            background: #FF0000 !important;
-            color: white !important;
-            padding: 15px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            min-width: 120px;
-        }
-        
-        body.android .btn-close {
-            display: flex !important;
-        }
-        
-        .btn-close:active {
-            background: #CC0000 !important;
-            transform: scale(0.95);
-        }
-        
         .btn {
             flex: 1;
             padding: 12px;
@@ -587,16 +567,6 @@
         html, body {
             overscroll-behavior-y: contain;
         }
-        
-        /* Ensure buttons are clickable */
-        .bottom-bar .btn {
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            touch-action: manipulation;
-        }
     </style>
 </head>
 <body>
@@ -725,47 +695,28 @@
             return isAndroid;
         }
         
-        // Close page function - Enhanced version
+        // Close page function
         function closePage() {
-            console.log('Close page called');
-            
             try {
-                // Method 1: Try LIFF close first
+                // Try LIFF close first
                 if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
-                    console.log('Trying LIFF close...');
                     liff.closeWindow();
-                    return;
-                }
-                
-                // Method 2: Try to go back in history
-                if (window.history.length > 1) {
-                    console.log('Going back in history...');
-                    window.history.back();
-                    
-                    // Set timeout to check if still on page
-                    setTimeout(() => {
-                        // If still here after 500ms, try other methods
-                        console.log('History back might have failed, trying window.close()');
-                        window.close();
-                        
-                        // Final fallback
-                        setTimeout(() => {
-                            showToast('กรุณาใช้ปุ่ม Back ของเบราว์เซอร์หรือปิดแท็บนี้');
-                        }, 500);
-                    }, 500);
                 } else {
-                    // Method 3: Direct close
-                    console.log('Trying window.close()...');
-                    window.close();
-                    
-                    // If we're still here, show message
-                    setTimeout(() => {
-                        showToast('กรุณาใช้ปุ่ม Back ของเบราว์เซอร์หรือปิดแท็บนี้');
-                    }, 500);
+                    // Try to go back in history
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // Last resort - try to close window
+                        window.close();
+                        // If still here, show message
+                        setTimeout(() => {
+                            showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+                        }, 500);
+                    }
                 }
             } catch (error) {
                 console.error('Error closing page:', error);
-                showToast('กรุณาใช้ปุ่ม Back ของเบราว์เซอร์หรือปิดแท็บนี้');
+                showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
             }
         }
         
@@ -1253,39 +1204,6 @@
                 // Always show bottom bar
                 document.getElementById('bottomBar').style.display = 'flex';
                 
-                // Add event listeners to buttons
-                setTimeout(() => {
-                    // Ensure close button works
-                    const closeBtn = document.querySelector('.btn-close');
-                    if (closeBtn) {
-                        closeBtn.removeAttribute('disabled');
-                        closeBtn.style.pointerEvents = 'auto';
-                        closeBtn.style.cursor = 'pointer';
-                        
-                        // Add click listener as backup
-                        closeBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            closePage();
-                        });
-                        
-                        // Add touch listener for mobile
-                        closeBtn.addEventListener('touchend', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            closePage();
-                        });
-                    }
-                    
-                    // Disable other buttons on Android
-                    if (isAndroid) {
-                        const selectBtn = document.getElementById('selectBtn');
-                        const downloadBtn = document.getElementById('downloadBtn');
-                        if (selectBtn) selectBtn.disabled = true;
-                        if (downloadBtn) downloadBtn.disabled = true;
-                    }
-                }, 100);
-                
             } catch (error) {
                 console.error('Error loading images:', error);
                 showError(`เกิดข้อผิดพลาดในการโหลดรูปภาพ\n\n${error.message}`);
@@ -1334,12 +1252,6 @@
         function toggleSelectMode() {
             if (isAndroid) {
                 showToast('ฟังก์ชันนี้ไม่สามารถใช้งานบน Android');
-                return;
-            }
-            
-            // Prevent if button is disabled
-            const selectBtn = document.getElementById('selectBtn');
-            if (selectBtn.disabled) {
                 return;
             }
             
@@ -1406,12 +1318,6 @@
         async function downloadImages() {
             if (isAndroid) {
                 showToast('การดาวน์โหลดไม่สามารถใช้งานบน Android\nกรุณาใช้งานผ่านคอมพิวเตอร์');
-                return;
-            }
-            
-            // Prevent if button is disabled
-            const downloadBtn = document.getElementById('downloadBtn');
-            if (downloadBtn.disabled) {
                 return;
             }
             
