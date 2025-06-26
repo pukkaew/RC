@@ -1063,6 +1063,16 @@
                 // Update header with lot number
                 document.querySelector('.header h1').textContent = `📸 รูปภาพ ${lotNumber}`;
                 
+                // Check if Android in LINE app - hide bottom bar
+                const isAndroidInLine = /Android/i.test(navigator.userAgent) && /Line/i.test(navigator.userAgent);
+                if (isAndroidInLine) {
+                    document.getElementById('bottomBar').style.display = 'none';
+                    document.body.style.paddingBottom = '0';
+                    
+                    // Show warning message
+                    showToast('⚠️ LINE app ไม่รองรับการดาวน์โหลดตรง\n💡 กรุณาเปิดในเบราว์เซอร์แทน');
+                }
+                
                 // Initialize viewer
                 viewer.init();
                 
@@ -1098,7 +1108,12 @@
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
-                document.getElementById('bottomBar').style.display = 'flex';
+                
+                // Only show bottom bar if not Android in LINE
+                const isAndroidInLine = /Android/i.test(navigator.userAgent) && /Line/i.test(navigator.userAgent);
+                if (!isAndroidInLine) {
+                    document.getElementById('bottomBar').style.display = 'flex';
+                }
                 
             } catch (error) {
                 console.error('Error loading images:', error);
