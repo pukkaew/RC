@@ -159,7 +159,7 @@
             display: none;
         }
         
-        /* Close button for Android */
+        /* Close button - show for all mobile devices */
         .btn-close {
             display: none;
             background: #FF0000;
@@ -169,14 +169,29 @@
             font-weight: 600;
         }
         
-        body.android .btn-close {
-            display: flex;
+        /* Show close button on mobile devices (Android & iOS) */
+        @media (max-width: 768px) {
+            .btn-close {
+                display: flex !important;
+            }
+            
+            /* Hide other buttons on mobile */
+            .bottom-bar .btn:not(.btn-close) {
+                display: none !important;
+            }
+            
+            .bottom-bar {
+                justify-content: center;
+                padding: 15px;
+            }
         }
         
-        /* Show close button on iOS too if not working */
-        body:not(.android) .btn-close {
-            display: flex;
-            background: #666;
+        /* PC specific */
+        @media (min-width: 769px) {
+            /* Keep all buttons visible on PC */
+            .btn-close {
+                display: none !important;
+            }
         }
         
         .btn {
@@ -536,8 +551,8 @@
             font-size: 12px;
         }
         
-        /* Android notice */
-        .android-notice {
+        /* Android notice - updated for all mobile */
+        .mobile-notice {
             display: none;
             background: #e3f2fd;
             border: 1px solid #90caf9;
@@ -549,8 +564,10 @@
             border-radius: 8px;
         }
         
-        body.android .android-notice {
-            display: block;
+        @media (max-width: 768px) {
+            .mobile-notice {
+                display: block;
+            }
         }
         
         /* Download Progress */
@@ -603,9 +620,9 @@
         💡 โหมดดูรูปภาพ - ไม่ต้องเข้าสู่ระบบ
     </div>
     
-    <!-- Android Notice -->
-    <div class="android-notice">
-        📱 อุปกรณ์ Android - แตะรูปเพื่อดูขนาดใหญ่ | กดปุ่มปิดด้านล่างเพื่อออก
+    <!-- Mobile Notice -->
+    <div class="mobile-notice">
+        📱 โหมดมือถือ - แตะรูปเพื่อดูขนาดใหญ่ | กดปุ่มปิดด้านล่างเพื่อออก
     </div>
     
     <!-- Selection Counter -->
@@ -704,6 +721,21 @@
         let imageDate = '';
         let baseUrl = '';
         let isAndroid = false;
+        let liffInitialized = false;
+        
+        // Initialize LIFF
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                liffInitialized = true;
+                console.log('LIFF initialized successfully');
+                console.log('LIFF in client:', liff.isInClient());
+                console.log('LIFF logged in:', liff.isLoggedIn());
+            } catch (error) {
+                console.error('LIFF initialization failed:', error);
+                liffInitialized = false;
+            }
+        }
         
         // Check if device is Android
         function checkAndroid() {
@@ -718,48 +750,79 @@
             return isAndroid;
         }
         
-        // Close page function - Enhanced for LIFF
-        function closePage() {
-            console.log('Attempting to close page...');
-            
+        // Close page function - Enhanced version
+        async function closePage() {
             try {
-                // Method 1: Try LIFF close first (most reliable)
-                if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
-                    console.log('Using LIFF closeWindow()');
-                    liff.closeWindow();
-                    
-                    // Fallback after delay
-                    setTimeout(() => {
-                        console.log('LIFF close might have failed, trying alternatives...');
-                        tryAlternativeClose();
-                    }, 500);
-                } else {
-                    console.log('Not in LIFF client, trying alternatives...');
-                    tryAlternativeClose();
+                console.log('Attempting to close page...');
+                console.log('LIFF initialized:', liffInitialized);
+                console.log('LIFF available:', typeof liff !== 'undefined');
+                
+                // Method 1: Try LIFF close if available
+                if (typeof liff !== 'undefined' && liffInitialized) {
+                    console.log('Using LIFF close...');
+                    if (liff.isInClient()) {
+                        console.log('In LIFF client, closing window...');
+                        liff.closeWindow();
+                        
+                        // Fallback after delay
+                        setTimeout(() => {
+                            console.log('LIFF close may have failed, trying alternatives...');
+                            tryAlternativeClose();
+                        }, 1000);
+                        return;
+                    }
                 }
+                
+                // If not in LIFF or LIFF failed, try alternatives
+                tryAlternativeClose();
+                
             } catch (error) {
                 console.error('Error in closePage:', error);
                 tryAlternativeClose();
             }
         }
         
-        // Try alternative close methods
+        // Alternative close methods
         function tryAlternativeClose() {
             try {
-                // Method 2: Try to navigate away
+                // Method 2: Try window.close() for popup windows
                 if (window.opener) {
+                    console.log('Closing popup window...');
                     window.close();
-                } else if (window.history.length > 1) {
-                    // Go back in history
-                    window.history.back();
-                } else {
-                    // Method 3: Try to redirect to LINE
-                    window.location.href = 'line://nv/chat';
+                    return;
                 }
+                
+                // Method 3: Try history back
+                if (window.history.length > 1) {
+                    console.log('Going back in history...');
+                    window.history.back();
+                    
+                    // Double back for some cases
+                    setTimeout(() => {
+                        if (window.history.length > 1) {
+                            window.history.back();
+                        }
+                    }, 100);
+                    return;
+                }
+                
+                // Method 4: Try to navigate to LINE app
+                if (isAndroid) {
+                    console.log('Trying LINE intent for Android...');
+                    window.location.href = 'intent://line.me/R/#Intent;scheme=line;package=jp.naver.line.android;end';
+                } else if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    console.log('Trying LINE scheme for iOS...');
+                    window.location.href = 'line://';
+                }
+                
+                // Method 5: Last resort - show message
+                setTimeout(() => {
+                    showToast('กดปุ่ม ← หรือปิดแท็บเพื่อออก');
+                }, 500);
+                
             } catch (error) {
-                console.error('All close methods failed:', error);
-                // Last resort - show instruction
-                showToast('กรุณากด ← หรือปัดกลับเพื่อปิดหน้านี้');
+                console.error('Error in alternative close:', error);
+                showToast('กดปุ่ม ← หรือปิดแท็บเพื่อออก');
             }
         }
         
@@ -1191,23 +1254,11 @@
         // Initialize
         async function initialize() {
             try {
-                // Check Android first
-                checkAndroid();
+                // Initialize LIFF first
+                await initializeLiff();
                 
-                // Initialize LIFF if available
-                if (typeof liff !== 'undefined') {
-                    try {
-                        await liff.init({ 
-                            liffId: '2007575196-NWaXrZVE',
-                            withLoginOnExternalBrowser: false
-                        });
-                        console.log('LIFF initialized successfully');
-                        console.log('Is in client:', liff.isInClient());
-                    } catch (liffError) {
-                        console.error('LIFF init error:', liffError);
-                        // Continue without LIFF
-                    }
-                }
+                // Check Android
+                checkAndroid();
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
