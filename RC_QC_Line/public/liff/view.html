@@ -623,8 +623,8 @@
             <span>💾</span>
             <span>ดาวน์โหลด</span>
         </button>
-        <button class="btn btn-close" onclick="closePage()">
-            <span>✖</span>
+        <button class="btn btn-close" onclick="closePage()" type="button">
+            <span>✕</span>
             <span>ปิด</span>
         </button>
     </div>
@@ -698,56 +698,68 @@
             return isAndroid;
         }
         
-        // Close page function - Enhanced for LIFF
+        // Close page function - Simplified for mobile
         function closePage() {
+            console.log('Close button clicked');
+            
             try {
-                console.log('Attempting to close page...');
-                
-                // Method 1: Try LIFF closeWindow if available
-                if (typeof liff !== 'undefined' && liff.closeWindow) {
-                    console.log('Using LIFF closeWindow');
+                // Method 1: For LIFF environment
+                if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                    console.log('In LIFF client, using closeWindow');
                     liff.closeWindow();
-                    return;
-                }
-                
-                // Method 2: For Android/iOS - navigate back
-                if (isAndroid || isIOS()) {
-                    console.log('Mobile device - going back');
-                    window.history.back();
-                    
-                    // If still here after 500ms, try other methods
+                    // Give it time to close
                     setTimeout(() => {
-                        // Try to navigate to LINE app
-                        window.location.href = 'line://';
-                        
-                        // Final fallback message
-                        setTimeout(() => {
-                            showToast('กรุณากดปุ่ม Back หรือปัดกลับเพื่อออก');
-                        }, 500);
-                    }, 500);
+                        // If still here, try fallback
+                        window.location.href = 'https://line.me/R/';
+                    }, 1000);
                     return;
                 }
                 
-                // Method 3: For PC browsers
+                // Method 2: Check if opened from LINE app
+                const userAgent = navigator.userAgent.toLowerCase();
+                if (userAgent.includes('line')) {
+                    console.log('Detected LINE browser');
+                    // Try multiple methods for LINE browser
+                    
+                    // Try LIFF close even without init
+                    if (typeof liff !== 'undefined' && liff.closeWindow) {
+                        liff.closeWindow();
+                    }
+                    
+                    // Try going back
+                    setTimeout(() => {
+                        if (window.history.length > 1) {
+                            window.history.go(-1);
+                        } else {
+                            window.history.back();
+                        }
+                    }, 300);
+                    
+                    // Final fallback - redirect to LINE
+                    setTimeout(() => {
+                        window.location.href = 'https://line.me/R/';
+                    }, 1000);
+                    
+                    return;
+                }
+                
+                // Method 3: Regular browser
+                console.log('Regular browser - going back');
                 if (window.history.length > 1) {
                     window.history.back();
                 } else {
+                    // Try to close window
                     window.close();
-                    // If still here, show message
+                    // Show message if can't close
                     setTimeout(() => {
-                        showToast('กรุณาปิดแท็บนี้ด้วยตนเอง');
+                        alert('กรุณาปิดหน้านี้ด้วยตนเอง');
                     }, 500);
                 }
                 
             } catch (error) {
-                console.error('Error closing page:', error);
-                
-                // Last resort - try to go to LINE app
-                if (isAndroid || isIOS()) {
-                    window.location.href = 'line://';
-                } else {
-                    showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
-                }
+                console.error('Error in closePage:', error);
+                // Emergency fallback
+                window.location.href = 'https://line.me/R/';
             }
         }
         
@@ -1185,8 +1197,12 @@
                 // Try to initialize LIFF if available
                 if (typeof liff !== 'undefined') {
                     try {
-                        await liff.init({ liffId: '2007575196-NWaXrZVE' });
+                        await liff.init({ 
+                            liffId: '2007575196-NWaXrZVE',
+                            withLoginOnExternalBrowser: true
+                        });
                         console.log('LIFF initialized successfully');
+                        console.log('Is in LIFF client:', liff.isInClient());
                     } catch (liffError) {
                         console.log('LIFF init failed, continuing without LIFF:', liffError);
                     }
