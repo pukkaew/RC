@@ -173,6 +173,12 @@
             display: flex;
         }
         
+        /* Show close button on iOS too if not working */
+        body:not(.android) .btn-close {
+            display: flex;
+            background: #666;
+        }
+        
         .btn {
             flex: 1;
             padding: 12px;
@@ -683,6 +689,9 @@
         </div>
     </div>
     
+    <!-- Include LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    
     <!-- Include FileSaver for downloading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
@@ -709,28 +718,48 @@
             return isAndroid;
         }
         
-        // Close page function
+        // Close page function - Enhanced for LIFF
         function closePage() {
+            console.log('Attempting to close page...');
+            
             try {
-                // Try LIFF close first
+                // Method 1: Try LIFF close first (most reliable)
                 if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                    console.log('Using LIFF closeWindow()');
                     liff.closeWindow();
+                    
+                    // Fallback after delay
+                    setTimeout(() => {
+                        console.log('LIFF close might have failed, trying alternatives...');
+                        tryAlternativeClose();
+                    }, 500);
                 } else {
-                    // Try to go back in history
-                    if (window.history.length > 1) {
-                        window.history.back();
-                    } else {
-                        // Last resort - try to close window
-                        window.close();
-                        // If still here, show message
-                        setTimeout(() => {
-                            showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
-                        }, 500);
-                    }
+                    console.log('Not in LIFF client, trying alternatives...');
+                    tryAlternativeClose();
                 }
             } catch (error) {
-                console.error('Error closing page:', error);
-                showToast('กรุณาปิดหน้านี้ด้วยตนเอง');
+                console.error('Error in closePage:', error);
+                tryAlternativeClose();
+            }
+        }
+        
+        // Try alternative close methods
+        function tryAlternativeClose() {
+            try {
+                // Method 2: Try to navigate away
+                if (window.opener) {
+                    window.close();
+                } else if (window.history.length > 1) {
+                    // Go back in history
+                    window.history.back();
+                } else {
+                    // Method 3: Try to redirect to LINE
+                    window.location.href = 'line://nv/chat';
+                }
+            } catch (error) {
+                console.error('All close methods failed:', error);
+                // Last resort - show instruction
+                showToast('กรุณากด ← หรือปัดกลับเพื่อปิดหน้านี้');
             }
         }
         
@@ -1164,6 +1193,21 @@
             try {
                 // Check Android first
                 checkAndroid();
+                
+                // Initialize LIFF if available
+                if (typeof liff !== 'undefined') {
+                    try {
+                        await liff.init({ 
+                            liffId: '2007575196-NWaXrZVE',
+                            withLoginOnExternalBrowser: false
+                        });
+                        console.log('LIFF initialized successfully');
+                        console.log('Is in client:', liff.isInClient());
+                    } catch (liffError) {
+                        console.error('LIFF init error:', liffError);
+                        // Continue without LIFF
+                    }
+                }
                 
                 // Extract parameters
                 const params = new URLSearchParams(window.location.search);
