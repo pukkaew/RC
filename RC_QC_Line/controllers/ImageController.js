@@ -110,12 +110,9 @@ class ImageController {
   }
 
   // Build album preview message with thumbnails
-  buildAlbumPreviewMessage(lotNumber, date, images, userAgent = '') {
+  buildAlbumPreviewMessage(lotNumber, date, images) {
     const formattedDate = new Date(date).toLocaleDateString('th-TH');
     const baseUrl = process.env.BASE_URL || 'https://line.ruxchai.co.th';
-    
-    // Check if Android from User-Agent (if available)
-    const isAndroid = userAgent && /Android/i.test(userAgent);
     
     // Limit preview images to 9 for 3x3 grid
     const previewImages = images.slice(0, 9);
@@ -173,8 +170,7 @@ class ImageController {
       });
     }
     
-    // Build URL - use direct URL for better Android support
-    const directUrl = `${baseUrl}/liff/view.html?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}&base_url=${encodeURIComponent(baseUrl)}`;
+    // Build LIFF URL
     const liffUrl = `https://liff.line.me/2007575196-NWaXrZVE?lot=${encodeURIComponent(lotNumber)}&date=${encodeURIComponent(date)}`;
     
     return {
@@ -261,11 +257,7 @@ class ImageController {
               action: {
                 type: "uri",
                 label: "🔍 ดูรูปภาพทั้งหมด",
-                uri: directUrl,  // Use direct URL
-                // This will open in external browser on Android when LINE supports it
-                altUri: {
-                  desktop: directUrl
-                }
+                uri: liffUrl
               },
               color: "#00B900"
             },

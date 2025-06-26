@@ -2,11 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QC Photo Viewer</title>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         * {
             margin: 0;
@@ -21,15 +18,6 @@
             padding-bottom: 60px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            padding-top: 0 !important; /* Override LIFF padding */
-            margin-top: 0 !important;
-        }
-        
-        /* Hide LIFF header if exists */
-        .liff-header,
-        [class*="liff-"],
-        #liff-header {
-            display: none !important;
         }
         
         /* Header */
@@ -37,7 +25,6 @@
             background: #00B900;
             color: white;
             padding: 15px;
-            padding-top: calc(15px + env(safe-area-inset-top));
             position: sticky;
             top: 0;
             z-index: 100;
@@ -1214,11 +1201,6 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('imageGrid').style.display = 'grid';
                 document.getElementById('bottomBar').style.display = 'flex';
-                
-                // Show notice for Android
-                if (isAndroid) {
-                    document.getElementById('androidNotice').style.display = 'block';
-                }
                 
             } catch (error) {
                 console.error('Error loading images:', error);
