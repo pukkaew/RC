@@ -1,4 +1,4 @@
-// Main application file - Updated with Share Routes
+// Main application file - Fixed Share Directory Logging
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -25,10 +25,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware
+// Middleware for raw body (needed for webhook signature verification)
 app.use(bodyParser.json({ 
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
+  verify: (req, res, buf, encoding) => {
+    // Store raw body for webhook signature verification
+    if (req.headers['x-line-signature']) {
+      req.rawBody = buf.toString(encoding || 'utf8');
+    }
   }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -156,7 +159,6 @@ setInterval(() => {
 // Cleanup share temp files (every hour)
 setInterval(async () => {
   try {
-    const shareApiRoutes = require('./routes/shareApi');
     const response = await fetch(`http://localhost:${PORT}/api/share/cleanup`, {
       method: 'POST'
     });
@@ -210,6 +212,10 @@ app.listen(PORT, () => {
   logger.info('- Static /liff/* (LIFF files)');
   logger.info('- Static /temp/* (Temporary share files)');
   logger.info('- Static /share/* (Share pages)');
+  
+  // Log share temp directory properly
+  const shareTempDir = path.join(__dirname, 'public', 'temp', 'share');
+  logger.info(`Share temp directory: ${shareTempDir}`);
 });
 
 // Handle uncaught exceptions

@@ -1,5 +1,6 @@
-// Controller for handling LINE webhook events - Updated with viewtoday command
+// Controller for handling LINE webhook events - Fixed Signature Verification
 const line = require('@line/bot-sdk');
+const crypto = require('crypto');
 const lineConfig = require('../config/line');
 const commandConfig = require('../config/commands');
 const lineService = require('../services/LineService');
@@ -66,19 +67,35 @@ class WebhookController {
     };
   }
 
-  // Handle webhook verification
+  // Handle webhook verification - FIXED VERSION
   verifyWebhook(req, res) {
     const signature = req.headers['x-line-signature'];
     
     if (!signature) {
+      logger.warn('Missing x-line-signature header');
       throw new AppError('Missing signature', 401);
     }
     
     try {
-      const body = req.body;
-      const isValid = lineService.verifySignature(body, signature);
+      // Use raw body for signature verification
+      const body = req.rawBody || JSON.stringify(req.body);
+      
+      // Create HMAC-SHA256 hash
+      const channelSecret = lineConfig.channelSecret;
+      const hash = crypto
+        .createHmac('SHA256', channelSecret)
+        .update(body)
+        .digest('base64');
+      
+      // Compare signatures
+      const isValid = hash === signature;
       
       if (!isValid) {
+        logger.warn('Invalid webhook signature', {
+          expectedSignature: hash,
+          receivedSignature: signature,
+          bodyLength: body.length
+        });
         throw new AppError('Invalid signature', 401);
       }
       
@@ -89,10 +106,10 @@ class WebhookController {
     }
   }
 
-  // Handle webhook events
+  // Handle webhook events - FIXED VERSION
   handleWebhook = asyncHandler(async (req, res) => {
     try {
-      // Verify webhook
+      // Verify webhook signature
       this.verifyWebhook(req, res);
       
       const events = req.body.events;
@@ -101,11 +118,18 @@ class WebhookController {
         return res.status(200).send('No events');
       }
       
-      // Process each event
-      for (const event of events) {
-        await this.processEvent(event);
-      }
+      // Process each event asynchronously
+      const eventPromises = events.map(event => 
+        this.processEvent(event).catch(error => {
+          logger.error('Error processing individual event:', error);
+          // Don't throw - continue processing other events
+        })
+      );
       
+      // Wait for all events to process
+      await Promise.all(eventPromises);
+      
+      // Always return 200 to prevent LINE retries
       return res.status(200).send('OK');
     } catch (error) {
       logger.error('Error handling webhook:', error);
@@ -173,7 +197,7 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error processing event:', error);
-      throw error;
+      // Don't throw - let other events continue processing
     }
   }
 
@@ -210,7 +234,7 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling message event:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -410,7 +434,7 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling text message:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -433,7 +457,7 @@ class WebhookController {
       await lineService.replyMessage(replyToken, requestMessage);
     } catch (error) {
       logger.error('Error requesting Lot number for viewtoday:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -470,8 +494,6 @@ class WebhookController {
       // Reply with error message
       const errorMessage = 'เกิดข้อผิดพลาดในการดึงรูปภาพวันนี้ โปรดลองใหม่อีกครั้ง';
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
-      
-      throw error;
     }
   }
 
@@ -493,7 +515,7 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling image message:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -549,7 +571,7 @@ class WebhookController {
       }
     } catch (error) {
       logger.error('Error handling postback event:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -581,8 +603,6 @@ class WebhookController {
       
       const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
-      
-      throw error;
     }
   }
 
@@ -614,8 +634,6 @@ class WebhookController {
       
       const errorMessage = 'เกิดข้อผิดพลาดในการแชร์รูปภาพ โปรดลองใหม่อีกครั้ง';
       await lineService.replyMessage(replyToken, lineService.createTextMessage(errorMessage));
-      
-      throw error;
     }
   }
 
@@ -641,7 +659,7 @@ class WebhookController {
       );
     } catch (error) {
       logger.error('Error handling follow event:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
@@ -663,7 +681,7 @@ class WebhookController {
       logger.info(`User ${userId} has unfollowed the bot`);
     } catch (error) {
       logger.error('Error handling unfollow event:', error);
-      throw error;
+      // Don't throw - handle gracefully
     }
   }
 
