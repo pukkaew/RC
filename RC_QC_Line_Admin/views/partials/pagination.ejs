@@ -1,0 +1,131 @@
+<!-- views/partials/pagination.ejs -->
+<% 
+// Generate page numbers
+const generatePageNumbers = (current, total, max = 5) => {
+    const pages = [];
+    
+    if (total <= max) {
+        for (let i = 1; i <= total; i++) {
+            pages.push(i);
+        }
+    } else {
+        let start = Math.max(1, current - Math.floor(max / 2));
+        let end = Math.min(total, start + max - 1);
+        
+        if (end === total) {
+            start = Math.max(1, end - max + 1);
+        }
+        
+        if (start > 1) {
+            pages.push(1);
+            if (start > 2) pages.push('...');
+        }
+        
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        
+        if (end < total) {
+            if (end < total - 1) pages.push('...');
+            pages.push(total);
+        }
+    }
+    
+    return pages;
+};
+
+const pages = generatePageNumbers(pagination.currentPage, pagination.totalPages);
+
+// Build URL with current params
+const buildPageUrl = (page) => {
+    const url = new URL(window.location);
+    url.searchParams.set('page', page);
+    return url.toString();
+};
+%>
+
+<div class="mt-6 flex justify-between items-center">
+    <!-- Page Info -->
+    <div class="text-sm text-gray-600">
+        <%= t('common.showing') %> 
+        <span class="font-medium"><%= pagination.startRecord %></span>
+        - 
+        <span class="font-medium"><%= pagination.endRecord %></span>
+        <%= t('common.of') %> 
+        <span class="font-medium"><%= pagination.total %></span>
+        <%= t('common.results') %>
+    </div>
+
+    <!-- Pagination Controls -->
+    <nav class="flex items-center gap-2">
+        <!-- Previous Button -->
+        <% if (pagination.hasPrev) { %>
+            <a href="<%= buildPageUrl(pagination.prevPage) %>" 
+               class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                <i class="fas fa-chevron-left mr-1"></i>
+                <%= t('common.previous') %>
+            </a>
+        <% } else { %>
+            <span class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed">
+                <i class="fas fa-chevron-left mr-1"></i>
+                <%= t('common.previous') %>
+            </span>
+        <% } %>
+
+        <!-- Page Numbers -->
+        <div class="hidden md:flex items-center gap-1">
+            <% pages.forEach(page => { %>
+                <% if (page === '...') { %>
+                    <span class="px-3 py-2 text-sm text-gray-500">...</span>
+                <% } else if (page === pagination.currentPage) { %>
+                    <span class="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md">
+                        <%= page %>
+                    </span>
+                <% } else { %>
+                    <a href="<%= buildPageUrl(page) %>" 
+                       class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        <%= page %>
+                    </a>
+                <% } %>
+            <% }) %>
+        </div>
+
+        <!-- Mobile Page Indicator -->
+        <div class="md:hidden px-3 py-2 text-sm">
+            <%= pagination.currentPage %> / <%= pagination.totalPages %>
+        </div>
+
+        <!-- Next Button -->
+        <% if (pagination.hasNext) { %>
+            <a href="<%= buildPageUrl(pagination.nextPage) %>" 
+               class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                <%= t('common.next') %>
+                <i class="fas fa-chevron-right ml-1"></i>
+            </a>
+        <% } else { %>
+            <span class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed">
+                <%= t('common.next') %>
+                <i class="fas fa-chevron-right ml-1"></i>
+            </span>
+        <% } %>
+
+        <!-- Items per page selector -->
+        <div class="ml-4 flex items-center gap-2">
+            <label class="text-sm text-gray-600"><%= t('common.per_page') %>:</label>
+            <select onchange="changeLimit(this.value)" class="form-select text-sm py-1">
+                <% [10, 20, 50, 100].forEach(limit => { %>
+                    <option value="<%= limit %>" <%= pagination.limit == limit ? 'selected' : '' %>><%= limit %></option>
+                <% }) %>
+            </select>
+        </div>
+    </nav>
+</div>
+
+<script>
+function changeLimit(limit) {
+    const url = new URL(window.location);
+    url.searchParams.set('limit', limit);
+    url.searchParams.set('page', '1'); // Reset to first page
+    window.location = url;
+}
+</script>

@@ -1,0 +1,523 @@
+<%- include('../layouts/main', { 
+    title: t('users.title'),
+    user: user 
+}) %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-users mr-2"></i>
+                <%= t('users.title') %>
+            </h1>
+            
+            <button onclick="openCreateModal()" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>
+                <%= t('users.add_user') %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('common.search') %>
+                </label>
+                <div class="relative">
+                    <input type="text" id="searchInput" class="form-input w-full pl-10" 
+                           placeholder="<%= t('users.search_placeholder') %>" 
+                           value="<%= search %>">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('users.filter_by_role') %>
+                </label>
+                <select id="roleFilter" class="form-select w-full">
+                    <option value=""><%= t('common.all') %></option>
+                    <option value="viewer" <%= role === 'viewer' ? 'selected' : '' %>><%= t('users.role_viewer') %></option>
+                    <option value="manager" <%= role === 'manager' ? 'selected' : '' %>><%= t('users.role_manager') %></option>
+                    <option value="admin" <%= role === 'admin' ? 'selected' : '' %>><%= t('users.role_admin') %></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('users.filter_by_status') %>
+                </label>
+                <select id="statusFilter" class="form-select w-full">
+                    <option value=""><%= t('common.all') %></option>
+                    <option value="active" <%= status === 'active' ? 'selected' : '' %>><%= t('users.status_active') %></option>
+                    <option value="inactive" <%= status === 'inactive' ? 'selected' : '' %>><%= t('users.status_inactive') %></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <button onclick="applyFilters()" class="btn btn-primary">
+                <i class="fas fa-filter mr-2"></i>
+                <%= t('common.apply_filters') %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b">
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.employee_id') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.full_name') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.email') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.department') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.role') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.status') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('users.last_login') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('common.actions') %>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (users.length === 0) { %>
+                        <tr>
+                            <td colspan="8" class="text-center p-8 text-gray-500">
+                                <i class="fas fa-users text-4xl mb-2"></i>
+                                <p><%= t('users.no_users') %></p>
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% users.forEach(u => { %>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-4">
+                                    <span class="font-medium"><%= u.employee_id %></span>
+                                </td>
+                                <td class="p-4">
+                                    <%= u.full_name %>
+                                </td>
+                                <td class="p-4">
+                                    <a href="mailto:<%= u.email %>" class="text-blue-600 hover:underline">
+                                        <%= u.email %>
+                                    </a>
+                                </td>
+                                <td class="p-4">
+                                    <%= u.department %>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                                        <% if (u.role === 'admin') { %>
+                                            bg-purple-100 text-purple-800
+                                        <% } else if (u.role === 'manager') { %>
+                                            bg-blue-100 text-blue-800
+                                        <% } else { %>
+                                            bg-gray-100 text-gray-800
+                                        <% } %>">
+                                        <%= t(`users.role_${u.role}`) %>
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                                        <%= u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                        <%= u.is_active ? t('users.status_active') : t('users.status_inactive') %>
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <% if (u.last_login) { %>
+                                        <p class="text-sm"><%= formatDateTime(u.last_login, locale) %></p>
+                                        <p class="text-xs text-gray-500"><%= getRelativeTime(u.last_login, locale) %></p>
+                                    <% } else { %>
+                                        <span class="text-gray-400"><%= t('users.never_logged_in') %></span>
+                                    <% } %>
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="editUser('<%= u.admin_id %>')" 
+                                                class="btn btn-sm btn-secondary" 
+                                                title="<%= t('common.edit') %>">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <button onclick="toggleUserStatus('<%= u.admin_id %>', <%= u.is_active %>)" 
+                                                class="btn btn-sm <%= u.is_active ? 'btn-warning' : 'btn-success' %>"
+                                                title="<%= u.is_active ? t('users.deactivate') : t('users.activate') %>">
+                                            <i class="fas fa-<%= u.is_active ? 'ban' : 'check' %>"></i>
+                                        </button>
+                                        
+                                        <button onclick="resetPassword('<%= u.admin_id %>')" 
+                                                class="btn btn-sm btn-info"
+                                                title="<%= t('users.reset_password') %>">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        
+                                        <% if (u.admin_id !== user.admin_id) { %>
+                                        <button onclick="deleteUser('<%= u.admin_id %>')" 
+                                                class="btn btn-sm btn-danger"
+                                                title="<%= t('common.delete') %>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+        <%- include('../partials/pagination', { pagination: pagination }) %>
+    <% } %>
+</div>
+
+<!-- Create/Edit User Modal -->
+<div id="userModal" class="modal hidden">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    <%= t('users.add_user') %>
+                </h3>
+                <button onclick="closeModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="userForm" onsubmit="saveUser(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="userId">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label required">
+                                <%= t('users.employee_id') %>
+                            </label>
+                            <input type="text" id="employeeId" name="employee_id" 
+                                   class="form-input w-full" required 
+                                   pattern="[a-zA-Z0-9]{3,20}"
+                                   title="<%= t('users.employee_id_format') %>">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label required">
+                                <%= t('users.full_name') %>
+                            </label>
+                            <input type="text" id="fullName" name="full_name" 
+                                   class="form-input w-full" required>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label required">
+                                <%= t('users.email') %>
+                            </label>
+                            <input type="email" id="email" name="email" 
+                                   class="form-input w-full" required>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label required">
+                                <%= t('users.department') %>
+                            </label>
+                            <input type="text" id="department" name="department" 
+                                   class="form-input w-full" required>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label required">
+                                <%= t('users.role') %>
+                            </label>
+                            <select id="role" name="role" class="form-select w-full" required>
+                                <option value="viewer"><%= t('users.role_viewer') %></option>
+                                <option value="manager"><%= t('users.role_manager') %></option>
+                                <option value="admin"><%= t('users.role_admin') %></option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">
+                                <%= t('users.preferred_language') %>
+                            </label>
+                            <select id="preferredLanguage" name="preferred_language" class="form-select w-full">
+                                <option value="th-TH"><%= t('languages.th-TH') %></option>
+                                <option value="en-US"><%= t('languages.en-US') %></option>
+                            </select>
+                        </div>
+                        
+                        <div id="passwordField" class="md:col-span-2">
+                            <label class="form-label required">
+                                <%= t('users.password') %>
+                            </label>
+                            <input type="password" id="password" name="password" 
+                                   class="form-input w-full">
+                            <p class="text-sm text-gray-500 mt-1">
+                                <%= t('users.password_requirements') %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                        <%= t('common.cancel') %>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <%= t('common.save') %>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetPasswordModal" class="modal hidden">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-key mr-2"></i>
+                    <%= t('users.reset_password') %>
+                </h3>
+                <button onclick="closeResetModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="resetPasswordForm" onsubmit="confirmResetPassword(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="resetUserId">
+                    
+                    <div class="mb-4">
+                        <label class="form-label required">
+                            <%= t('users.new_password') %>
+                        </label>
+                        <input type="password" id="newPassword" name="new_password" 
+                               class="form-input w-full" required>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600">
+                        <%= t('users.reset_password_warning') %>
+                    </p>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeResetModal()" class="btn btn-secondary">
+                        <%= t('common.cancel') %>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <%= t('users.reset_password') %>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter functions
+function applyFilters() {
+    const search = document.getElementById('searchInput').value;
+    const role = document.getElementById('roleFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const url = new URL(window.location);
+    if (search) url.searchParams.set('search', search);
+    else url.searchParams.delete('search');
+    
+    if (role) url.searchParams.set('role', role);
+    else url.searchParams.delete('role');
+    
+    if (status) url.searchParams.set('status', status);
+    else url.searchParams.delete('status');
+    
+    url.searchParams.set('page', '1');
+    window.location = url;
+}
+
+// Modal functions
+function openCreateModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus mr-2"></i><%= t("users.add_user") %>';
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    document.getElementById('employeeId').readOnly = false;
+    document.getElementById('password').required = true;
+    document.getElementById('passwordField').style.display = 'block';
+    document.getElementById('userModal').classList.remove('hidden');
+}
+
+async function editUser(userId) {
+    try {
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user');
+        
+        const data = await response.json();
+        const user = data.data;
+        
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit mr-2"></i><%= t("users.edit_user") %>';
+        document.getElementById('userId').value = user.admin_id;
+        document.getElementById('employeeId').value = user.employee_id;
+        document.getElementById('employeeId').readOnly = true;
+        document.getElementById('fullName').value = user.full_name;
+        document.getElementById('email').value = user.email;
+        document.getElementById('department').value = user.department;
+        document.getElementById('role').value = user.role;
+        document.getElementById('preferredLanguage').value = user.preferred_language || 'th-TH';
+        document.getElementById('password').required = false;
+        document.getElementById('passwordField').style.display = 'none';
+        
+        document.getElementById('userModal').classList.remove('hidden');
+    } catch (error) {
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+function closeModal() {
+    document.getElementById('userModal').classList.add('hidden');
+}
+
+async function saveUser(event) {
+    event.preventDefault();
+    
+    const userId = document.getElementById('userId').value;
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    // Remove password if empty (for edit mode)
+    if (!data.password) delete data.password;
+    
+    try {
+        const url = userId ? `/api/users/${userId}` : '/api/users';
+        const method = userId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            showAlert('success', userId ? '<%= t("users.update_success") %>' : '<%= t("users.create_success") %>');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            const result = await response.json();
+            showAlert('error', result.message || '<%= t("common.error_occurred") %>');
+        }
+    } catch (error) {
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+async function toggleUserStatus(userId, currentStatus) {
+    const action = currentStatus ? '<%= t("users.deactivate") %>' : '<%= t("users.activate") %>';
+    if (!confirm(`<%= t("users.confirm_toggle_status") %>`.replace('{action}', action))) return;
+    
+    try {
+        const response = await fetch(`/api/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showAlert('success', '<%= t("users.status_updated") %>');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            const data = await response.json();
+            showAlert('error', data.message || '<%= t("common.error_occurred") %>');
+        }
+    } catch (error) {
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+function resetPassword(userId) {
+    document.getElementById('resetUserId').value = userId;
+    document.getElementById('newPassword').value = '';
+    document.getElementById('resetPasswordModal').classList.remove('hidden');
+}
+
+function closeResetModal() {
+    document.getElementById('resetPasswordModal').classList.add('hidden');
+}
+
+async function confirmResetPassword(event) {
+    event.preventDefault();
+    
+    const userId = document.getElementById('resetUserId').value;
+    const newPassword = document.getElementById('newPassword').value;
+    
+    try {
+        const response = await fetch(`/api/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ new_password: newPassword })
+        });
+        
+        if (response.ok) {
+            showAlert('success', '<%= t("users.password_reset_success") %>');
+            closeResetModal();
+        } else {
+            const data = await response.json();
+            showAlert('error', data.message || '<%= t("common.error_occurred") %>');
+        }
+    } catch (error) {
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('<%= t("users.confirm_delete") %>')) return;
+    
+    try {
+        const response = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showAlert('success', '<%= t("users.delete_success") %>');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            const data = await response.json();
+            showAlert('error', data.message || '<%= t("common.error_occurred") %>');
+        }
+    } catch (error) {
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+// Enter key to submit search
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>

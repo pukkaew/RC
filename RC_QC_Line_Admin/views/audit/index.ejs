@@ -1,0 +1,366 @@
+<%- include('../layouts/main', { 
+    title: t('audit.title'),
+    user: user 
+}) %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-history mr-2"></i>
+                <%= t('audit.title') %>
+            </h1>
+            
+            <button onclick="exportLogs()" class="btn btn-secondary">
+                <i class="fas fa-download mr-2"></i>
+                <%= t('audit.export') %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Date Range -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('audit.start_date') %>
+                </label>
+                <input type="date" id="startDate" class="form-input w-full" value="<%= startDate %>">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('audit.end_date') %>
+                </label>
+                <input type="date" id="endDate" class="form-input w-full" value="<%= endDate %>">
+            </div>
+
+            <!-- Action Type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('audit.action_type') %>
+                </label>
+                <select id="actionType" class="form-select w-full">
+                    <option value=""><%= t('common.all') %></option>
+                    <optgroup label="<%= t('audit.authentication') %>">
+                        <option value="LOGIN_SUCCESS" <%= action === 'LOGIN_SUCCESS' ? 'selected' : '' %>><%= t('audit.login_success') %></option>
+                        <option value="LOGIN_FAILED" <%= action === 'LOGIN_FAILED' ? 'selected' : '' %>><%= t('audit.login_failed') %></option>
+                        <option value="LOGOUT" <%= action === 'LOGOUT' ? 'selected' : '' %>><%= t('audit.logout') %></option>
+                    </optgroup>
+                    <optgroup label="<%= t('audit.lot_operations') %>">
+                        <option value="LOT_VIEW" <%= action === 'LOT_VIEW' ? 'selected' : '' %>><%= t('audit.lot_view') %></option>
+                        <option value="LOT_UPDATE" <%= action === 'LOT_UPDATE' ? 'selected' : '' %>><%= t('audit.lot_update') %></option>
+                        <option value="LOT_DELETE" <%= action === 'LOT_DELETE' ? 'selected' : '' %>><%= t('audit.lot_delete') %></option>
+                    </optgroup>
+                    <optgroup label="<%= t('audit.image_operations') %>">
+                        <option value="IMAGE_VIEW" <%= action === 'IMAGE_VIEW' ? 'selected' : '' %>><%= t('audit.image_view') %></option>
+                        <option value="IMAGE_DOWNLOAD" <%= action === 'IMAGE_DOWNLOAD' ? 'selected' : '' %>><%= t('audit.image_download') %></option>
+                        <option value="IMAGE_DELETE" <%= action === 'IMAGE_DELETE' ? 'selected' : '' %>><%= t('audit.image_delete') %></option>
+                    </optgroup>
+                    <optgroup label="<%= t('audit.user_management') %>">
+                        <option value="USER_CREATE" <%= action === 'USER_CREATE' ? 'selected' : '' %>><%= t('audit.user_create') %></option>
+                        <option value="USER_UPDATE" <%= action === 'USER_UPDATE' ? 'selected' : '' %>><%= t('audit.user_update') %></option>
+                        <option value="USER_DELETE" <%= action === 'USER_DELETE' ? 'selected' : '' %>><%= t('audit.user_delete') %></option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- User -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <%= t('audit.user') %>
+                </label>
+                <select id="userId" class="form-select w-full">
+                    <option value=""><%= t('common.all') %></option>
+                    <% adminUsers.forEach(u => { %>
+                        <option value="<%= u.admin_id %>" <%= userId == u.admin_id ? 'selected' : '' %>>
+                            <%= u.full_name %> (<%= u.employee_id %>)
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center">
+            <button onclick="applyFilters()" class="btn btn-primary">
+                <i class="fas fa-filter mr-2"></i>
+                <%= t('common.apply_filters') %>
+            </button>
+
+            <button onclick="resetFilters()" class="btn btn-secondary">
+                <i class="fas fa-times mr-2"></i>
+                <%= t('common.reset') %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b">
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.timestamp') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.user') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.action') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.entity') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.description') %>
+                        </th>
+                        <th class="text-left p-4 font-medium text-gray-700">
+                            <%= t('audit.ip_address') %>
+                        </th>
+                        <th class="text-center p-4 font-medium text-gray-700">
+                            <%= t('audit.details') %>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (logs.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="text-center p-8 text-gray-500">
+                                <i class="fas fa-history text-4xl mb-2"></i>
+                                <p><%= t('audit.no_logs') %></p>
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% logs.forEach(log => { %>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-4">
+                                    <p class="font-medium"><%= formatDateTime(log.created_at, locale) %></p>
+                                    <p class="text-sm text-gray-500"><%= getRelativeTime(log.created_at, locale) %></p>
+                                </td>
+                                <td class="p-4">
+                                    <% if (log.admin_name) { %>
+                                        <p class="font-medium"><%= log.admin_name %></p>
+                                        <p class="text-sm text-gray-500"><%= log.employee_id %></p>
+                                    <% } else { %>
+                                        <span class="text-gray-400"><%= t('audit.anonymous') %></span>
+                                    <% } %>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full
+                                        <% if (log.action_type.includes('DELETE')) { %>
+                                            bg-red-100 text-red-800
+                                        <% } else if (log.action_type.includes('CREATE') || log.action_type.includes('UPDATE')) { %>
+                                            bg-green-100 text-green-800
+                                        <% } else if (log.action_type.includes('LOGIN')) { %>
+                                            bg-blue-100 text-blue-800
+                                        <% } else { %>
+                                            bg-gray-100 text-gray-800
+                                        <% } %>">
+                                        <%= t(`audit.${log.action_type.toLowerCase()}`) || log.action_type %>
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    <% if (log.entity_type && log.entity_id) { %>
+                                        <p class="text-sm">
+                                            <%= log.entity_type %> #<%= log.entity_id %>
+                                        </p>
+                                    <% } else { %>
+                                        <span class="text-gray-400">-</span>
+                                    <% } %>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-sm"><%= log.description || '-' %></p>
+                                </td>
+                                <td class="p-4">
+                                    <p class="text-sm font-mono"><%= log.ip_address || '-' %></p>
+                                </td>
+                                <td class="p-4 text-center">
+                                    <% if (log.old_value || log.new_value) { %>
+                                        <button onclick="showDetails('<%= log.log_id %>')" 
+                                                class="btn btn-sm btn-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <span class="text-gray-400">-</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+        <%- include('../partials/pagination', { pagination: pagination }) %>
+    <% } %>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="modal hidden">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <%= t('audit.log_details') %>
+                </h3>
+                <button onclick="closeDetails()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="logDetails" class="space-y-4">
+                    <!-- Details will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="closeDetails()" class="btn btn-secondary">
+                    <%= t('common.close') %>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store log data for details view
+const logData = <%- JSON.stringify(logs.map(log => ({
+    log_id: log.log_id,
+    action_type: log.action_type,
+    old_value: log.old_value,
+    new_value: log.new_value,
+    user_agent: log.user_agent
+}))) %>;
+
+// Filter functions
+function applyFilters() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const actionType = document.getElementById('actionType').value;
+    const userId = document.getElementById('userId').value;
+    
+    const url = new URL(window.location);
+    
+    if (startDate) url.searchParams.set('start_date', startDate);
+    else url.searchParams.delete('start_date');
+    
+    if (endDate) url.searchParams.set('end_date', endDate);
+    else url.searchParams.delete('end_date');
+    
+    if (actionType) url.searchParams.set('action', actionType);
+    else url.searchParams.delete('action');
+    
+    if (userId) url.searchParams.set('user_id', userId);
+    else url.searchParams.delete('user_id');
+    
+    url.searchParams.set('page', '1');
+    window.location = url;
+}
+
+function resetFilters() {
+    const url = new URL(window.location);
+    url.searchParams.delete('start_date');
+    url.searchParams.delete('end_date');
+    url.searchParams.delete('action');
+    url.searchParams.delete('user_id');
+    url.searchParams.set('page', '1');
+    window.location = url;
+}
+
+// Show log details
+function showDetails(logId) {
+    const log = logData.find(l => l.log_id == logId);
+    if (!log) return;
+    
+    let content = '';
+    
+    // User Agent
+    if (log.user_agent) {
+        content += `
+            <div>
+                <h4 class="font-semibold mb-2"><%= t('audit.user_agent') %></h4>
+                <p class="text-sm text-gray-600 font-mono bg-gray-50 p-2 rounded">${log.user_agent}</p>
+            </div>
+        `;
+    }
+    
+    // Old Value
+    if (log.old_value) {
+        content += `
+            <div>
+                <h4 class="font-semibold mb-2"><%= t('audit.old_value') %></h4>
+                <pre class="text-sm bg-red-50 p-3 rounded overflow-x-auto">${formatJson(log.old_value)}</pre>
+            </div>
+        `;
+    }
+    
+    // New Value
+    if (log.new_value) {
+        content += `
+            <div>
+                <h4 class="font-semibold mb-2"><%= t('audit.new_value') %></h4>
+                <pre class="text-sm bg-green-50 p-3 rounded overflow-x-auto">${formatJson(log.new_value)}</pre>
+            </div>
+        `;
+    }
+    
+    document.getElementById('logDetails').innerHTML = content;
+    document.getElementById('detailsModal').classList.remove('hidden');
+}
+
+function closeDetails() {
+    document.getElementById('detailsModal').classList.add('hidden');
+}
+
+// Format JSON for display
+function formatJson(jsonString) {
+    try {
+        const obj = JSON.parse(jsonString);
+        return JSON.stringify(obj, null, 2);
+    } catch {
+        return jsonString;
+    }
+}
+
+// Export logs
+async function exportLogs() {
+    const url = new URL(window.location);
+    url.pathname = '/api/audit/export';
+    
+    // Keep current filters
+    const params = new URLSearchParams(window.location.search);
+    params.delete('page'); // Remove pagination
+    url.search = params.toString();
+    
+    window.location.href = url;
+}
+
+// Auto-refresh every 30 seconds
+let refreshTimer;
+function startAutoRefresh() {
+    refreshTimer = setInterval(() => {
+        location.reload();
+    }, 30000);
+}
+
+function stopAutoRefresh() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+    }
+}
+
+// Start auto-refresh
+startAutoRefresh();
+
+// Stop when user interacts with page
+document.addEventListener('click', stopAutoRefresh);
+document.addEventListener('keypress', stopAutoRefresh);
+</script>

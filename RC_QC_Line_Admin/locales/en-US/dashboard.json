@@ -1,0 +1,26 @@
+{
+    "title": "Dashboard",
+    "welcome": "Welcome back, {{name}}!",
+    "system_overview": "System Overview",
+    "total_lots": "Total Lots",
+    "total_images": "Total Images",
+    "uploaded_today": "Uploaded Today",
+    "storage_used": "Storage Used",
+    "recent_activity": "Recent Activity",
+    "view_all": "View All",
+    "quick_stats": "Quick Statistics",
+    "chart_title": "Daily Uploads (Last 7 Days)",
+    "no_recent_activity": "No recent activity",
+    "activity": {
+      "image_uploaded": "Image uploaded",
+      "lot_created": "Lot created",
+      "lot_updated": "Lot updated",
+      "image_deleted": "Image deleted"
+    },
+    "time": {
+      "just_now": "Just now",
+      "minutes_ago": "{{count}} minutes ago",
+      "hours_ago": "{{count}} hours ago",
+      "days_ago": "{{count}} days ago"
+    }
+  }

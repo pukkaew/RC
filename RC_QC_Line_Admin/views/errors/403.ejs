@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="<%= locale || 'th-TH' %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - <%= typeof t !== 'undefined' ? t('errors.forbidden') : 'Forbidden' %></title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-container {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .lock-icon {
+            animation: shake 2s infinite;
+        }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container bg-white rounded-lg shadow-2xl p-8 md:p-12 max-w-md mx-4 text-center">
+        <div class="lock-icon text-red-500 text-6xl mb-4">
+            <i class="fas fa-lock"></i>
+        </div>
+        
+        <h1 class="text-6xl font-bold text-gray-800 mb-2">403</h1>
+        
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">
+            <%= typeof t !== 'undefined' ? t('errors.forbidden') : 'Access Forbidden' %>
+        </h2>
+        
+        <p class="text-gray-600 mb-8">
+            <%= typeof t !== 'undefined' ? t('errors.forbidden_message') : 'You do not have permission to access this resource.' %>
+        </p>
+        
+        <div class="space-y-3">
+            <a href="javascript:history.back()" 
+               class="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition duration-300">
+                <i class="fas fa-arrow-left mr-2"></i>
+                <%= typeof t !== 'undefined' ? t('common.go_back') : 'Go Back' %>
+            </a>
+            
+            <br>
+            
+            <a href="/dashboard" 
+               class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300">
+                <i class="fas fa-home mr-2"></i>
+                <%= typeof t !== 'undefined' ? t('common.go_home') : 'Go to Dashboard' %>
+            </a>
+        </div>
+        
+        <div class="mt-8 text-sm text-gray-500">
+            <p><%= typeof t !== 'undefined' ? t('errors.need_help') : 'Need help?' %></p>
+            <p><%= typeof t !== 'undefined' ? t('errors.contact_admin') : 'Contact your system administrator' %></p>
+        </div>
+    </div>
+</body>
+</html>

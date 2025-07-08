@@ -1,0 +1,641 @@
+<%- include('../layouts/main', { 
+    title: t('reports.title'),
+    user: user 
+}) %>
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-chart-bar mr-2"></i>
+                <%= t('reports.title') %>
+            </h1>
+        </div>
+    </div>
+
+    <!-- Report Types -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Daily Summary Report -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-start">
+                <div class="bg-blue-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-calendar-day text-2xl text-blue-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-2"><%= t('reports.daily_summary') %></h3>
+                    <p class="text-gray-600 mb-4"><%= t('reports.daily_summary_desc') %></p>
+                    <button onclick="openReportModal('daily_summary')" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <%= t('reports.generate') %>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lot Summary Report -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-start">
+                <div class="bg-green-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-boxes text-2xl text-green-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-2"><%= t('reports.lot_summary') %></h3>
+                    <p class="text-gray-600 mb-4"><%= t('reports.lot_summary_desc') %></p>
+                    <button onclick="openReportModal('lot_summary')" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <%= t('reports.generate') %>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Activity Report -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-start">
+                <div class="bg-purple-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-user-chart text-2xl text-purple-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-2"><%= t('reports.user_activity') %></h3>
+                    <p class="text-gray-600 mb-4"><%= t('reports.user_activity_desc') %></p>
+                    <button onclick="openReportModal('user_activity')" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <%= t('reports.generate') %>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Audit Report -->
+        <% if (user.role === 'admin') { %>
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-start">
+                <div class="bg-red-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-shield-alt text-2xl text-red-600"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold mb-2"><%= t('reports.system_audit') %></h3>
+                    <p class="text-gray-600 mb-4"><%= t('reports.system_audit_desc') %></p>
+                    <button onclick="openReportModal('system_audit')" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <%= t('reports.generate') %>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Recent Reports -->
+    <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">
+            <i class="fas fa-history mr-2"></i>
+            <%= t('reports.recent_reports') %>
+        </h2>
+        
+        <div id="recentReports">
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                <p><%= t('common.loading') %></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Generation Modal -->
+<div id="reportModal" class="modal hidden">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    <%= t('reports.generate_report') %>
+                </h3>
+                <button onclick="closeModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="reportForm" onsubmit="generateReport(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="reportType" name="report_type">
+                    
+                    <!-- Date Range Selection -->
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <%= t('reports.date_range') %>
+                        </label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm text-gray-600"><%= t('reports.start_date') %></label>
+                                <input type="date" id="startDate" name="start_date" 
+                                       class="form-input w-full" required>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600"><%= t('reports.end_date') %></label>
+                                <input type="date" id="endDate" name="end_date" 
+                                       class="form-input w-full" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick date range buttons -->
+                        <div class="mt-2 flex gap-2 flex-wrap">
+                            <button type="button" onclick="setDateRange('today')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.today') %>
+                            </button>
+                            <button type="button" onclick="setDateRange('yesterday')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.yesterday') %>
+                            </button>
+                            <button type="button" onclick="setDateRange('last7days')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.last_7_days') %>
+                            </button>
+                            <button type="button" onclick="setDateRange('last30days')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.last_30_days') %>
+                            </button>
+                            <button type="button" onclick="setDateRange('thisMonth')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.this_month') %>
+                            </button>
+                            <button type="button" onclick="setDateRange('lastMonth')" 
+                                    class="text-sm text-blue-600 hover:underline">
+                                <%= t('reports.last_month') %>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Options (varies by report type) -->
+                    <div id="additionalOptions" class="mb-4">
+                        <!-- Populated dynamically based on report type -->
+                    </div>
+                    
+                    <!-- Format Selection -->
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <%= t('reports.format') %>
+                        </label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="format" value="preview" checked 
+                                       class="mr-2">
+                                <span><%= t('reports.preview') %></span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="format" value="excel" 
+                                       class="mr-2">
+                                <span><%= t('reports.excel') %></span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="format" value="pdf" 
+                                       class="mr-2">
+                                <span><%= t('reports.pdf') %></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                        <%= t('common.cancel') %>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        <%= t('reports.generate') %>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Report Preview Modal -->
+<div id="previewModal" class="modal hidden">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="previewTitle">
+                    <i class="fas fa-eye mr-2"></i>
+                    <%= t('reports.preview') %>
+                </h3>
+                <button onclick="closePreview()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="reportPreview" class="p-4">
+                    <!-- Report content will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="closePreview()" class="btn btn-secondary">
+                    <%= t('common.close') %>
+                </button>
+                <button onclick="exportReport('excel')" class="btn btn-success">
+                    <i class="fas fa-file-excel mr-2"></i>
+                    <%= t('reports.export_excel') %>
+                </button>
+                <button onclick="exportReport('pdf')" class="btn btn-danger">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    <%= t('reports.export_pdf') %>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReportData = null;
+
+// Load recent reports on page load
+document.addEventListener('DOMContentLoaded', loadRecentReports);
+
+// Report type configurations
+const reportConfigs = {
+    daily_summary: {
+        title: '<%= t("reports.daily_summary") %>',
+        additionalOptions: null
+    },
+    lot_summary: {
+        title: '<%= t("reports.lot_summary") %>',
+        additionalOptions: `
+            <label class="form-label"><%= t("reports.select_lots") %></label>
+            <select id="lotIds" name="lot_ids" multiple class="form-select w-full" size="5">
+                <% if (typeof lots !== 'undefined') { %>
+                    <% lots.forEach(lot => { %>
+                        <option value="<%= lot.lot_id %>"><%= lot.lot_number %></option>
+                    <% }) %>
+                <% } %>
+            </select>
+            <p class="text-sm text-gray-500 mt-1"><%= t("reports.lot_selection_hint") %></p>
+        `
+    },
+    user_activity: {
+        title: '<%= t("reports.user_activity") %>',
+        additionalOptions: `
+            <label class="form-label"><%= t("reports.select_users") %></label>
+            <select id="userIds" name="user_ids" multiple class="form-select w-full" size="5">
+                <% if (typeof users !== 'undefined') { %>
+                    <% users.forEach(user => { %>
+                        <option value="<%= user.admin_id %>"><%= user.full_name %> (<%= user.employee_id %>)</option>
+                    <% }) %>
+                <% } %>
+            </select>
+            <p class="text-sm text-gray-500 mt-1"><%= t("reports.user_selection_hint") %></p>
+        `
+    },
+    system_audit: {
+        title: '<%= t("reports.system_audit") %>',
+        additionalOptions: `
+            <label class="form-label"><%= t("reports.audit_actions") %></label>
+            <select id="actionTypes" name="action_types" multiple class="form-select w-full" size="5">
+                <option value="LOGIN_SUCCESS"><%= t("audit.login_success") %></option>
+                <option value="LOGIN_FAILED"><%= t("audit.login_failed") %></option>
+                <option value="LOT_UPDATE"><%= t("audit.lot_update") %></option>
+                <option value="LOT_DELETE"><%= t("audit.lot_delete") %></option>
+                <option value="IMAGE_DELETE"><%= t("audit.image_delete") %></option>
+                <option value="USER_CREATE"><%= t("audit.user_create") %></option>
+                <option value="USER_UPDATE"><%= t("audit.user_update") %></option>
+            </select>
+            <p class="text-sm text-gray-500 mt-1"><%= t("reports.action_selection_hint") %></p>
+        `
+    }
+};
+
+function openReportModal(reportType) {
+    const config = reportConfigs[reportType];
+    document.getElementById('modalTitle').innerHTML = `<i class="fas fa-file-alt mr-2"></i>${config.title}`;
+    document.getElementById('reportType').value = reportType;
+    
+    // Set default date range (last 7 days)
+    setDateRange('last7days');
+    
+    // Add additional options if any
+    const optionsContainer = document.getElementById('additionalOptions');
+    optionsContainer.innerHTML = config.additionalOptions || '';
+    
+    document.getElementById('reportModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('reportModal').classList.add('hidden');
+}
+
+function setDateRange(range) {
+    const today = new Date();
+    let startDate, endDate;
+    
+    switch (range) {
+        case 'today':
+            startDate = endDate = today;
+            break;
+        case 'yesterday':
+            startDate = endDate = new Date(today.setDate(today.getDate() - 1));
+            break;
+        case 'last7days':
+            startDate = new Date(today.setDate(today.getDate() - 6));
+            endDate = new Date();
+            break;
+        case 'last30days':
+            startDate = new Date(today.setDate(today.getDate() - 29));
+            endDate = new Date();
+            break;
+        case 'thisMonth':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'lastMonth':
+            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+    }
+    
+    document.getElementById('startDate').value = formatDateForInput(startDate);
+    document.getElementById('endDate').value = formatDateForInput(endDate);
+}
+
+function formatDateForInput(date) {
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+}
+
+async function generateReport(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
+    
+    // Handle multiple select fields
+    const lotIds = document.getElementById('lotIds');
+    if (lotIds) {
+        data.lot_ids = Array.from(lotIds.selectedOptions).map(opt => opt.value);
+    }
+    
+    const userIds = document.getElementById('userIds');
+    if (userIds) {
+        data.user_ids = Array.from(userIds.selectedOptions).map(opt => opt.value);
+    }
+    
+    const actionTypes = document.getElementById('actionTypes');
+    if (actionTypes) {
+        data.action_types = Array.from(actionTypes.selectedOptions).map(opt => opt.value);
+    }
+    
+    const format = data.format;
+    delete data.format;
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/reports/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) throw new Error('Failed to generate report');
+        
+        if (format === 'preview') {
+            const result = await response.json();
+            currentReportData = result.data;
+            showPreview(result.data);
+        } else {
+            // For Excel/PDF, the response is a file
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report_${data.report_type}_${Date.now()}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showAlert('success', '<%= t("reports.export_success") %>');
+        }
+        
+        closeModal();
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+function showPreview(data) {
+    document.getElementById('previewTitle').innerHTML = `<i class="fas fa-eye mr-2"></i>${data.title}`;
+    
+    let content = `
+        <div class="report-preview">
+            <div class="report-header mb-6">
+                <h2 class="text-2xl font-bold">${data.title}</h2>
+                <p class="text-gray-600">${data.dateRange}</p>
+                <p class="text-sm text-gray-500"><%= t('reports.generated_at') %>: ${new Date().toLocaleString()}</p>
+            </div>
+    `;
+    
+    // Add summary if available
+    if (data.summary) {
+        content += `
+            <div class="report-summary bg-gray-50 p-4 rounded-lg mb-6">
+                <h3 class="font-semibold mb-2"><%= t('reports.summary') %></h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        `;
+        
+        for (const [key, value] of Object.entries(data.summary)) {
+            content += `
+                <div>
+                    <p class="text-sm text-gray-600">${key}</p>
+                    <p class="text-xl font-semibold">${value}</p>
+                </div>
+            `;
+        }
+        
+        content += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add table data if available
+    if (data.rows && data.rows.length > 0) {
+        content += `
+            <div class="report-table">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+        `;
+        
+        // Add table headers
+        for (const header of data.headers) {
+            content += `<th class="p-2 text-left">${header}</th>`;
+        }
+        
+        content += `
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        // Add table rows
+        for (const row of data.rows) {
+            content += '<tr class="border-b hover:bg-gray-50">';
+            for (const cell of row) {
+                content += `<td class="p-2">${cell}</td>`;
+            }
+            content += '</tr>';
+        }
+        
+        content += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    content += '</div>';
+    
+    document.getElementById('reportPreview').innerHTML = content;
+    document.getElementById('previewModal').classList.remove('hidden');
+}
+
+function closePreview() {
+    document.getElementById('previewModal').classList.add('hidden');
+}
+
+async function exportReport(format) {
+    if (!currentReportData) return;
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/reports/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                data: currentReportData,
+                format: format
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to export report');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${currentReportData.title}_${Date.now()}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        hideLoading();
+        showAlert('success', '<%= t("reports.export_success") %>');
+    } catch (error) {
+        hideLoading();
+        showAlert('error', '<%= t("common.error_occurred") %>');
+    }
+}
+
+async function loadRecentReports() {
+    try {
+        const response = await fetch('/api/reports/recent');
+        if (!response.ok) throw new Error('Failed to load recent reports');
+        
+        const result = await response.json();
+        const reports = result.data;
+        
+        let content = '';
+        if (reports.length === 0) {
+            content = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-file-alt text-4xl mb-2"></i>
+                    <p><%= t('reports.no_recent_reports') %></p>
+                </div>
+            `;
+        } else {
+            content = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left p-2"><%= t('reports.type') %></th>
+                                <th class="text-left p-2"><%= t('reports.date_range') %></th>
+                                <th class="text-left p-2"><%= t('reports.generated_by') %></th>
+                                <th class="text-left p-2"><%= t('reports.generated_at') %></th>
+                                <th class="text-left p-2"><%= t('common.actions') %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            for (const report of reports) {
+                content += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2">${report.type_display}</td>
+                        <td class="p-2">${report.date_range}</td>
+                        <td class="p-2">${report.generated_by}</td>
+                        <td class="p-2">${report.generated_at}</td>
+                        <td class="p-2">
+                            <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            content += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
+        document.getElementById('recentReports').innerHTML = content;
+    } catch (error) {
+        document.getElementById('recentReports').innerHTML = `
+            <div class="text-center py-8 text-red-500">
+                <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                <p><%= t('common.error_occurred') %></p>
+            </div>
+        `;
+    }
+}
+
+async function viewReport(reportId) {
+    // Implementation for viewing saved reports
+    showAlert('info', '<%= t("common.feature_coming_soon") %>');
+}
+
+function showLoading() {
+    // Add loading overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'loadingOverlay';
+    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    overlay.innerHTML = `
+        <div class="bg-white rounded-lg p-6">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+            <p class="mt-2"><%= t('common.processing') %></p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.remove();
+}
+</script>

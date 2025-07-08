@@ -1,0 +1,40 @@
+{
+    "title": "Image Management",
+    "images": "images",
+    "no_images": "No images found",
+    "filter_by_lot": "Filter by Lot",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "search_placeholder": "Search by filename...",
+    "download_selected": "Download Selected",
+    "delete_selected": "Delete Selected",
+    "preview": "Preview",
+    "filename": "Filename",
+    "lot": "Lot",
+    "size": "Size",
+    "uploaded": "Uploaded",
+    "compressed": "Compressed",
+    "confirm_delete": "Are you sure you want to delete this image?",
+    "confirm_delete_multiple": "Are you sure you want to delete {count} images?",
+    "delete_success": "Image deleted successfully",
+    "delete_error": "Failed to delete image",
+    "bulk_delete_success": "Images deleted successfully",
+    "bulk_delete_error": "Failed to delete images",
+    "download_error": "Failed to download image",
+    "view_mode": {
+      "grid": "Grid View",
+      "list": "List View"
+    },
+    "selection": {
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "selected": "{{count}} selected"
+    },
+    "lightbox": {
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "download": "Download",
+      "info": "{{current}} of {{total}}"
+    }
+  }
