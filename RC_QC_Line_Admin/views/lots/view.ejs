@@ -1,0 +1,291 @@
+<%- include('../layouts/main', { 
+    body: (function() { %>
+
+<div class="container mx-auto">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="/lots" class="text-gray-700 hover:text-purple-600">
+                    <i class="fas fa-boxes mr-2"></i><%= t('common:navigation.lots') %>
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-gray-500"><%= lot.lot_number %></span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    
+    <!-- Lot Info Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                    <%= t('lots:view.lot_info') %>: <%= lot.lot_number %>
+                </h1>
+                <div class="mt-2 space-y-1 text-sm text-gray-600">
+                    <p><i class="fas fa-calendar mr-2"></i><%= t('lots:table.created_date') %>: <%= formatDate(lot.created_at) %></p>
+                    <p><i class="fas fa-clock mr-2"></i><%= t('lots:table.last_upload') %>: <%= lot.last_upload ? formatDateTime(lot.last_upload) : '-' %></p>
+                </div>
+            </div>
+            
+            <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+                <% if (isManager) { %>
+                    <a href="/lots/<%= lot.lot_id %>/edit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit mr-2"></i><%= t('lots:actions.edit') %>
+                    </a>
+                <% } %>
+                
+                <% if (lot.image_count > 0) { %>
+                    <a href="/lots/<%= lot.lot_id %>/download" class="btn btn-success btn-sm">
+                        <i class="fas fa-download mr-2"></i><%= t('lots:view.download_all') %>
+                    </a>
+                <% } %>
+                
+                <% if (isAdmin) { %>
+                    <button onclick="deleteLot()" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash mr-2"></i><%= t('lots:actions.delete') %>
+                    </button>
+                <% } %>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-purple-600"><%= formatNumber(lot.image_count) %></p>
+                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.image_count') %></p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-blue-600"><%= formatFileSize(lot.total_size) %></p>
+                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.total_size') %></p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-green-600">
+                    <% if (lot.total_size && lot.image_count) { %>
+                        <%= formatFileSize(lot.total_size / lot.image_count) %>
+                    <% } else { %>
+                        0 B
+                    <% } %>
+                </p>
+                <p class="text-sm text-gray-600 mt-1"><%= t('lots:view.avg_size') %></p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold <%= lot.status === 'active' ? 'text-green-600' : 'text-red-600' %>">
+                    <i class="fas fa-<%= lot.status === 'active' ? 'check-circle' : 'times-circle' %>"></i>
+                </p>
+                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.status') %></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Images Section -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">
+                <i class="fas fa-images mr-2"></i><%= t('lots:view.images') %>
+            </h2>
+            
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-600">
+                    <%= t('common:table.showing') %> <%= images.length %> <%= t('common:table.of') %> <%= lot.image_count %>
+                </span>
+            </div>
+        </div>
+        
+        <% if (images.length > 0) { %>
+            <!-- Image Grid -->
+            <div class="image-grid">
+                <% images.forEach(image => { %>
+                    <div class="image-card" data-image-id="<%= image.image_id %>">
+                        <img src="<%= image.thumbnail_url || image.public_url %>" 
+                             alt="<%= image.file_name %>"
+                             class="w-full h-32 object-cover cursor-pointer"
+                             onclick="viewImage('<%= image.public_url %>', '<%= image.file_name %>')">
+                        
+                        <div class="p-2">
+                            <p class="text-xs text-gray-600 truncate" title="<%= image.file_name %>">
+                                <%= image.file_name %>
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                <%= formatFileSize(image.original_size) %>
+                            </p>
+                        </div>
+                        
+                        <div class="image-card-overlay opacity-0 group-hover:opacity-100">
+                            <div class="flex space-x-2">
+                                <button onclick="viewImage('<%= image.public_url %>', '<%= image.file_name %>')" 
+                                        class="text-white hover:text-gray-200">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="/images/<%= image.image_id %>/download" 
+                                   class="text-white hover:text-gray-200">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <% if (isManager) { %>
+                                    <button onclick="deleteImage(<%= image.image_id %>, '<%= image.file_name %>')" 
+                                            class="text-white hover:text-gray-200">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+            
+            <% if (pagination.totalPages > 1) { %>
+                <!-- Pagination -->
+                <div class="mt-6 flex justify-center">
+                    <div class="flex space-x-2">
+                        <% if (pagination.hasPrev) { %>
+                            <a href="?page=<%= pagination.page - 1 %>" 
+                               class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        <% } %>
+                        
+                        <% for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+                            <a href="?page=<%= i %>" 
+                               class="px-3 py-1 text-sm border rounded-md <%= i === pagination.page ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 hover:bg-gray-50' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+                        
+                        <% if (pagination.hasNext) { %>
+                            <a href="?page=<%= pagination.page + 1 %>" 
+                               class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        <% } else { %>
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-images text-4xl mb-2"></i>
+                <p><%= t('lots:view.no_images') %></p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-75" onclick="closeImageModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-full">
+            <img id="modalImage" src="" alt="" class="max-w-full max-h-full">
+            <button onclick="closeImageModal()" 
+                    class="absolute top-4 right-4 text-white hover:text-gray-300">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<% })(), 
+    scripts: `
+<script>
+function viewImage(url, filename) {
+    document.getElementById('modalImage').src = url;
+    document.getElementById('modalImage').alt = filename;
+    document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+}
+
+function deleteImage(imageId, fileName) {
+    Swal.fire({
+        title: '<%= t("images:delete.title") %>',
+        text: '<%= t("images:delete.single_confirm") %>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<%= t("images:delete.confirm_button") %>',
+        cancelButtonText: '<%= t("images:delete.cancel_button") %>'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/images/' + imageId,
+                method: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '<%= t("common:status.success") %>',
+                            text: response.message,
+                            timer: 1500
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Utils.error(xhr.responseJSON?.message || '<%= t("common:errors.delete_failed") %>');
+                }
+            });
+        }
+    });
+}
+
+function deleteLot() {
+    const lotId = <%= lot.lot_id %>;
+    const lotNumber = '<%= lot.lot_number %>';
+    const imageCount = <%= lot.image_count %>;
+    
+    Swal.fire({
+        title: '<%= t("lots:delete.title") %>',
+        html: \`<%= t("lots:delete.confirm") %><br><br>
+               <strong>Lot: \${lotNumber}</strong><br>
+               <%= t("lots:delete.image_count", { count: '${imageCount}' }) %><br><br>
+               <span class="text-red-600"><%= t("lots:delete.warning") %></span>\`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<%= t("lots:delete.confirm_button") %>',
+        cancelButtonText: '<%= t("lots:delete.cancel_button") %>'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Utils.showLoading('<%= t("common:messages.loading") %>');
+            
+            $.ajax({
+                url: '/lots/' + lotId,
+                method: 'DELETE',
+                success: function(response) {
+                    Utils.hideLoading();
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '<%= t("common:status.success") %>',
+                            text: response.message,
+                            timer: 2000
+                        }).then(() => {
+                            window.location.href = '/lots';
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Utils.hideLoading();
+                    Utils.error(xhr.responseJSON?.message || '<%= t("common:errors.delete_failed") %>');
+                }
+            });
+        }
+    });
+}
+
+// Keyboard navigation for image modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('imageModal').classList.contains('hidden')) {
+        closeImageModal();
+    }
+});
+</script>
+` }) %>

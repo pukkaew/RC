@@ -1,0 +1,56 @@
+{
+    "title": "แดชบอร์ด",
+    "subtitle": "ภาพรวมระบบจัดการรูปภาพ QC",
+    
+    "stats": {
+      "total_lots": "Lot ทั้งหมด",
+      "total_images": "รูปภาพทั้งหมด",
+      "uploads_today": "อัปโหลดวันนี้",
+      "storage_used": "พื้นที่ที่ใช้",
+      "active_users": "ผู้ใช้ที่ใช้งาน"
+    },
+    
+    "charts": {
+      "uploads_7days": "การอัปโหลด 7 วันย้อนหลัง",
+      "uploads_per_day": "การอัปโหลดต่อวัน",
+      "uploads": "การอัปโหลด",
+      "storage_breakdown": "การใช้พื้นที่จัดเก็บ",
+      "top_uploaders": "ผู้อัปโหลดมากที่สุด"
+    },
+    
+    "recent_activity": {
+      "title": "กิจกรรมล่าสุด",
+      "no_activity": "ยังไม่มีกิจกรรม",
+      "view_all": "ดูทั้งหมด",
+      "uploaded": "อัปโหลด",
+      "deleted": "ลบ",
+      "modified": "แก้ไข"
+    },
+    
+    "quick_actions": {
+      "title": "เมนูลัด",
+      "view_lots": "ดู Lot ทั้งหมด",
+      "manage_images": "จัดการรูปภาพ",
+      "generate_report": "สร้างรายงาน",
+      "manage_users": "จัดการผู้ใช้",
+      "help": "ศูนย์ช่วยเหลือ",
+      "system_settings": "ตั้งค่าระบบ"
+    },
+    
+    "notifications": {
+      "title": "การแจ้งเตือน",
+      "no_notifications": "ไม่มีการแจ้งเตือนใหม่",
+      "mark_all_read": "ทำเครื่องหมายอ่านทั้งหมด"
+    },
+    
+    "system_health": {
+      "title": "สถานะระบบ",
+      "status": "สถานะ",
+      "healthy": "ปกติ",
+      "warning": "มีคำเตือน",
+      "critical": "วิกฤต",
+      "database": "ฐานข้อมูล",
+      "storage": "พื้นที่จัดเก็บ",
+      "performance": "ประสิทธิภาพ"
+    }
+  }

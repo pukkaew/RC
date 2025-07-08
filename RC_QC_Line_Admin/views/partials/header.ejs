@@ -1,0 +1,194 @@
+<!-- Header -->
+<header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Mobile menu button -->
+            <button id="sidebarToggle" class="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            
+            <!-- Breadcrumb -->
+            <div class="flex-1 flex items-center">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="flex items-center space-x-2">
+                        <li>
+                            <a href="/" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-home"></i>
+                            </a>
+                        </li>
+                        <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs.length > 0) { %>
+                            <% breadcrumbs.forEach((crumb, index) => { %>
+                                <li class="flex items-center">
+                                    <i class="fas fa-chevron-right text-gray-400 mx-2 text-sm"></i>
+                                    <% if (index === breadcrumbs.length - 1) { %>
+                                        <span class="text-gray-500"><%= crumb.text %></span>
+                                    <% } else { %>
+                                        <a href="<%= crumb.url %>" class="text-gray-400 hover:text-gray-500">
+                                            <%= crumb.text %>
+                                        </a>
+                                    <% } %>
+                                </li>
+                            <% }) %>
+                        <% } %>
+                    </ol>
+                </nav>
+            </div>
+            
+            <!-- Right side -->
+            <div class="flex items-center space-x-4">
+                <!-- Language Selector -->
+                <div class="relative">
+                    <select id="languageSelector" class="appearance-none bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg text-sm focus:outline-none focus:border-purple-500">
+                        <% supportedLangs.forEach(lang => { %>
+                            <option value="<%= lang %>" <%= lang === currentLang ? 'selected' : '' %>>
+                                <%= getLanguageFlag(lang) %> <%= getLanguageName(lang) %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+                
+                <!-- Notifications (Future feature) -->
+                <button class="relative p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full">
+                    <i class="fas fa-bell text-lg"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                
+                <!-- User Dropdown -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.away="open = false" class="flex items-center space-x-3 text-sm focus:outline-none">
+                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white">
+                            <span class="font-medium"><%= currentUser.full_name.charAt(0).toUpperCase() %></span>
+                        </div>
+                        <div class="hidden md:block text-left">
+                            <p class="text-gray-700 font-medium"><%= currentUser.full_name %></p>
+                            <p class="text-gray-500 text-xs"><%= t('users:roles.' + currentUser.role) %></p>
+                        </div>
+                        <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <p class="text-sm font-medium text-gray-900"><%= currentUser.full_name %></p>
+                                <p class="text-sm text-gray-500"><%= currentUser.employee_id %></p>
+                            </div>
+                            
+                            <a href="#" @click="showProfileModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-circle mr-2"></i>
+                                <%= t('common:navigation.profile') %>
+                            </a>
+                            
+                            <a href="#" @click="showChangePasswordModal()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-key mr-2"></i>
+                                <%= t('auth:change_password.title') %>
+                            </a>
+                            
+                            <div class="border-t border-gray-100"></div>
+                            
+                            <a href="/auth/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>
+                                <%= t('common:navigation.logout') %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Alpine.js for dropdown -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<script>
+// Language selector
+$('#languageSelector').change(function() {
+    const lang = $(this).val();
+    $.post('/auth/language', { language: lang }, function(response) {
+        if (response.success) {
+            window.location.reload();
+        }
+    });
+});
+
+// Profile modal
+function showProfileModal() {
+    // TODO: Implement profile modal
+    alert('Profile feature coming soon');
+}
+
+// Change password modal  
+function showChangePasswordModal() {
+    Swal.fire({
+        title: '<%= t("auth:change_password.title") %>',
+        html: `
+            <form id="changePasswordForm" class="text-left">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                        <%= t("auth:change_password.current_password") %>
+                    </label>
+                    <input type="password" name="current_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                        <%= t("auth:change_password.new_password") %>
+                    </label>
+                    <input type="password" name="new_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500" required>
+                    <p class="text-xs text-gray-500 mt-1"><%= t("auth:change_password.password_requirements") %></p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">
+                        <%= t("auth:change_password.confirm_password") %>
+                    </label>
+                    <input type="password" name="confirm_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500" required>
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<%= t("common:actions.save") %>',
+        cancelButtonText: '<%= t("common:actions.cancel") %>',
+        confirmButtonColor: '#9333ea',
+        preConfirm: () => {
+            const form = document.getElementById('changePasswordForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            
+            if (data.new_password !== data.confirm_password) {
+                Swal.showValidationMessage('<%= t("common:form.password_mismatch") %>');
+                return false;
+            }
+            
+            return $.post('/auth/change-password', data)
+                .then(response => {
+                    if (!response.success) {
+                        throw new Error(response.message);
+                    }
+                    return response;
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.responseJSON?.message || error.message);
+                });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                icon: 'success',
+                title: '<%= t("common:status.success") %>',
+                text: '<%= t("auth:change_password.success") %>',
+                confirmButtonColor: '#9333ea'
+            });
+        }
+    });
+}
+</script>

@@ -1,0 +1,145 @@
+{
+    "app_name": "RC QC Admin",
+    "app_title": "ระบบจัดการรูปภาพ QC",
+    "welcome": "ยินดีต้อนรับ",
+    "language": "ภาษา",
+    "language_updated": "เปลี่ยนภาษาเรียบร้อยแล้ว",
+    
+    "navigation": {
+      "dashboard": "แดชบอร์ด",
+      "lots": "จัดการ Lot",
+      "images": "จัดการรูปภาพ",
+      "reports": "รายงาน",
+      "users": "จัดการผู้ใช้",
+      "audit": "บันทึกการใช้งาน",
+      "settings": "ตั้งค่า",
+      "help": "ช่วยเหลือ",
+      "profile": "โปรไฟล์",
+      "logout": "ออกจากระบบ"
+    },
+    
+    "actions": {
+      "view": "ดู",
+      "edit": "แก้ไข",
+      "delete": "ลบ",
+      "save": "บันทึก",
+      "cancel": "ยกเลิก",
+      "search": "ค้นหา",
+      "filter": "กรอง",
+      "export": "ส่งออก",
+      "import": "นำเข้า",
+      "download": "ดาวน์โหลด",
+      "upload": "อัปโหลด",
+      "refresh": "รีเฟรช",
+      "back": "กลับ",
+      "next": "ถัดไป",
+      "previous": "ก่อนหน้า",
+      "confirm": "ยืนยัน",
+      "select": "เลือก",
+      "select_all": "เลือกทั้งหมด",
+      "deselect_all": "ยกเลิกเลือกทั้งหมด",
+      "close": "ปิด",
+      "print": "พิมพ์",
+      "copy": "คัดลอก",
+      "paste": "วาง",
+      "change": "เปลี่ยน"
+    },
+    
+    "status": {
+      "active": "ใช้งาน",
+      "inactive": "ไม่ใช้งาน",
+      "deleted": "ถูกลบ",
+      "pending": "รอดำเนินการ",
+      "completed": "เสร็จสิ้น",
+      "failed": "ล้มเหลว",
+      "success": "สำเร็จ",
+      "error": "ผิดพลาด",
+      "warning": "คำเตือน",
+      "info": "ข้อมูล"
+    },
+    
+    "table": {
+      "no_data": "ไม่พบข้อมูล",
+      "loading": "กำลังโหลด...",
+      "rows_per_page": "แถวต่อหน้า",
+      "page": "หน้า",
+      "of": "จาก",
+      "total": "ทั้งหมด",
+      "showing": "แสดง",
+      "to": "ถึง",
+      "entries": "รายการ",
+      "filtered_from": "กรองจาก",
+      "total_entries": "รายการทั้งหมด"
+    },
+    
+    "form": {
+      "required": "จำเป็น",
+      "optional": "ไม่จำเป็น",
+      "select_option": "-- เลือก --",
+      "select_date": "เลือกวันที่",
+      "select_time": "เลือกเวลา",
+      "select_file": "เลือกไฟล์",
+      "no_file_selected": "ยังไม่ได้เลือกไฟล์",
+      "invalid_input": "ข้อมูลไม่ถูกต้อง",
+      "min_length": "ความยาวขั้นต่ำ {{min}} ตัวอักษร",
+      "max_length": "ความยาวสูงสุด {{max}} ตัวอักษร",
+      "min_value": "ค่าขั้นต่ำ {{min}}",
+      "max_value": "ค่าสูงสุด {{max}}",
+      "email_format": "รูปแบบอีเมลไม่ถูกต้อง",
+      "password_mismatch": "รหัสผ่านไม่ตรงกัน",
+      "field_required": "กรุณากรอกข้อมูลนี้"
+    },
+    
+    "messages": {
+      "save_success": "บันทึกข้อมูลเรียบร้อยแล้ว",
+      "update_success": "อัปเดตข้อมูลเรียบร้อยแล้ว",
+      "delete_success": "ลบข้อมูลเรียบร้อยแล้ว",
+      "operation_success": "ดำเนินการเรียบร้อยแล้ว",
+      "confirm_delete": "คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?",
+      "confirm_action": "คุณแน่ใจหรือไม่ที่จะดำเนินการนี้?",
+      "cannot_undo": "การดำเนินการนี้ไม่สามารถยกเลิกได้",
+      "loading": "กำลังดำเนินการ...",
+      "please_wait": "กรุณารอสักครู่"
+    },
+    
+    "errors": {
+      "general": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+      "system_error": "เกิดข้อผิดพลาดในระบบ",
+      "network_error": "เกิดข้อผิดพลาดในการเชื่อมต่อ",
+      "validation_error": "ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่",
+      "not_found": "ไม่พบข้อมูลที่ต้องการ",
+      "unauthorized": "คุณไม่มีสิทธิ์ในการดำเนินการนี้",
+      "forbidden": "ไม่อนุญาตให้เข้าถึง",
+      "bad_request": "คำขอไม่ถูกต้อง",
+      "server_error": "เซิร์ฟเวอร์เกิดข้อผิดพลาด",
+      "timeout": "หมดเวลาการเชื่อมต่อ",
+      "load_failed": "ไม่สามารถโหลดข้อมูลได้",
+      "save_failed": "ไม่สามารถบันทึกข้อมูลได้",
+      "delete_failed": "ไม่สามารถลบข้อมูลได้",
+      "upload_failed": "ไม่สามารถอัปโหลดไฟล์ได้",
+      "download_failed": "ไม่สามารถดาวน์โหลดไฟล์ได้"
+    },
+    
+    "time": {
+      "just_now": "เมื่อสักครู่",
+      "seconds_ago": "{{count}} วินาทีที่แล้ว",
+      "minute_ago": "1 นาทีที่แล้ว",
+      "minutes_ago": "{{count}} นาทีที่แล้ว",
+      "hour_ago": "1 ชั่วโมงที่แล้ว",
+      "hours_ago": "{{count}} ชั่วโมงที่แล้ว",
+      "day_ago": "เมื่อวาน",
+      "days_ago": "{{count}} วันที่แล้ว",
+      "week_ago": "1 สัปดาห์ที่แล้ว",
+      "weeks_ago": "{{count}} สัปดาห์ที่แล้ว",
+      "month_ago": "1 เดือนที่แล้ว",
+      "months_ago": "{{count}} เดือนที่แล้ว",
+      "year_ago": "1 ปีที่แล้ว",
+      "years_ago": "{{count}} ปีที่แล้ว"
+    },
+    
+    "footer": {
+      "copyright": "© 2025 RC QC System. สงวนลิขสิทธิ์",
+      "version": "เวอร์ชัน {{version}}",
+      "powered_by": "พัฒนาโดย RC Team"
+    }
+  }

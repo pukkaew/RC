@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="<%= currentLang %>" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= title || 'RC QC Admin' %> - <%= appName %></title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts - Sarabun for Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.tailwindcss.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.tailwindcss.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Moment.js with locale -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/app.css">
+    
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        
+        /* Thai font adjustment */
+        <% if (currentLang === 'th-TH') { %>
+        body {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        <% } %>
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Sidebar transition */
+        .sidebar-transition {
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-full">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <%- include('../partials/sidebar') %>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <%- include('../partials/header') %>
+            
+            <!-- Page Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4">
+                <!-- Alerts -->
+                <%- include('../partials/alerts') %>
+                
+                <!-- Content -->
+                <%- body %>
+            </main>
+            
+            <!-- Footer -->
+            <%- include('../partials/footer') %>
+        </div>
+    </div>
+    
+    <!-- Language Data -->
+    <script>
+        window.appLang = '<%= currentLang %>';
+        window.translations = {
+            common: <%- JSON.stringify(t('common:')) %>,
+            current: <%- JSON.stringify(t()) %>
+        };
+        
+        // Set moment locale
+        moment.locale('<%= currentLang === "th-TH" ? "th" : "en" %>');
+    </script>
+    
+    <!-- Scripts -->
+    <%- include('../partials/scripts') %>
+    
+    <!-- Page specific scripts -->
+    <% if (typeof scripts !== 'undefined') { %>
+        <%- scripts %>
+    <% } %>
+</body>
+</html>

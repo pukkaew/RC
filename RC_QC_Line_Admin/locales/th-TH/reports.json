@@ -1,0 +1,107 @@
+{
+    "title": "รายงาน",
+    "subtitle": "ดูและส่งออกรายงานต่างๆ",
+    
+    "types": {
+      "summary": "สรุปภาพรวม",
+      "daily": "รายงานประจำวัน",
+      "lot_summary": "สรุป Lot",
+      "image_details": "รายละเอียดรูปภาพ",
+      "upload_trends": "แนวโน้มการอัปโหลด",
+      "storage": "การใช้พื้นที่จัดเก็บ",
+      "user_activity": "กิจกรรมผู้ใช้"
+    },
+    
+    "filters": {
+      "date_range": "ช่วงวันที่",
+      "start_date": "วันที่เริ่มต้น",
+      "end_date": "วันที่สิ้นสุด",
+      "lot": "Lot",
+      "user": "ผู้ใช้",
+      "apply": "ใช้ตัวกรอง",
+      "reset": "รีเซ็ต",
+      "last_7_days": "7 วันล่าสุด",
+      "last_30_days": "30 วันล่าสุด",
+      "this_month": "เดือนนี้",
+      "last_month": "เดือนที่แล้ว",
+      "custom_range": "กำหนดเอง"
+    },
+    
+    "summary": {
+      "total_lots": "Lot ทั้งหมด",
+      "total_images": "รูปภาพทั้งหมด",
+      "total_size": "พื้นที่ใช้งานรวม",
+      "active_users": "ผู้ใช้ที่ใช้งาน",
+      "images_in_period": "รูปภาพในช่วงเวลา",
+      "average_per_day": "เฉลี่ยต่อวัน"
+    },
+    
+    "daily": {
+      "title": "รายงานประจำวัน",
+      "uploads_by_hour": "การอัปโหลดตามชั่วโมง",
+      "uploads_by_lot": "การอัปโหลดตาม Lot",
+      "uploads_by_user": "การอัปโหลดตามผู้ใช้",
+      "hour": "ชั่วโมง",
+      "upload_count": "จำนวนอัปโหลด",
+      "first_upload": "อัปโหลดแรก",
+      "last_upload": "อัปโหลดล่าสุด"
+    },
+    
+    "storage": {
+      "title": "รายงานการใช้พื้นที่",
+      "by_lot": "แยกตาม Lot",
+      "by_date": "แยกตามวันที่",
+      "by_type": "แยกตามประเภท",
+      "top_lots": "Lot ที่ใช้พื้นที่มากที่สุด",
+      "growth_trend": "แนวโน้มการเติบโต",
+      "original_size": "ขนาดต้นฉบับ",
+      "compressed_size": "ขนาดบีบอัด",
+      "compression_ratio": "อัตราการบีบอัด"
+    },
+    
+    "user_activity": {
+      "title": "รายงานกิจกรรมผู้ใช้",
+      "upload_activity": "กิจกรรมการอัปโหลด",
+      "admin_activity": "กิจกรรมผู้ดูแลระบบ",
+      "top_uploaders": "ผู้อัปโหลดมากที่สุด",
+      "active_days": "วันที่ใช้งาน",
+      "lots_touched": "Lot ที่เกี่ยวข้อง",
+      "login_count": "จำนวนครั้งเข้าสู่ระบบ",
+      "actions_performed": "การดำเนินการ"
+    },
+    
+    "export": {
+      "title": "ส่งออกรายงาน",
+      "format": "รูปแบบไฟล์",
+      "excel": "Excel (.xlsx)",
+      "csv": "CSV (.csv)",
+      "pdf": "PDF",
+      "include_charts": "รวมกราฟ",
+      "include_summary": "รวมสรุป",
+      "export_button": "ส่งออก",
+      "preparing": "กำลังเตรียมรายงาน...",
+      "success": "ส่งออกรายงานเรียบร้อยแล้ว"
+    },
+    
+    "charts": {
+      "upload_trend": "แนวโน้มการอัปโหลด",
+      "lot_distribution": "การกระจายตาม Lot",
+      "storage_usage": "การใช้พื้นที่จัดเก็บ",
+      "user_contribution": "การมีส่วนร่วมของผู้ใช้"
+    },
+    
+    "messages": {
+      "no_data": "ไม่มีข้อมูลในช่วงเวลาที่เลือก",
+      "select_date_range": "กรุณาเลือกช่วงวันที่",
+      "generating": "กำลังสร้างรายงาน...",
+      "export_success": "ส่งออกรายงานเรียบร้อยแล้ว",
+      "export_failed": "ไม่สามารถส่งออกรายงานได้"
+    },
+    
+    "errors": {
+      "invalid_date_range": "ช่วงวันที่ไม่ถูกต้อง",
+      "date_future": "ไม่สามารถเลือกวันที่ในอนาคตได้",
+      "export_failed": "ไม่สามารถส่งออกรายงานได้",
+      "rate_limit": "ส่งออกรายงานได้ไม่เกิน 5 ครั้งใน 10 นาที"
+    }
+  }

@@ -1,0 +1,266 @@
+/* RC QC Admin Dashboard - Custom Styles */
+
+/* Form Controls */
+.form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition;
+}
+
+.form-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition bg-white;
+}
+
+.form-checkbox {
+    @apply rounded text-purple-600 focus:ring-purple-500 border-gray-300;
+}
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-error {
+    @apply text-red-600 text-sm mt-1;
+}
+
+/* Buttons */
+.btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200;
+}
+
+.btn-primary {
+    @apply btn bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500;
+}
+
+.btn-secondary {
+    @apply btn bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+}
+
+.btn-success {
+    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-warning {
+    @apply btn bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+}
+
+.btn-info {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-outline {
+    @apply btn bg-white border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.btn-sm {
+    @apply px-3 py-1.5 text-xs;
+}
+
+.btn-lg {
+    @apply px-6 py-3 text-base;
+}
+
+/* Cards */
+.card {
+    @apply bg-white rounded-lg shadow-md;
+}
+
+.card-header {
+    @apply px-6 py-4 border-b border-gray-200;
+}
+
+.card-body {
+    @apply p-6;
+}
+
+.card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+}
+
+/* Tables */
+.table-container {
+    @apply overflow-x-auto shadow-sm rounded-lg;
+}
+
+.table {
+    @apply min-w-full divide-y divide-gray-200;
+}
+
+.table thead {
+    @apply bg-gray-50;
+}
+
+.table th {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+.table tbody tr {
+    @apply hover:bg-gray-50 transition-colors;
+}
+
+/* Badges */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-primary {
+    @apply badge bg-purple-100 text-purple-800;
+}
+
+.badge-success {
+    @apply badge bg-green-100 text-green-800;
+}
+
+.badge-danger {
+    @apply badge bg-red-100 text-red-800;
+}
+
+.badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+}
+
+.badge-info {
+    @apply badge bg-blue-100 text-blue-800;
+}
+
+.badge-gray {
+    @apply badge bg-gray-100 text-gray-800;
+}
+
+/* Image Grid */
+.image-grid {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4;
+}
+
+.image-card {
+    @apply relative group cursor-pointer rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow;
+}
+
+.image-card img {
+    @apply w-full h-32 object-cover;
+}
+
+.image-card-overlay {
+    @apply absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center;
+}
+
+.image-checkbox {
+    @apply absolute top-2 left-2 z-10;
+}
+
+/* Dropdown */
+.dropdown {
+    @apply relative inline-block text-left;
+}
+
+.dropdown-menu {
+    @apply absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50;
+}
+
+.dropdown-item {
+    @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+}
+
+/* Loading Spinner */
+.spinner {
+    @apply inline-block w-4 h-4 border-2 border-gray-300 border-t-purple-600 rounded-full animate-spin;
+}
+
+.spinner-lg {
+    @apply w-8 h-8 border-4;
+}
+
+/* DataTables Custom Styling */
+.dataTables_wrapper .dataTables_length select {
+    @apply form-select py-1 text-sm;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    @apply form-input py-1 text-sm;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    @apply px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer mx-1;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    @apply bg-purple-600 text-white hover:bg-purple-700 border-purple-600;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+    @apply opacity-50 cursor-not-allowed hover:bg-white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.slide-down {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Utilities */
+.text-truncate {
+    @apply truncate;
+}
+
+.aspect-square {
+    aspect-ratio: 1 / 1;
+}
+
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-break-before {
+        page-break-before: always;
+    }
+    
+    .print-break-after {
+        page-break-after: always;
+    }
+}

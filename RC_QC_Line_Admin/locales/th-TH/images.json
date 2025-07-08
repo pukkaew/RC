@@ -1,0 +1,77 @@
+{
+    "title": "จัดการรูปภาพ",
+    "subtitle": "ดูและจัดการรูปภาพ QC ทั้งหมด",
+    
+    "filter": {
+      "title": "ตัวกรอง",
+      "lot": "Lot",
+      "all_lots": "Lot ทั้งหมด",
+      "date_range": "ช่วงวันที่",
+      "start_date": "วันที่เริ่มต้น",
+      "end_date": "วันที่สิ้นสุด",
+      "uploaded_by": "อัปโหลดโดย",
+      "apply": "ใช้ตัวกรอง",
+      "reset": "รีเซ็ต"
+    },
+    
+    "view": {
+      "grid": "มุมมองตาราง",
+      "list": "มุมมองรายการ",
+      "images_per_page": "รูปต่อหน้า"
+    },
+    
+    "selection": {
+      "select_all": "เลือกทั้งหมด",
+      "deselect_all": "ยกเลิกเลือกทั้งหมด",
+      "selected": "เลือกแล้ว {{count}} รูป",
+      "bulk_actions": "การดำเนินการแบบกลุ่ม"
+    },
+    
+    "details": {
+      "file_name": "ชื่อไฟล์",
+      "lot_number": "เลข Lot",
+      "upload_date": "วันที่อัปโหลด",
+      "uploaded_by": "อัปโหลดโดย",
+      "file_size": "ขนาดไฟล์",
+      "dimensions": "ขนาด",
+      "mime_type": "ประเภทไฟล์"
+    },
+    
+    "actions": {
+      "view": "ดูรูปภาพ",
+      "download": "ดาวน์โหลด",
+      "delete": "ลบ",
+      "download_selected": "ดาวน์โหลดที่เลือก",
+      "delete_selected": "ลบที่เลือก",
+      "zoom_in": "ซูมเข้า",
+      "zoom_out": "ซูมออก",
+      "rotate": "หมุน",
+      "fullscreen": "เต็มหน้าจอ"
+    },
+    
+    "delete": {
+      "title": "ลบรูปภาพ",
+      "single_confirm": "คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?",
+      "bulk_confirm": "คุณแน่ใจหรือไม่ที่จะลบรูปภาพ {{count}} รูป?",
+      "warning": "การดำเนินการนี้ไม่สามารถยกเลิกได้",
+      "confirm_button": "ใช่, ลบเลย",
+      "cancel_button": "ยกเลิก"
+    },
+    
+    "messages": {
+      "delete_success": "ลบรูปภาพเรียบร้อยแล้ว",
+      "bulk_delete_success": "ลบรูปภาพ {{count}} รูปเรียบร้อยแล้ว",
+      "download_started": "เริ่มดาวน์โหลด...",
+      "download_preparing": "กำลังเตรียมไฟล์ ZIP...",
+      "no_images": "ไม่พบรูปภาพตามเงื่อนไขที่กำหนด"
+    },
+    
+    "errors": {
+      "not_found": "ไม่พบรูปภาพที่ต้องการ",
+      "file_not_found": "ไม่พบไฟล์รูปภาพในระบบ",
+      "no_selection": "กรุณาเลือกรูปภาพอย่างน้อย 1 รูป",
+      "too_many_selected": "เลือกรูปภาพได้สูงสุด 50 รูปต่อครั้ง",
+      "delete_failed": "ไม่สามารถลบรูปภาพได้",
+      "download_failed": "ไม่สามารถดาวน์โหลดรูปภาพได้"
+    }
+  }

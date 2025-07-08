@@ -1,0 +1,148 @@
+<!-- Sidebar -->
+<div id="sidebar" class="bg-gray-800 text-white w-64 min-h-screen transition-all duration-300 flex flex-col">
+    <!-- Logo -->
+    <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-clipboard-check text-white text-xl"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold"><%= appName %></h2>
+                <p class="text-xs text-gray-400"><%= t('common:app_title') %></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Info -->
+    <div class="p-4 border-b border-gray-700">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm font-medium"><%= currentUser.full_name %></p>
+                <p class="text-xs text-gray-400">
+                    <% if (currentUser.role === 'admin') { %>
+                        <i class="fas fa-crown text-yellow-400"></i>
+                    <% } else if (currentUser.role === 'manager') { %>
+                        <i class="fas fa-user-tie text-blue-400"></i>
+                    <% } else { %>
+                        <i class="fas fa-user text-gray-400"></i>
+                    <% } %>
+                    <%= t('users:roles.' + currentUser.role) %>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+        <!-- Dashboard -->
+        <a href="/" class="nav-link <%= currentPath === '/' ? 'active' : '' %>">
+            <i class="fas fa-tachometer-alt w-5"></i>
+            <span><%= t('common:navigation.dashboard') %></span>
+        </a>
+        
+        <!-- Lot Management -->
+        <a href="/lots" class="nav-link <%= currentPath.startsWith('/lots') ? 'active' : '' %>">
+            <i class="fas fa-boxes w-5"></i>
+            <span><%= t('common:navigation.lots') %></span>
+        </a>
+        
+        <!-- Image Management -->
+        <a href="/images" class="nav-link <%= currentPath.startsWith('/images') ? 'active' : '' %>">
+            <i class="fas fa-images w-5"></i>
+            <span><%= t('common:navigation.images') %></span>
+        </a>
+        
+        <!-- Reports -->
+        <a href="/reports" class="nav-link <%= currentPath.startsWith('/reports') ? 'active' : '' %>">
+            <i class="fas fa-chart-line w-5"></i>
+            <span><%= t('common:navigation.reports') %></span>
+        </a>
+        
+        <% if (isAdmin) { %>
+            <!-- Divider -->
+            <div class="border-t border-gray-700 my-4"></div>
+            
+            <!-- Admin Section -->
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Admin</p>
+            
+            <!-- User Management -->
+            <a href="/users" class="nav-link <%= currentPath.startsWith('/users') ? 'active' : '' %>">
+                <i class="fas fa-users w-5"></i>
+                <span><%= t('common:navigation.users') %></span>
+            </a>
+            
+            <!-- Audit Log -->
+            <a href="/audit" class="nav-link <%= currentPath.startsWith('/audit') ? 'active' : '' %>">
+                <i class="fas fa-clipboard-list w-5"></i>
+                <span><%= t('common:navigation.audit') %></span>
+            </a>
+        <% } %>
+        
+        <!-- Divider -->
+        <div class="border-t border-gray-700 my-4"></div>
+        
+        <!-- Help -->
+        <a href="/help" class="nav-link <%= currentPath.startsWith('/help') ? 'active' : '' %>">
+            <i class="fas fa-question-circle w-5"></i>
+            <span><%= t('common:navigation.help') %></span>
+        </a>
+    </nav>
+    
+    <!-- Sidebar Toggle (Mobile) -->
+    <div class="p-4 border-t border-gray-700 lg:hidden">
+        <button id="sidebarToggleMobile" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg transition">
+            <i class="fas fa-bars mr-2"></i>
+            <span>Toggle Menu</span>
+        </button>
+    </div>
+</div>
+
+<style>
+    .nav-link {
+        @apply flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200;
+    }
+    
+    .nav-link.active {
+        @apply bg-purple-600 text-white hover:bg-purple-700;
+    }
+    
+    .nav-link i {
+        @apply text-center;
+    }
+    
+    /* Responsive sidebar */
+    @media (max-width: 1024px) {
+        #sidebar {
+            @apply fixed -left-64 z-50;
+        }
+        
+        #sidebar.open {
+            @apply left-0;
+        }
+        
+        .sidebar-overlay {
+            @apply fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden;
+        }
+    }
+</style>
+
+<script>
+    // Sidebar toggle for mobile
+    $(document).ready(function() {
+        $('#sidebarToggleMobile, #sidebarToggle').click(function() {
+            $('#sidebar').toggleClass('open');
+            
+            if ($('#sidebar').hasClass('open')) {
+                $('<div class="sidebar-overlay"></div>').appendTo('body').click(function() {
+                    $('#sidebar').removeClass('open');
+                    $(this).remove();
+                });
+            } else {
+                $('.sidebar-overlay').remove();
+            }
+        });
+    });
+</script>

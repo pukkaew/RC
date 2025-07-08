@@ -1,0 +1,71 @@
+{
+    "title": "จัดการ Lot",
+    "subtitle": "จัดการข้อมูล Lot และรูปภาพ",
+    
+    "list": {
+      "title": "รายการ Lot",
+      "search_placeholder": "ค้นหาด้วยเลข Lot...",
+      "filter_by": "กรองตาม",
+      "all_lots": "Lot ทั้งหมด",
+      "with_images": "มีรูปภาพ",
+      "without_images": "ไม่มีรูปภาพ"
+    },
+    
+    "table": {
+      "lot_number": "เลข Lot",
+      "image_count": "จำนวนรูป",
+      "total_size": "ขนาดรวม",
+      "created_date": "วันที่สร้าง",
+      "last_upload": "อัปโหลดล่าสุด",
+      "status": "สถานะ",
+      "actions": "การดำเนินการ"
+    },
+    
+    "view": {
+      "title": "รายละเอียด Lot",
+      "lot_info": "ข้อมูล Lot",
+      "images": "รูปภาพใน Lot",
+      "statistics": "สถิติ",
+      "download_all": "ดาวน์โหลดทั้งหมด",
+      "no_images": "ไม่มีรูปภาพใน Lot นี้"
+    },
+    
+    "edit": {
+      "title": "แก้ไข Lot",
+      "lot_number": "เลข Lot",
+      "save": "บันทึกการเปลี่ยนแปลง",
+      "cancel": "ยกเลิก"
+    },
+    
+    "delete": {
+      "title": "ลบ Lot",
+      "confirm": "คุณแน่ใจหรือไม่ที่จะลบ Lot นี้?",
+      "warning": "การดำเนินการนี้จะลบรูปภาพทั้งหมดใน Lot และไม่สามารถยกเลิกได้",
+      "image_count": "Lot นี้มีรูปภาพ {{count}} รูป",
+      "confirm_button": "ใช่, ลบเลย",
+      "cancel_button": "ยกเลิก"
+    },
+    
+    "actions": {
+      "view": "ดูรายละเอียด",
+      "edit": "แก้ไข",
+      "delete": "ลบ",
+      "download": "ดาวน์โหลด",
+      "export": "ส่งออก"
+    },
+    
+    "messages": {
+      "update_success": "อัปเดต Lot เรียบร้อยแล้ว",
+      "delete_success": "ลบ Lot และรูปภาพ {{count}} รูปเรียบร้อยแล้ว",
+      "download_started": "เริ่มดาวน์โหลด...",
+      "export_success": "ส่งออกข้อมูลเรียบร้อยแล้ว"
+    },
+    
+    "errors": {
+      "not_found": "ไม่พบ Lot ที่ต้องการ",
+      "duplicate_lot_number": "เลข Lot นี้มีอยู่ในระบบแล้ว",
+      "no_images": "ไม่มีรูปภาพใน Lot นี้",
+      "delete_failed": "ไม่สามารถลบ Lot ได้",
+      "update_failed": "ไม่สามารถอัปเดต Lot ได้"
+    }
+  }
