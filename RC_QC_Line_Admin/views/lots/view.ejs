@@ -1,19 +1,20 @@
-<%- include('../layouts/main', { 
-    body: (function() { %>
-
+<!-- Path: RC_QC_Line_Admin/views/lots/view.ejs -->
+<%
+// Define page content
+const pageContent = `
 <div class="container mx-auto">
     <!-- Breadcrumb -->
     <nav class="flex mb-4" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
             <li class="inline-flex items-center">
                 <a href="/lots" class="text-gray-700 hover:text-purple-600">
-                    <i class="fas fa-boxes mr-2"></i><%= t('common:navigation.lots') %>
+                    <i class="fas fa-boxes mr-2"></i>${typeof t === 'function' ? t('common:navigation.lots') : 'Lots'}
                 </a>
             </li>
             <li>
                 <div class="flex items-center">
                     <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                    <span class="text-gray-500"><%= lot.lot_number %></span>
+                    <span class="text-gray-500">${lot.lot_number}</span>
                 </div>
             </li>
         </ol>
@@ -24,60 +25,58 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">
-                    <%= t('lots:view.lot_info') %>: <%= lot.lot_number %>
+                    ${typeof t === 'function' ? t('lots:view.lot_info') : 'Lot Information'}: ${lot.lot_number}
                 </h1>
                 <div class="mt-2 space-y-1 text-sm text-gray-600">
-                    <p><i class="fas fa-calendar mr-2"></i><%= t('lots:table.created_date') %>: <%= formatDate(lot.created_at) %></p>
-                    <p><i class="fas fa-clock mr-2"></i><%= t('lots:table.last_upload') %>: <%= lot.last_upload ? formatDateTime(lot.last_upload) : '-' %></p>
+                    <p><i class="fas fa-calendar mr-2"></i>${typeof t === 'function' ? t('lots:table.created_date') : 'Created Date'}: ${typeof formatDate === 'function' ? formatDate(lot.created_at) : new Date(lot.created_at).toLocaleDateString()}</p>
+                    <p><i class="fas fa-clock mr-2"></i>${typeof t === 'function' ? t('lots:table.last_upload') : 'Last Upload'}: ${lot.last_upload ? (typeof formatDateTime === 'function' ? formatDateTime(lot.last_upload) : new Date(lot.last_upload).toLocaleString()) : '-'}</p>
                 </div>
             </div>
             
             <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
-                <% if (isManager) { %>
-                    <a href="/lots/<%= lot.lot_id %>/edit" class="btn btn-warning btn-sm">
-                        <i class="fas fa-edit mr-2"></i><%= t('lots:actions.edit') %>
+                ${isManager ? `
+                    <a href="/lots/${lot.lot_id}/edit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit mr-2"></i>${typeof t === 'function' ? t('lots:actions.edit') : 'Edit'}
                     </a>
-                <% } %>
+                ` : ''}
                 
-                <% if (lot.image_count > 0) { %>
-                    <a href="/lots/<%= lot.lot_id %>/download" class="btn btn-success btn-sm">
-                        <i class="fas fa-download mr-2"></i><%= t('lots:view.download_all') %>
+                ${lot.image_count > 0 ? `
+                    <a href="/lots/${lot.lot_id}/download" class="btn btn-success btn-sm">
+                        <i class="fas fa-download mr-2"></i>${typeof t === 'function' ? t('lots:view.download_all') : 'Download All'}
                     </a>
-                <% } %>
+                ` : ''}
                 
-                <% if (isAdmin) { %>
+                ${isAdmin ? `
                     <button onclick="deleteLot()" class="btn btn-danger btn-sm">
-                        <i class="fas fa-trash mr-2"></i><%= t('lots:actions.delete') %>
+                        <i class="fas fa-trash mr-2"></i>${typeof t === 'function' ? t('lots:actions.delete') : 'Delete'}
                     </button>
-                <% } %>
+                ` : ''}
             </div>
         </div>
         
         <!-- Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold text-purple-600"><%= formatNumber(lot.image_count) %></p>
-                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.image_count') %></p>
+                <p class="text-3xl font-bold text-purple-600">${typeof formatNumber === 'function' ? formatNumber(lot.image_count) : lot.image_count}</p>
+                <p class="text-sm text-gray-600 mt-1">${typeof t === 'function' ? t('lots:table.image_count') : 'Total Images'}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold text-blue-600"><%= formatFileSize(lot.total_size) %></p>
-                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.total_size') %></p>
+                <p class="text-3xl font-bold text-blue-600">${typeof formatFileSize === 'function' ? formatFileSize(lot.total_size) : lot.total_size + ' B'}</p>
+                <p class="text-sm text-gray-600 mt-1">${typeof t === 'function' ? t('lots:table.total_size') : 'Total Size'}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-4 text-center">
                 <p class="text-3xl font-bold text-green-600">
-                    <% if (lot.total_size && lot.image_count) { %>
-                        <%= formatFileSize(lot.total_size / lot.image_count) %>
-                    <% } else { %>
-                        0 B
-                    <% } %>
+                    ${lot.total_size && lot.image_count ? 
+                        (typeof formatFileSize === 'function' ? formatFileSize(lot.total_size / lot.image_count) : Math.round(lot.total_size / lot.image_count) + ' B') : 
+                        '0 B'}
                 </p>
-                <p class="text-sm text-gray-600 mt-1"><%= t('lots:view.avg_size') %></p>
+                <p class="text-sm text-gray-600 mt-1">${typeof t === 'function' ? t('lots:view.avg_size') : 'Average Size'}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold <%= lot.status === 'active' ? 'text-green-600' : 'text-red-600' %>">
-                    <i class="fas fa-<%= lot.status === 'active' ? 'check-circle' : 'times-circle' %>"></i>
+                <p class="text-3xl font-bold ${lot.status === 'active' ? 'text-green-600' : 'text-red-600'}">
+                    <i class="fas fa-${lot.status === 'active' ? 'check-circle' : 'times-circle'}"></i>
                 </p>
-                <p class="text-sm text-gray-600 mt-1"><%= t('lots:table.status') %></p>
+                <p class="text-sm text-gray-600 mt-1">${typeof t === 'function' ? t('lots:table.status') : 'Status'}</p>
             </div>
         </div>
     </div>
@@ -86,90 +85,96 @@
     <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-800">
-                <i class="fas fa-images mr-2"></i><%= t('lots:view.images') %>
+                <i class="fas fa-images mr-2"></i>${typeof t === 'function' ? t('lots:view.images') : 'Images'}
             </h2>
             
             <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">
-                    <%= t('common:table.showing') %> <%= images.length %> <%= t('common:table.of') %> <%= lot.image_count %>
+                    ${typeof t === 'function' ? t('common:table.showing') : 'Showing'} ${images.length} ${typeof t === 'function' ? t('common:table.of') : 'of'} ${lot.image_count}
                 </span>
             </div>
         </div>
         
-        <% if (images.length > 0) { %>
+        ${images && images.length > 0 ? `
             <!-- Image Grid -->
             <div class="image-grid">
-                <% images.forEach(image => { %>
-                    <div class="image-card" data-image-id="<%= image.image_id %>">
-                        <img src="<%= image.thumbnail_url || image.public_url %>" 
-                             alt="<%= image.file_name %>"
+                ${images.map(image => `
+                    <div class="image-card" data-image-id="${image.image_id}">
+                        <img src="${image.thumbnail_url || image.public_url || '/images/placeholder.jpg'}" 
+                             alt="${image.file_name}"
                              class="w-full h-32 object-cover cursor-pointer"
-                             onclick="viewImage('<%= image.public_url %>', '<%= image.file_name %>')">
+                             onclick="viewImage('${image.public_url || '/images/placeholder.jpg'}', '${image.file_name}')">
                         
                         <div class="p-2">
-                            <p class="text-xs text-gray-600 truncate" title="<%= image.file_name %>">
-                                <%= image.file_name %>
+                            <p class="text-xs text-gray-600 truncate" title="${image.file_name}">
+                                ${image.file_name}
                             </p>
                             <p class="text-xs text-gray-500">
-                                <%= formatFileSize(image.original_size) %>
+                                ${typeof formatFileSize === 'function' ? formatFileSize(image.original_size) : image.original_size + ' B'}
                             </p>
                         </div>
                         
                         <div class="image-card-overlay opacity-0 group-hover:opacity-100">
                             <div class="flex space-x-2">
-                                <button onclick="viewImage('<%= image.public_url %>', '<%= image.file_name %>')" 
+                                <button onclick="viewImage('${image.public_url || '/images/placeholder.jpg'}', '${image.file_name}')" 
                                         class="text-white hover:text-gray-200">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <a href="/images/<%= image.image_id %>/download" 
+                                <a href="/images/${image.image_id}/download" 
                                    class="text-white hover:text-gray-200">
                                     <i class="fas fa-download"></i>
                                 </a>
-                                <% if (isManager) { %>
-                                    <button onclick="deleteImage(<%= image.image_id %>, '<%= image.file_name %>')" 
+                                ${isManager ? `
+                                    <button onclick="deleteImage(${image.image_id}, '${image.file_name}')" 
                                             class="text-white hover:text-gray-200">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                <% } %>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
-                <% }) %>
+                `).join('')}
             </div>
             
-            <% if (pagination.totalPages > 1) { %>
+            ${pagination && pagination.totalPages > 1 ? `
                 <!-- Pagination -->
                 <div class="mt-6 flex justify-center">
                     <div class="flex space-x-2">
-                        <% if (pagination.hasPrev) { %>
-                            <a href="?page=<%= pagination.page - 1 %>" 
+                        ${pagination.hasPrev ? `
+                            <a href="?page=${pagination.page - 1}" 
                                class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
                                 <i class="fas fa-chevron-left"></i>
                             </a>
-                        <% } %>
+                        ` : ''}
                         
-                        <% for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
-                            <a href="?page=<%= i %>" 
-                               class="px-3 py-1 text-sm border rounded-md <%= i === pagination.page ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 hover:bg-gray-50' %>">
-                                <%= i %>
-                            </a>
-                        <% } %>
+                        ${Array.from({length: Math.min(5, pagination.totalPages)}, (_, i) => {
+                            const page = Math.max(1, Math.min(pagination.page - 2 + i, pagination.totalPages - 4)) + i;
+                            if (page <= pagination.totalPages) {
+                                return `
+                                    <a href="?page=${page}" 
+                                       class="px-3 py-1 text-sm border rounded-md ${page === pagination.page ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-300 hover:bg-gray-50'}">
+                                        ${page}
+                                    </a>
+                                `;
+                            }
+                            return '';
+                        }).join('')}
                         
-                        <% if (pagination.hasNext) { %>
-                            <a href="?page=<%= pagination.page + 1 %>" 
+                        ${pagination.hasNext ? `
+                            <a href="?page=${pagination.page + 1}" 
                                class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
                                 <i class="fas fa-chevron-right"></i>
                             </a>
-                        <% } %>
+                        ` : ''}
                     </div>
                 </div>
-            <% } %>
-        <% } else { %>
+            ` : ''}
+        ` : `
             <div class="text-center py-12 text-gray-500">
                 <i class="fas fa-images text-4xl mb-2"></i>
-                <p><%= t('lots:view.no_images') %></p>
+                <p>${typeof t === 'function' ? t('lots:view.no_images') : 'No images in this lot'}</p>
             </div>
-        <% } %>
+        `}
     </div>
 </div>
 
@@ -186,9 +191,10 @@
         </div>
     </div>
 </div>
+`;
 
-<% })(), 
-    scripts: `
+// Define page scripts
+const pageScripts = `
 <script>
 function viewImage(url, filename) {
     document.getElementById('modalImage').src = url;
@@ -202,14 +208,14 @@ function closeImageModal() {
 
 function deleteImage(imageId, fileName) {
     Swal.fire({
-        title: '<%= t("images:delete.title") %>',
-        text: '<%= t("images:delete.single_confirm") %>',
+        title: '${typeof t === 'function' ? t("images:delete.title") : "Delete Image?"}',
+        text: '${typeof t === 'function' ? t("images:delete.single_confirm") : "Are you sure you want to delete this image?"}',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc2626',
         cancelButtonColor: '#6b7280',
-        confirmButtonText: '<%= t("images:delete.confirm_button") %>',
-        cancelButtonText: '<%= t("images:delete.cancel_button") %>'
+        confirmButtonText: '${typeof t === 'function' ? t("images:delete.confirm_button") : "Yes, delete it!"}',
+        cancelButtonText: '${typeof t === 'function' ? t("images:delete.cancel_button") : "Cancel"}'
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
@@ -219,7 +225,7 @@ function deleteImage(imageId, fileName) {
                     if (response.success) {
                         Swal.fire({
                             icon: 'success',
-                            title: '<%= t("common:status.success") %>',
+                            title: '${typeof t === 'function' ? t("common:status.success") : "Success"}',
                             text: response.message,
                             timer: 1500
                         }).then(() => {
@@ -228,7 +234,7 @@ function deleteImage(imageId, fileName) {
                     }
                 },
                 error: function(xhr) {
-                    Utils.error(xhr.responseJSON?.message || '<%= t("common:errors.delete_failed") %>');
+                    Utils.error(xhr.responseJSON?.message || '${typeof t === 'function' ? t("common:errors.delete_failed") : "Failed to delete"}');
                 }
             });
         }
@@ -236,25 +242,25 @@ function deleteImage(imageId, fileName) {
 }
 
 function deleteLot() {
-    const lotId = <%= lot.lot_id %>;
-    const lotNumber = '<%= lot.lot_number %>';
-    const imageCount = <%= lot.image_count %>;
+    const lotId = ${lot.lot_id};
+    const lotNumber = '${lot.lot_number}';
+    const imageCount = ${lot.image_count};
     
     Swal.fire({
-        title: '<%= t("lots:delete.title") %>',
-        html: \`<%= t("lots:delete.confirm") %><br><br>
+        title: '${typeof t === 'function' ? t("lots:delete.title") : "Delete Lot?"}',
+        html: \`${typeof t === 'function' ? t("lots:delete.confirm") : "Are you sure you want to delete this lot?"}<br><br>
                <strong>Lot: \${lotNumber}</strong><br>
-               <%= t("lots:delete.image_count", { count: '${imageCount}' }) %><br><br>
-               <span class="text-red-600"><%= t("lots:delete.warning") %></span>\`,
+               ${typeof t === 'function' ? t("lots:delete.image_count", { count: '${lot.image_count}' }) : 'This lot contains ' + lot.image_count + ' images'}<br><br>
+               <span class="text-red-600">${typeof t === 'function' ? t("lots:delete.warning") : "This action cannot be undone!"}</span>\`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc2626',
         cancelButtonColor: '#6b7280',
-        confirmButtonText: '<%= t("lots:delete.confirm_button") %>',
-        cancelButtonText: '<%= t("lots:delete.cancel_button") %>'
+        confirmButtonText: '${typeof t === 'function' ? t("lots:delete.confirm_button") : "Yes, delete it!"}',
+        cancelButtonText: '${typeof t === 'function' ? t("lots:delete.cancel_button") : "Cancel"}'
     }).then((result) => {
         if (result.isConfirmed) {
-            Utils.showLoading('<%= t("common:messages.loading") %>');
+            Utils.showLoading('${typeof t === 'function' ? t("common:messages.loading") : "Loading..."}');
             
             $.ajax({
                 url: '/lots/' + lotId,
@@ -264,7 +270,7 @@ function deleteLot() {
                     if (response.success) {
                         Swal.fire({
                             icon: 'success',
-                            title: '<%= t("common:status.success") %>',
+                            title: '${typeof t === 'function' ? t("common:status.success") : "Success"}',
                             text: response.message,
                             timer: 2000
                         }).then(() => {
@@ -274,7 +280,7 @@ function deleteLot() {
                 },
                 error: function(xhr) {
                     Utils.hideLoading();
-                    Utils.error(xhr.responseJSON?.message || '<%= t("common:errors.delete_failed") %>');
+                    Utils.error(xhr.responseJSON?.message || '${typeof t === 'function' ? t("common:errors.delete_failed") : "Failed to delete"}');
                 }
             });
         }
@@ -288,4 +294,16 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
-` }) %>
+`;
+%>
+
+<!-- Include main layout with content -->
+<%- include('../layouts/main', {
+    body: pageContent,
+    scripts: pageScripts,
+    title: `Lot: ${lot.lot_number}`,
+    breadcrumbs: [
+        { text: typeof t === 'function' ? t('common:navigation.lots') : 'Lots', url: '/lots' },
+        { text: lot.lot_number }
+    ]
+}) %>

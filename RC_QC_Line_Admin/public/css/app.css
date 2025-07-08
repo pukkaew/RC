@@ -1,4 +1,18 @@
 /* RC QC Admin Dashboard - Custom Styles */
+/* Path: RC_QC_Line_Admin/public/css/app.css */
+
+/* Import Tailwind base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Font for Thai */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+/* Base Styles */
+body {
+    font-family: 'Sarabun', sans-serif;
+}
 
 /* Form Controls */
 .form-input {
@@ -176,6 +190,27 @@
     @apply w-8 h-8 border-4;
 }
 
+/* Alerts */
+.alert {
+    @apply px-4 py-3 rounded-lg relative flex items-center justify-between mb-4;
+}
+
+.alert-success {
+    @apply alert bg-green-100 border border-green-400 text-green-700;
+}
+
+.alert-error {
+    @apply alert bg-red-100 border border-red-400 text-red-700;
+}
+
+.alert-warning {
+    @apply alert bg-yellow-100 border border-yellow-400 text-yellow-700;
+}
+
+.alert-info {
+    @apply alert bg-blue-100 border border-blue-400 text-blue-700;
+}
+
 /* DataTables Custom Styling */
 .dataTables_wrapper .dataTables_length select {
     @apply form-select py-1 text-sm;
@@ -250,6 +285,31 @@
     border-radius: 3px;
 }
 
+/* Navigation Active State */
+.nav-link {
+    @apply flex items-center space-x-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200;
+}
+
+.nav-link.active {
+    @apply bg-purple-600 text-white hover:bg-purple-700;
+}
+
+/* Sidebar Responsive */
+@media (max-width: 1024px) {
+    #sidebar {
+        @apply fixed -left-64 z-50;
+    }
+    
+    #sidebar.open {
+        @apply left-0;
+    }
+}
+
+/* Tooltips */
+[data-toggle="tooltip"] {
+    @apply relative;
+}
+
 /* Print Styles */
 @media print {
     .no-print {
@@ -263,4 +323,171 @@
     .print-break-after {
         page-break-after: always;
     }
+}
+
+/* Custom Scrollbar for Main Content */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+}
+
+/* Lightbox Style */
+.lightbox {
+    @apply fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4;
+}
+
+.lightbox img {
+    @apply max-w-full max-h-full object-contain;
+}
+
+/* File Upload Area */
+.upload-area {
+    @apply border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-500 transition-colors;
+}
+
+.upload-area.dragover {
+    @apply border-purple-500 bg-purple-50;
+}
+
+/* Stat Card */
+.stat-card {
+    @apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow;
+}
+
+.stat-value {
+    @apply text-3xl font-bold text-gray-800;
+}
+
+.stat-label {
+    @apply text-sm text-gray-500 mt-1;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+}
+
+.modal-content {
+    @apply bg-white rounded-lg shadow-xl z-50;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+    .table-responsive {
+        @apply block overflow-x-auto;
+    }
+    
+    .table-responsive table {
+        @apply min-w-full;
+    }
+}
+
+/* Thai Language Specific Adjustments */
+html[lang="th-TH"] {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+html[lang="th-TH"] .text-xs {
+    font-size: 0.8125rem;
+}
+
+html[lang="th-TH"] .text-sm {
+    font-size: 0.9375rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    @apply flex items-center space-x-2 text-sm text-gray-600;
+}
+
+.breadcrumb-item:not(:last-child)::after {
+    content: '/';
+    @apply mx-2 text-gray-400;
+}
+
+/* Action Buttons Group */
+.action-buttons {
+    @apply flex items-center space-x-2;
+}
+
+.action-button {
+    @apply p-1 rounded hover:bg-gray-100 transition-colors;
+}
+
+/* Empty State */
+.empty-state {
+    @apply text-center py-12;
+}
+
+.empty-state-icon {
+    @apply text-gray-400 text-5xl mb-4;
+}
+
+.empty-state-text {
+    @apply text-gray-500;
+}
+
+/* Progress Bar */
+.progress {
+    @apply w-full bg-gray-200 rounded-full h-2.5;
+}
+
+.progress-bar {
+    @apply bg-purple-600 h-2.5 rounded-full transition-all duration-300;
+}
+
+/* Search Box */
+.search-box {
+    @apply relative;
+}
+
+.search-box-icon {
+    @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+}
+
+.search-box-input {
+    @apply pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+/* Tag */
+.tag {
+    @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium;
+}
+
+.tag-purple {
+    @apply tag bg-purple-100 text-purple-800;
+}
+
+.tag-blue {
+    @apply tag bg-blue-100 text-blue-800;
+}
+
+.tag-green {
+    @apply tag bg-green-100 text-green-800;
+}
+
+/* Skeleton Loading */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+    @apply h-4 skeleton mb-2;
+}
+
+.skeleton-box {
+    @apply h-20 skeleton;
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title><%= title || 'RC QC Admin' %> - <%= appName %></title>
+    <title><%= typeof title !== 'undefined' ? title : 'RC QC Admin' %> - <%= appName %></title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
@@ -26,7 +26,6 @@
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.tailwindcss.min.css">
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.tailwindcss.min.js"></script>
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -36,6 +35,9 @@
     
     <!-- Moment.js with locale -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/app.css">
@@ -76,6 +78,9 @@
         .sidebar-transition {
             transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
         }
+        
+        /* Fix for Alpine.js cloak */
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50 h-full">
@@ -94,7 +99,11 @@
                 <%- include('../partials/alerts') %>
                 
                 <!-- Content -->
-                <%- body %>
+                <% if (typeof body === 'function') { %>
+                    <%- body() %>
+                <% } else if (typeof body !== 'undefined') { %>
+                    <%- body %>
+                <% } %>
             </main>
             
             <!-- Footer -->
@@ -106,8 +115,48 @@
     <script>
         window.appLang = '<%= currentLang %>';
         window.translations = {
-            common: <%- JSON.stringify(t('common:')) %>,
-            current: <%- JSON.stringify(t()) %>
+            common: <%- JSON.stringify(typeof t === 'function' ? {
+                actions: {
+                    view: 'View',
+                    edit: 'Edit', 
+                    delete: 'Delete',
+                    save: 'Save',
+                    cancel: 'Cancel',
+                    search: 'Search',
+                    filter: 'Filter',
+                    export: 'Export',
+                    download: 'Download',
+                    confirm: 'Confirm',
+                    select_all: 'Select All',
+                    deselect_all: 'Deselect All'
+                },
+                status: {
+                    success: 'Success',
+                    error: 'Error',
+                    warning: 'Warning',
+                    info: 'Info'
+                },
+                messages: {
+                    loading: 'Loading...',
+                    please_wait: 'Please wait...',
+                    confirm_action: 'Are you sure?',
+                    operation_success: 'Operation completed successfully'
+                },
+                errors: {
+                    general: 'An error occurred',
+                    load_failed: 'Failed to load data',
+                    save_failed: 'Failed to save data',
+                    delete_failed: 'Failed to delete data'
+                },
+                table: {
+                    no_data: 'No data available',
+                    showing: 'Showing',
+                    to: 'to',
+                    of: 'of',
+                    entries: 'entries',
+                    all: 'All'
+                }
+            } : {}) %>
         };
         
         // Set moment locale
@@ -116,6 +165,9 @@
     
     <!-- Scripts -->
     <%- include('../partials/scripts') %>
+    
+    <!-- Main App JS -->
+    <script src="/js/app.js"></script>
     
     <!-- Page specific scripts -->
     <% if (typeof scripts !== 'undefined') { %>
