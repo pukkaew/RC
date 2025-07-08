@@ -1,6 +1,4 @@
 <!-- Global Scripts -->
-<script src="/js/app.js"></script>
-
 <script>
     // Global configuration
     window.appConfig = {
@@ -8,9 +6,9 @@
         language: '<%= currentLang %>',
         translations: window.translations || {},
         user: {
-            id: <%= currentUser.admin_id %>,
-            name: '<%= currentUser.full_name %>',
-            role: '<%= currentUser.role %>'
+            id: <%= currentUser ? currentUser.admin_id : 'null' %>,
+            name: '<%= currentUser ? currentUser.full_name : '' %>',
+            role: '<%= currentUser ? currentUser.role : '' %>'
         }
     };
     
@@ -27,8 +25,8 @@
             // Session expired
             Swal.fire({
                 icon: 'warning',
-                title: '<%= t("auth:errors.session_expired") %>',
-                text: '<%= t("auth:errors.login_required") %>',
+                title: 'Session Expired',
+                text: 'Please login to continue',
                 confirmButtonColor: '#9333ea'
             }).then(() => {
                 window.location.href = '/auth/login';
@@ -37,16 +35,16 @@
             // Forbidden
             Swal.fire({
                 icon: 'error',
-                title: '<%= t("common:errors.forbidden") %>',
-                text: '<%= t("auth:errors.insufficient_permissions") %>',
+                title: 'Access Denied',
+                text: 'You do not have permission to perform this action',
                 confirmButtonColor: '#9333ea'
             });
         } else if (jqXHR.status === 429) {
             // Rate limit
             Swal.fire({
                 icon: 'warning',
-                title: '<%= t("common:errors.rate_limit_exceeded") %>',
-                text: '<%= t("common:messages.please_wait") %>',
+                title: 'Too Many Requests',
+                text: 'Please wait a moment before trying again',
                 confirmButtonColor: '#9333ea'
             });
         }
@@ -55,18 +53,36 @@
     // DataTables default configuration
     $.extend(true, $.fn.dataTable.defaults, {
         language: {
-            url: `/vendor/datatables/i18n/${appConfig.language}.json`
+            processing: "กำลังดำเนินการ...",
+            search: "ค้นหา:",
+            lengthMenu: "แสดง _MENU_ รายการ",
+            info: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+            infoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
+            infoFiltered: "(กรองข้อมูล _MAX_ รายการ)",
+            loadingRecords: "กำลังโหลดข้อมูล...",
+            zeroRecords: "ไม่พบข้อมูล",
+            emptyTable: "ไม่มีข้อมูลในตาราง",
+            paginate: {
+                first: "หน้าแรก",
+                previous: "ก่อนหน้า",
+                next: "ถัดไป",
+                last: "หน้าสุดท้าย"
+            },
+            aria: {
+                sortAscending: ": เรียงข้อมูลจากน้อยไปมาก",
+                sortDescending: ": เรียงข้อมูลจากมากไปน้อย"
+            }
         },
         pageLength: 25,
         responsive: true,
         processing: true,
         stateSave: true,
         dom: '<"flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4"<"mb-2 sm:mb-0"l><"mb-2 sm:mb-0"f>>rtip',
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, '<%= t("common:table.all") %>']],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'ทั้งหมด']],
         initComplete: function() {
             // Custom styling for DataTables elements
             $('.dataTables_length select').addClass('form-select text-sm');
-            $('.dataTables_filter input').addClass('form-input text-sm').attr('placeholder', '<%= t("common:actions.search") %>...');
+            $('.dataTables_filter input').addClass('form-input text-sm').attr('placeholder', 'ค้นหา...');
         }
     });
     
@@ -74,32 +90,40 @@
     window.Utils = {
         // Format file size
         formatFileSize: function(bytes) {
-            if (!bytes) return '0 Bytes';
+            if (!bytes || bytes === 0) return '0 Bytes';
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         },
         
+        // Format number with thousand separator
+        formatNumber: function(num) {
+            return new Intl.NumberFormat('<%= currentLang || "th-TH" %>').format(num);
+        },
+        
         // Format date
         formatDate: function(date) {
+            if (!date) return '-';
             return moment(date).format('<%= currentLang === "th-TH" ? "DD/MM/YYYY" : "MM/DD/YYYY" %>');
         },
         
         // Format datetime
         formatDateTime: function(date) {
+            if (!date) return '-';
             return moment(date).format('<%= currentLang === "th-TH" ? "DD/MM/YYYY HH:mm น." : "MM/DD/YYYY hh:mm A" %>');
         },
         
         // Time ago
         timeAgo: function(date) {
+            if (!date) return '-';
             return moment(date).fromNow();
         },
         
         // Show loading
         showLoading: function(text) {
             Swal.fire({
-                title: text || '<%= t("common:messages.loading") %>',
+                title: text || 'กำลังดำเนินการ...',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 didOpen: () => {
@@ -116,54 +140,218 @@
         // Confirm dialog
         confirm: function(options) {
             return Swal.fire({
-                title: options.title || '<%= t("common:messages.confirm_action") %>',
+                title: options.title || 'คุณแน่ใจหรือไม่?',
                 text: options.text || '',
                 icon: options.icon || 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#9333ea',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: options.confirmText || '<%= t("common:actions.confirm") %>',
-                cancelButtonText: options.cancelText || '<%= t("common:actions.cancel") %>'
+                confirmButtonText: options.confirmText || 'ยืนยัน',
+                cancelButtonText: options.cancelText || 'ยกเลิก'
             });
         },
         
         // Success message
-        success: function(message) {
+        success: function(message, title) {
             Swal.fire({
                 icon: 'success',
-                title: '<%= t("common:status.success") %>',
+                title: title || 'สำเร็จ',
                 text: message,
                 confirmButtonColor: '#9333ea'
             });
         },
         
         // Error message
-        error: function(message) {
+        error: function(message, title) {
             Swal.fire({
                 icon: 'error',
-                title: '<%= t("common:status.error") %>',
+                title: title || 'เกิดข้อผิดพลาด',
                 text: message,
                 confirmButtonColor: '#9333ea'
             });
+        },
+        
+        // Warning message
+        warning: function(message, title) {
+            Swal.fire({
+                icon: 'warning',
+                title: title || 'คำเตือน',
+                text: message,
+                confirmButtonColor: '#9333ea'
+            });
+        },
+        
+        // Info message
+        info: function(message, title) {
+            Swal.fire({
+                icon: 'info',
+                title: title || 'ข้อมูล',
+                text: message,
+                confirmButtonColor: '#9333ea'
+            });
+        },
+        
+        // Toast notification
+        toast: function(message, type = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+            
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        },
+        
+        // Copy to clipboard
+        copyToClipboard: function(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.toast('คัดลอกข้อความแล้ว', 'success');
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    this.toast('คัดลอกข้อความแล้ว', 'success');
+                } catch (err) {
+                    this.error('ไม่สามารถคัดลอกข้อความได้');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+        },
+        
+        // Debounce function
+        debounce: function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+        
+        // Throttle function
+        throttle: function(func, limit) {
+            let inThrottle;
+            return function(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
         }
     };
     
-    // Initialize tooltips
+    // Initialize on document ready
     $(document).ready(function() {
-        // Initialize any tooltips
-        $('[data-toggle="tooltip"]').tooltip();
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-toggle="tooltip"]'));
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
         
         // Prevent double form submission
-        $('form').on('submit', function() {
+        $('form').on('submit', function(e) {
             const $form = $(this);
             const $submitBtn = $form.find('button[type="submit"]');
             
             if ($form.data('submitted') === true) {
+                e.preventDefault();
                 return false;
             }
             
             $form.data('submitted', true);
-            $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>' + $submitBtn.text());
+            $submitBtn.prop('disabled', true);
+            
+            const originalHtml = $submitBtn.html();
+            $submitBtn.html('<i class="fas fa-spinner fa-spin mr-2"></i>กำลังดำเนินการ...');
+            
+            // Reset form after 10 seconds (in case of error)
+            setTimeout(function() {
+                $form.data('submitted', false);
+                $submitBtn.prop('disabled', false).html(originalHtml);
+            }, 10000);
         });
+        
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert-success, .alert-info').fadeOut('slow', function() {
+                $(this).remove();
+            });
+        }, 5000);
+        
+        // Close alert on click
+        $(document).on('click', '.close-alert', function() {
+            $(this).closest('[role="alert"]').fadeOut('fast', function() {
+                $(this).remove();
+            });
+        });
+        
+        // Handle sidebar toggle
+        $('#sidebarToggle, #sidebarToggleMobile').click(function() {
+            $('#sidebar').toggleClass('open');
+            
+            if ($('#sidebar').hasClass('open')) {
+                $('<div class="sidebar-overlay"></div>').appendTo('body').click(function() {
+                    $('#sidebar').removeClass('open');
+                    $(this).remove();
+                });
+            } else {
+                $('.sidebar-overlay').remove();
+            }
+        });
+        
+        // Auto-refresh session every 25 minutes (if session timeout is 30 minutes)
+        if (window.appConfig.user.id) {
+            setInterval(function() {
+                $.get('/api/health', function() {
+                    console.log('Session refreshed');
+                });
+            }, 25 * 60 * 1000);
+        }
     });
+    
+    // Image lazy loading
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                        imageObserver.unobserve(img);
+                    }
+                }
+            });
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const lazyImages = document.querySelectorAll('img[data-src]');
+            lazyImages.forEach(img => imageObserver.observe(img));
+        });
+    }
 </script>
