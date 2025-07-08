@@ -1,258 +1,276 @@
-<%- include('../layouts/main', { body: (function() { %>
+<!-- Path: RC_QC_Line_Admin/views/dashboard/index.ejs -->
+<!-- Dashboard main page -->
 
-    <div class="container mx-auto">
-        <!-- Page Header -->
-        <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">
-                <i class="fas fa-tachometer-alt mr-2"></i><%= title %>
-            </h1>
-            <p class="text-gray-600 mt-2"><%= t('dashboard:subtitle') %></p>
-        </div>
+<%- include('../layouts/main', { title: title }) %>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <%- include('../partials/header') %>
+    
+    <div class="flex">
+        <!-- Sidebar -->
+        <%- include('../partials/sidebar', { active: 'dashboard' }) %>
         
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Lots -->
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium"><%= t('dashboard:stats.total_lots') %></p>
-                        <p class="text-3xl font-bold text-gray-800 mt-2">
-                            <%= formatNumber(stats.totalLots) %>
-                        </p>
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <!-- Page Title -->
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    <%= t('dashboard:title') %>
+                </h1>
+                <p class="text-gray-600 mt-1"><%= t('dashboard:subtitle') %></p>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Lots -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-blue-500 rounded-full p-3">
+                            <i class="fas fa-boxes text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-gray-500 text-sm uppercase"><%= t('dashboard:stats.total_lots') %></h3>
+                            <p class="text-2xl font-bold text-gray-800" id="totalLots">-</p>
+                        </div>
                     </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <i class="fas fa-boxes text-2xl text-blue-600"></i>
+                </div>
+                
+                <!-- Total Images -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-500 rounded-full p-3">
+                            <i class="fas fa-images text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-gray-500 text-sm uppercase"><%= t('dashboard:stats.total_images') %></h3>
+                            <p class="text-2xl font-bold text-gray-800" id="totalImages">-</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Storage Used -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-purple-500 rounded-full p-3">
+                            <i class="fas fa-hdd text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-gray-500 text-sm uppercase"><%= t('dashboard:stats.storage_used') %></h3>
+                            <p class="text-2xl font-bold text-gray-800" id="storageUsed">-</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Today's Uploads -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-yellow-500 rounded-full p-3">
+                            <i class="fas fa-upload text-white text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-gray-500 text-sm uppercase"><%= t('dashboard:stats.today_uploads') %></h3>
+                            <p class="text-2xl font-bold text-gray-800" id="todayUploads">-</p>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Total Images -->
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium"><%= t('dashboard:stats.total_images') %></p>
-                        <p class="text-3xl font-bold text-gray-800 mt-2">
-                            <%= formatNumber(stats.totalImages) %>
-                        </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-clock mr-2"></i>
+                            <%= t('dashboard:recent_activity.title') %>
+                        </h2>
                     </div>
-                    <div class="bg-green-100 p-3 rounded-full">
-                        <i class="fas fa-images text-2xl text-green-600"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Today's Uploads -->
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium"><%= t('dashboard:stats.uploads_today') %></p>
-                        <p class="text-3xl font-bold text-gray-800 mt-2">
-                            <%= formatNumber(stats.imagesToday) %>
-                        </p>
-                    </div>
-                    <div class="bg-purple-100 p-3 rounded-full">
-                        <i class="fas fa-cloud-upload-alt text-2xl text-purple-600"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Storage Used -->
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-500 text-sm font-medium"><%= t('dashboard:stats.storage_used') %></p>
-                        <p class="text-3xl font-bold text-gray-800 mt-2">
-                            <%= stats.storageUsed %>
-                        </p>
-                    </div>
-                    <div class="bg-orange-100 p-3 rounded-full">
-                        <i class="fas fa-hdd text-2xl text-orange-600"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Upload Chart -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        <i class="fas fa-chart-line mr-2"></i><%= t('dashboard:charts.uploads_7days') %>
-                    </h2>
-                    <button id="refreshChart" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <canvas id="uploadChart" width="400" height="200"></canvas>
-            </div>
-            
-            <!-- Recent Activity -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                    <i class="fas fa-clock mr-2"></i><%= t('dashboard:recent_activity.title') %>
-                </h2>
-                <div class="space-y-3 max-h-80 overflow-y-auto">
-                    <% if (recentActivity.length > 0) { %>
-                        <% recentActivity.forEach(activity => { %>
-                            <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded">
-                                <div class="flex items-center space-x-3">
-                                    <div class="bg-gray-100 p-2 rounded">
-                                        <i class="fas fa-image text-gray-600"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-800">
-                                            <%= activity.file_name %>
-                                        </p>
-                                        <p class="text-xs text-gray-500">
-                                            Lot: <%= activity.lot_number %> | 
-                                            <%= activity.uploader_name || activity.uploaded_by %>
-                                        </p>
-                                    </div>
-                                </div>
-                                <span class="text-xs text-gray-500 whitespace-nowrap">
-                                    <%= timeAgo(activity.uploaded_at) %>
-                                </span>
+                    <div class="p-6">
+                        <div class="space-y-4" id="recentActivity">
+                            <div class="text-center py-8">
+                                <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+                                <p class="text-gray-500 mt-2"><%= t('common:loading') %></p>
                             </div>
-                        <% }) %>
-                    <% } else { %>
-                        <p class="text-gray-500 text-center py-4">
-                            <%= t('dashboard:recent_activity.no_activity') %>
-                        </p>
-                    <% } %>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload Chart -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            <%= t('dashboard:upload_trend.title') %>
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="uploadChart" width="400" height="200"></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                <i class="fas fa-bolt mr-2"></i><%= t('dashboard:quick_actions.title') %>
-            </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <a href="/lots" class="bg-blue-50 hover:bg-blue-100 p-4 rounded-lg text-center transition">
-                    <i class="fas fa-boxes text-2xl text-blue-600 mb-2"></i>
-                    <p class="text-sm font-medium text-gray-800"><%= t('dashboard:quick_actions.view_lots') %></p>
-                </a>
-                <a href="/images" class="bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center transition">
-                    <i class="fas fa-images text-2xl text-green-600 mb-2"></i>
-                    <p class="text-sm font-medium text-gray-800"><%= t('dashboard:quick_actions.manage_images') %></p>
-                </a>
-                <a href="/reports" class="bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-center transition">
-                    <i class="fas fa-file-export text-2xl text-purple-600 mb-2"></i>
-                    <p class="text-sm font-medium text-gray-800"><%= t('dashboard:quick_actions.generate_report') %></p>
-                </a>
-                <% if (isAdmin) { %>
-                    <a href="/users" class="bg-orange-50 hover:bg-orange-100 p-4 rounded-lg text-center transition">
-                        <i class="fas fa-users text-2xl text-orange-600 mb-2"></i>
-                        <p class="text-sm font-medium text-gray-800"><%= t('dashboard:quick_actions.manage_users') %></p>
+            
+            <!-- Quick Actions -->
+            <div class="mt-8 bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-bolt mr-2"></i>
+                    <%= t('dashboard:quick_actions.title') %>
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a href="/lots" class="btn btn-outline flex items-center justify-center">
+                        <i class="fas fa-boxes mr-2"></i>
+                        <%= t('dashboard:quick_actions.view_lots') %>
                     </a>
-                <% } else { %>
-                    <a href="/help" class="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center transition">
-                        <i class="fas fa-question-circle text-2xl text-gray-600 mb-2"></i>
-                        <p class="text-sm font-medium text-gray-800"><%= t('dashboard:quick_actions.help') %></p>
+                    <a href="/images" class="btn btn-outline flex items-center justify-center">
+                        <i class="fas fa-images mr-2"></i>
+                        <%= t('dashboard:quick_actions.browse_images') %>
                     </a>
-                <% } %>
+                    <a href="/reports" class="btn btn-outline flex items-center justify-center">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        <%= t('dashboard:quick_actions.generate_report') %>
+                    </a>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
+</div>
+
+<!-- Dashboard Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Load statistics
+    loadDashboardStats();
     
-    <% })() }) %>
+    // Load recent activity
+    loadRecentActivity();
     
-    <% scripts = `
-    <script>
-    $(document).ready(function() {
-        // Initialize chart
-        const ctx = document.getElementById('uploadChart').getContext('2d');
-        const uploadChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ${JSON.stringify(chartData.labels)},
-                datasets: [{
-                    label: '${t('dashboard:charts.uploads')}',
-                    data: ${JSON.stringify(chartData.data)},
-                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                    borderColor: 'rgba(147, 51, 234, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: 'rgba(147, 51, 234, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: 'rgba(147, 51, 234, 1)',
-                        borderWidth: 1
-                    }
+    // Load upload chart
+    loadUploadChart();
+    
+    // Refresh every 30 seconds
+    setInterval(function() {
+        loadDashboardStats();
+        loadRecentActivity();
+    }, 30000);
+});
+
+function loadDashboardStats() {
+    $.ajax({
+        url: '/api/stats',
+        method: 'GET',
+        success: function(response) {
+            $('#totalLots').text(response.totalLots.toLocaleString());
+            $('#totalImages').text(response.totalImages.toLocaleString());
+            $('#storageUsed').text(formatBytes(response.storageUsed));
+            $('#todayUploads').text(response.todayUploads.toLocaleString());
+        },
+        error: function() {
+            console.error('Failed to load statistics');
+        }
+    });
+}
+
+function loadRecentActivity() {
+    $.ajax({
+        url: '/api/recent-activity',
+        method: 'GET',
+        success: function(response) {
+            const container = $('#recentActivity');
+            container.empty();
+            
+            if (response.activities.length === 0) {
+                container.html(`
+                    <div class="text-center py-8">
+                        <i class="fas fa-inbox text-3xl text-gray-400"></i>
+                        <p class="text-gray-500 mt-2">${'<%= t("dashboard:recent_activity.no_activity") %>'}</p>
+                    </div>
+                `);
+                return;
+            }
+            
+            response.activities.forEach(function(activity) {
+                const timeAgo = moment(activity.uploaded_at).fromNow();
+                const item = $(`
+                    <div class="flex items-center space-x-3 pb-3 border-b last:border-0">
+                        <div class="flex-shrink-0">
+                            <img src="/api/images/${activity.image_id}/thumbnail" 
+                                 alt="${activity.file_name}"
+                                 class="h-12 w-12 rounded object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate">
+                                ${activity.file_name}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                Lot: ${activity.lot_number} • ${activity.uploader_name || 'Unknown'}
+                            </p>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            ${timeAgo}
+                        </div>
+                    </div>
+                `);
+                container.append(item);
+            });
+        },
+        error: function() {
+            console.error('Failed to load recent activity');
+        }
+    });
+}
+
+function loadUploadChart() {
+    $.ajax({
+        url: '/api/upload-chart',
+        method: 'GET',
+        success: function(response) {
+            const ctx = document.getElementById('uploadChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: response.labels,
+                    datasets: [{
+                        label: '<%= t("dashboard:upload_trend.uploads") %>',
+                        data: response.data,
+                        borderColor: 'rgb(139, 92, 246)',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.3
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: {
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
                             display: false
                         }
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
                         }
                     }
                 }
-            }
-        });
-        
-        // Refresh chart
-        $('#refreshChart').click(function() {
-            const $btn = $(this);
-            $btn.find('i').addClass('fa-spin');
-            
-            $.ajax({
-                url: '/api/upload-chart',
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        uploadChart.data = response.data;
-                        uploadChart.update();
-                    }
-                },
-                complete: function() {
-                    $btn.find('i').removeClass('fa-spin');
-                }
             });
-        });
-        
-        // Auto-refresh stats every 30 seconds
-        setInterval(function() {
-            $.ajax({
-                url: '/api/stats',
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        // Update stats cards
-                        $('.stat-value').each(function() {
-                            const stat = $(this).data('stat');
-                            if (response.data[stat] !== undefined) {
-                                $(this).text(response.data[stat].toLocaleString());
-                            }
-                        });
-                    }
-                }
-            });
-        }, 30000);
+        },
+        error: function() {
+            console.error('Failed to load upload chart');
+        }
     });
-    </script>
-    ` %>
+}
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+</script>
+
+<%- include('../layouts/footer') %>

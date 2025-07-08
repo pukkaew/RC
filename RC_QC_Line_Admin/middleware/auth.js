@@ -1,3 +1,6 @@
+// Path: RC_QC_Line_Admin/middleware/auth.js
+// Authentication and authorization middleware
+
 const logger = require('../utils/logger');
 
 /**

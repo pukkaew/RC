@@ -1,3 +1,6 @@
+// Path: RC_QC_Line_Admin/server.js
+// Main application entry point for RC QC Admin Dashboard
+
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -141,42 +144,40 @@ app.get('/health', (req, res) => {
 // 404 handler
 app.use((req, res, next) => {
     res.status(404).render('errors/404', {
-        title: '404 - Page Not Found'
+        title: 'Page Not Found'
     });
 });
 
-// Error handler
+// Error handler (must be last)
 app.use(errorHandler);
 
 // Initialize database and start server
 const PORT = process.env.PORT || 3001;
 
-async function startServer() {
+const startServer = async () => {
     try {
         // Test database connection
         await DatabaseService.testConnection();
         logger.info('Database connection established');
         
-        // Initialize i18n
-        await i18nConfig.init();
-        logger.info('i18n initialized');
+        // Create tables if not exists
+        await DatabaseService.createAdminTables();
+        logger.info('Database tables verified');
+        
+        // Create default admin if not exists
+        await DatabaseService.createDefaultAdmin();
         
         // Start server
         app.listen(PORT, () => {
-            logger.info(`🚀 ${process.env.APP_NAME} running on port ${PORT}`);
-            logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
-            logger.info(`🔗 URL: ${process.env.APP_URL || `http://localhost:${PORT}`}`);
-            
-            if (process.env.NODE_ENV === 'development') {
-                logger.info(`📝 Logs: ${process.env.LOG_FILE_PATH || './logs'}`);
-                logger.info(`📁 Uploads: ${process.env.UPLOAD_PATH || './public/uploads'}`);
-            }
+            logger.info(`RC QC Admin Dashboard running on port ${PORT}`);
+            logger.info(`Environment: ${process.env.NODE_ENV}`);
+            logger.info(`URL: http://localhost:${PORT}`);
         });
     } catch (error) {
         logger.error('Failed to start server:', error);
         process.exit(1);
     }
-}
+};
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
@@ -185,21 +186,18 @@ process.on('uncaughtException', (error) => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on('unhandledRejection', (error) => {
+    logger.error('Unhandled Rejection:', error);
     process.exit(1);
 });
 
-// Handle graceful shutdown
+// Graceful shutdown
 process.on('SIGTERM', async () => {
-    logger.info('SIGTERM signal received: closing HTTP server');
+    logger.info('SIGTERM received, shutting down gracefully...');
+    
+    // Close database connections
     await DatabaseService.close();
-    process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-    logger.info('SIGINT signal received: closing HTTP server');
-    await DatabaseService.close();
+    
     process.exit(0);
 });
 

@@ -1,95 +1,104 @@
+// Path: RC_QC_Line_Admin/config/database.js
+// Database configuration and connection management
+
 const sql = require('mssql');
 const logger = require('../utils/logger');
 
 // Database configuration
 const config = {
-    server: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 1433,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    options: {
-        encrypt: process.env.DB_ENCRYPT === 'true',
-        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
-        enableArithAbort: true
-    },
+    server: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT) || 1433,
     pool: {
         max: 10,
         min: 0,
         idleTimeoutMillis: 30000
+    },
+    options: {
+        encrypt: process.env.DB_ENCRYPT === 'true',
+        trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
+        enableArithAbort: true
     }
 };
 
 // Connection pool
 let pool = null;
 
-// Get connection pool
-async function getPool() {
+// Connect to database
+const connect = async () => {
     try {
         if (!pool) {
             pool = await sql.connect(config);
-            logger.info('Database pool created');
-            
-            // Handle pool errors
-            pool.on('error', err => {
-                logger.error('Database pool error:', err);
-                pool = null;
-            });
+            logger.info('Database connection pool created');
         }
         return pool;
     } catch (error) {
-        logger.error('Failed to create database pool:', error);
+        logger.error('Database connection failed:', error);
         throw error;
     }
-}
+};
+
+// Close connection
+const close = async () => {
+    try {
+        if (pool) {
+            await pool.close();
+            pool = null;
+            logger.info('Database connection pool closed');
+        }
+    } catch (error) {
+        logger.error('Error closing database connection:', error);
+        throw error;
+    }
+};
 
 // Execute query
-async function query(sqlQuery, params = {}) {
+const query = async (text, params = {}) => {
     try {
-        const pool = await getPool();
+        const pool = await connect();
         const request = pool.request();
         
         // Add parameters
         Object.keys(params).forEach(key => {
-            request.input(key, params[key]);
+            const value = params[key];
+            if (value === null || value === undefined) {
+                request.input(key, sql.NVarChar, null);
+            } else if (typeof value === 'number') {
+                if (Number.isInteger(value)) {
+                    request.input(key, sql.Int, value);
+                } else {
+                    request.input(key, sql.Float, value);
+                }
+            } else if (value instanceof Date) {
+                request.input(key, sql.DateTime, value);
+            } else if (typeof value === 'boolean') {
+                request.input(key, sql.Bit, value);
+            } else {
+                request.input(key, sql.NVarChar, value.toString());
+            }
         });
         
         // Log query in development
-        if (process.env.SHOW_SQL === 'true') {
-            logger.debug(`SQL: ${sqlQuery}`);
-            logger.debug(`Params: ${JSON.stringify(params)}`);
+        if (process.env.NODE_ENV === 'development' && process.env.SHOW_SQL === 'true') {
+            logger.debug('SQL Query:', text);
+            logger.debug('Parameters:', params);
         }
         
-        const result = await request.query(sqlQuery);
+        const result = await request.query(text);
         return result;
     } catch (error) {
         logger.error('Query error:', error);
+        logger.error('Query:', text);
+        logger.error('Parameters:', params);
         throw error;
     }
-}
+};
 
-// Execute stored procedure
-async function execute(procedureName, params = {}) {
-    try {
-        const pool = await getPool();
-        const request = pool.request();
-        
-        // Add parameters
-        Object.keys(params).forEach(key => {
-            request.input(key, params[key]);
-        });
-        
-        const result = await request.execute(procedureName);
-        return result;
-    } catch (error) {
-        logger.error('Stored procedure error:', error);
-        throw error;
-    }
-}
-
-// Transaction helper
-async function transaction(callback) {
-    const pool = await getPool();
+// Transaction support
+const transaction = async (callback) => {
+    const pool = await connect();
     const transaction = new sql.Transaction(pool);
     
     try {
@@ -101,78 +110,23 @@ async function transaction(callback) {
         await transaction.rollback();
         throw error;
     }
-}
+};
 
-// Test connection
-async function testConnection() {
+// Health check
+const isHealthy = async () => {
     try {
-        const pool = await getPool();
-        await pool.request().query('SELECT 1 as test');
-        logger.info('Database connection test successful');
-        return true;
+        const result = await query('SELECT 1 as healthy');
+        return result.recordset[0].healthy === 1;
     } catch (error) {
-        logger.error('Database connection test failed:', error);
         return false;
-    }
-}
-
-// Close connection pool
-async function close() {
-    try {
-        if (pool) {
-            await pool.close();
-            pool = null;
-            logger.info('Database pool closed');
-        }
-    } catch (error) {
-        logger.error('Error closing database pool:', error);
-    }
-}
-
-// Helper functions
-const helpers = {
-    // Escape SQL identifiers
-    escapeIdentifier(identifier) {
-        return `[${identifier.replace(/\]/g, ']]')}]`;
-    },
-    
-    // Build WHERE clause
-    buildWhereClause(conditions) {
-        const clauses = [];
-        const params = {};
-        
-        Object.keys(conditions).forEach((key, index) => {
-            if (conditions[key] !== null && conditions[key] !== undefined) {
-                clauses.push(`${this.escapeIdentifier(key)} = @param${index}`);
-                params[`param${index}`] = conditions[key];
-            }
-        });
-        
-        return {
-            clause: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '',
-            params
-        };
-    },
-    
-    // Build pagination
-    buildPagination(page = 1, limit = 10) {
-        const offset = (page - 1) * limit;
-        return `OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
-    },
-    
-    // Format date for SQL
-    formatDate(date) {
-        return date ? new Date(date).toISOString() : null;
     }
 };
 
 module.exports = {
-    sql,
-    getPool,
-    query,
-    execute,
-    transaction,
-    testConnection,
+    connect,
     close,
-    helpers
+    query,
+    transaction,
+    isHealthy,
+    sql // Export mssql types
 };

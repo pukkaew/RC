@@ -1,3 +1,6 @@
+// Path: RC_QC_Line_Admin/models/AdminUser.js
+// Admin user model for authentication and user management
+
 const db = require('../config/database');
 const bcrypt = require('../utils/bcrypt');
 const logger = require('../utils/logger');
@@ -11,26 +14,57 @@ class AdminUser {
         this.email = data.email;
         this.department = data.department;
         this.role = data.role;
-        this.preferred_language = data.preferred_language || 'th-TH';
-        this.is_active = data.is_active !== false;
+        this.is_active = data.is_active;
+        this.preferred_language = data.preferred_language;
         this.last_login = data.last_login;
         this.created_at = data.created_at;
-        this.created_by = data.created_by;
         this.updated_at = data.updated_at;
     }
     
     // Static methods
+    static async create(userData) {
+        try {
+            // Hash password
+            const passwordHash = await bcrypt.hash(userData.password);
+            
+            const result = await db.query(
+                `INSERT INTO AdminUsers 
+                (employee_id, password_hash, full_name, email, department, role, preferred_language)
+                OUTPUT INSERTED.*
+                VALUES (@employee_id, @password_hash, @full_name, @email, @department, @role, @preferred_language)`,
+                {
+                    employee_id: userData.employee_id.toUpperCase(),
+                    password_hash: passwordHash,
+                    full_name: userData.full_name,
+                    email: userData.email,
+                    department: userData.department,
+                    role: userData.role || 'viewer',
+                    preferred_language: userData.preferred_language || 'th-TH'
+                }
+            );
+            
+            return new AdminUser(result.recordset[0]);
+        } catch (error) {
+            if (error.message.includes('UNIQUE')) {
+                throw new Error('Employee ID already exists');
+            }
+            logger.error('Error creating admin user:', error);
+            throw error;
+        }
+    }
+    
     static async findById(adminId) {
         try {
             const result = await db.query(
-                `SELECT * FROM AdminUsers WHERE admin_id = @adminId`,
-                { adminId }
+                `SELECT * FROM AdminUsers WHERE admin_id = @admin_id`,
+                { admin_id: adminId }
             );
             
-            if (result.recordset.length > 0) {
-                return new AdminUser(result.recordset[0]);
+            if (result.recordset.length === 0) {
+                return null;
             }
-            return null;
+            
+            return new AdminUser(result.recordset[0]);
         } catch (error) {
             logger.error('Error finding admin user by ID:', error);
             throw error;
@@ -40,14 +74,15 @@ class AdminUser {
     static async findByEmployeeId(employeeId) {
         try {
             const result = await db.query(
-                `SELECT * FROM AdminUsers WHERE employee_id = @employeeId`,
-                { employeeId }
+                `SELECT * FROM AdminUsers WHERE employee_id = @employee_id`,
+                { employee_id: employeeId.toUpperCase() }
             );
             
-            if (result.recordset.length > 0) {
-                return new AdminUser(result.recordset[0]);
+            if (result.recordset.length === 0) {
+                return null;
             }
-            return null;
+            
+            return new AdminUser(result.recordset[0]);
         } catch (error) {
             logger.error('Error finding admin user by employee ID:', error);
             throw error;
@@ -57,42 +92,38 @@ class AdminUser {
     static async findAll(options = {}) {
         try {
             let query = `
-                SELECT admin_id, employee_id, full_name, email, department, 
-                       role, preferred_language, is_active, last_login, created_at
-                FROM AdminUsers
+                SELECT * FROM AdminUsers 
+                WHERE 1=1
             `;
-            
             const params = {};
-            const conditions = [];
             
             // Add filters
             if (options.role) {
-                conditions.push('role = @role');
+                query += ` AND role = @role`;
                 params.role = options.role;
             }
             
-            if (options.is_active !== undefined) {
-                conditions.push('is_active = @is_active');
-                params.is_active = options.is_active;
-            }
-            
             if (options.department) {
-                conditions.push('department = @department');
+                query += ` AND department = @department`;
                 params.department = options.department;
             }
             
-            // Add WHERE clause
-            if (conditions.length > 0) {
-                query += ` WHERE ${conditions.join(' AND ')}`;
+            if (options.is_active !== undefined) {
+                query += ` AND is_active = @is_active`;
+                params.is_active = options.is_active;
             }
             
-            // Add ordering
-            query += ` ORDER BY ${options.orderBy || 'full_name'} ${options.orderDir || 'ASC'}`;
+            // Add sorting
+            const orderBy = options.orderBy || 'full_name';
+            const orderDir = options.orderDir || 'ASC';
+            query += ` ORDER BY ${orderBy} ${orderDir}`;
             
             // Add pagination
             if (options.limit) {
                 const offset = ((options.page || 1) - 1) * options.limit;
-                query += ` OFFSET ${offset} ROWS FETCH NEXT ${options.limit} ROWS ONLY`;
+                query += ` OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+                params.offset = offset;
+                params.limit = options.limit;
             }
             
             const result = await db.query(query, params);
@@ -105,22 +136,22 @@ class AdminUser {
     
     static async count(options = {}) {
         try {
-            let query = `SELECT COUNT(*) as total FROM AdminUsers`;
+            let query = `SELECT COUNT(*) as total FROM AdminUsers WHERE 1=1`;
             const params = {};
-            const conditions = [];
             
             if (options.role) {
-                conditions.push('role = @role');
+                query += ` AND role = @role`;
                 params.role = options.role;
             }
             
-            if (options.is_active !== undefined) {
-                conditions.push('is_active = @is_active');
-                params.is_active = options.is_active;
+            if (options.department) {
+                query += ` AND department = @department`;
+                params.department = options.department;
             }
             
-            if (conditions.length > 0) {
-                query += ` WHERE ${conditions.join(' AND ')}`;
+            if (options.is_active !== undefined) {
+                query += ` AND is_active = @is_active`;
+                params.is_active = options.is_active;
             }
             
             const result = await db.query(query, params);
@@ -131,50 +162,13 @@ class AdminUser {
         }
     }
     
-    static async create(userData) {
-        try {
-            // Hash password
-            const passwordHash = await bcrypt.hash(userData.password);
-            
-            const result = await db.query(
-                `INSERT INTO AdminUsers 
-                (employee_id, password_hash, full_name, email, department, role, 
-                 preferred_language, is_active, created_by)
-                OUTPUT INSERTED.*
-                VALUES (@employee_id, @password_hash, @full_name, @email, @department, 
-                        @role, @preferred_language, @is_active, @created_by)`,
-                {
-                    employee_id: userData.employee_id,
-                    password_hash: passwordHash,
-                    full_name: userData.full_name,
-                    email: userData.email,
-                    department: userData.department,
-                    role: userData.role,
-                    preferred_language: userData.preferred_language || 'th-TH',
-                    is_active: userData.is_active !== false,
-                    created_by: userData.created_by
-                }
-            );
-            
-            return new AdminUser(result.recordset[0]);
-        } catch (error) {
-            logger.error('Error creating admin user:', error);
-            throw error;
-        }
-    }
-    
     // Instance methods
     async update(updates) {
         try {
-            const allowedUpdates = [
-                'full_name', 'email', 'department', 'role', 
-                'preferred_language', 'is_active'
-            ];
-            
+            const allowedUpdates = ['full_name', 'email', 'department', 'role', 'is_active', 'preferred_language'];
             const updateFields = [];
             const params = { admin_id: this.admin_id };
             
-            // Build update query
             allowedUpdates.forEach(field => {
                 if (updates[field] !== undefined) {
                     updateFields.push(`${field} = @${field}`);
@@ -187,7 +181,6 @@ class AdminUser {
                 return this;
             }
             
-            // Always update updated_at
             updateFields.push('updated_at = GETDATE()');
             
             await db.query(
