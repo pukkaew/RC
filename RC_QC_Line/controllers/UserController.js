@@ -1,3 +1,4 @@
+// Path: RC_QC_Line/controllers/UserController.js
 // Controller for user management
 const lineService = require('../services/LineService');
 const userModel = require('../models/UserModel');
@@ -22,7 +23,8 @@ class UserController {
       
       // Try to create basic user without profile info
       try {
-        const user = await userModel.getOrCreate(userId);
+        // Use userId as display name if profile is not available
+        const user = await userModel.getOrCreate(userId, `User_${userId.substring(0, 8)}`);
         logger.info(`Basic user created: ${userId}`);
         return user;
       } catch (fallbackError) {

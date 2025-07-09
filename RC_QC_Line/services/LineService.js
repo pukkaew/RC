@@ -1,3 +1,4 @@
+// Path: RC_QC_Line/services/LineService.js
 // Service for LINE API interactions - Updated for Multi-Chat Support
 const line = require('@line/bot-sdk');
 const lineConfig = require('../config/line');
@@ -152,10 +153,23 @@ class LineService {
   // Get user profile from LINE
   async getUserProfile(userId) {
     try {
-      return await this.client.getProfile(userId);
+      const profile = await this.client.getProfile(userId);
+      return profile;
     } catch (error) {
-      logger.error('Error getting LINE user profile:', error);
-      throw new AppError('Failed to get user profile', 500, { error: error.message });
+      // Log specific error details
+      if (error.statusCode === 404) {
+        logger.warn(`User profile not found for userId: ${userId} - This may be a test/development user`);
+      } else {
+        logger.error('Error getting LINE user profile:', error);
+      }
+      
+      // Return a default profile object instead of throwing
+      return {
+        userId: userId,
+        displayName: `User_${userId.substring(0, 8)}`,
+        pictureUrl: null,
+        statusMessage: null
+      };
     }
   }
 
