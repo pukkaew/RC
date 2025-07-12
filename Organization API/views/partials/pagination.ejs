@@ -1,0 +1,95 @@
+<div class="mt-6 flex items-center justify-between">
+    <div class="flex-1 flex justify-between sm:hidden">
+        <% if (pagination.hasPrev) { %>
+            <a href="?page=<%= pagination.page - 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+            </a>
+        <% } %>
+        <% if (pagination.hasNext) { %>
+            <a href="?page=<%= pagination.page + 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+            </a>
+        <% } %>
+    </div>
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                Showing
+                <span class="font-medium"><%= (pagination.page - 1) * pagination.limit + 1 %></span>
+                to
+                <span class="font-medium"><%= Math.min(pagination.page * pagination.limit, pagination.total) %></span>
+                of
+                <span class="font-medium"><%= pagination.total %></span>
+                results
+            </p>
+        </div>
+        <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <% if (pagination.hasPrev) { %>
+                    <a href="?page=<%= pagination.page - 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Previous</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                <% } %>
+                
+                <% 
+                const maxVisible = 7;
+                let startPage = Math.max(1, pagination.page - Math.floor(maxVisible / 2));
+                let endPage = Math.min(pagination.pages, startPage + maxVisible - 1);
+                
+                if (endPage - startPage < maxVisible - 1) {
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+                }
+                %>
+                
+                <% if (startPage > 1) { %>
+                    <a href="?page=1<%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        1
+                    </a>
+                    <% if (startPage > 2) { %>
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                    <% } %>
+                <% } %>
+                
+                <% for (let i = startPage; i <= endPage; i++) { %>
+                    <% if (i === pagination.page) { %>
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600 z-10">
+                            <%= i %>
+                        </span>
+                    <% } else { %>
+                        <a href="?page=<%= i %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                <% } %>
+                
+                <% if (endPage < pagination.pages) { %>
+                    <% if (endPage < pagination.pages - 1) { %>
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                    <% } %>
+                    <a href="?page=<%= pagination.pages %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <%= pagination.pages %>
+                    </a>
+                <% } %>
+                
+                <% if (pagination.hasNext) { %>
+                    <a href="?page=<%= pagination.page + 1 %><%= Object.keys(query).filter(k => k !== 'page').map(k => `&${k}=${query[k]}`).join('') %>" 
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Next</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                <% } %>
+            </nav>
+        </div>
+    </div>
+</div>

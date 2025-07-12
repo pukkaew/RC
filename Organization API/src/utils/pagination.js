@@ -68,10 +68,44 @@ const generatePaginationLinks = (baseUrl, currentPage, totalPages, queryParams =
     return links;
 };
 
-// Get sort parameters from request
-const getSortParams = (req, defaultField = 'created_date', defaultOrder = 'DESC') => {
+// Define allowed fields for each entity type
+const ALLOWED_SORT_FIELDS = {
+    companies: ['company_code', 'company_name_th', 'company_name_en', 'created_date', 'updated_date'],
+    branches: ['branch_code', 'branch_name', 'company_code', 'is_headquarters', 'created_date'],
+    divisions: ['division_code', 'division_name', 'company_code', 'branch_code', 'created_date'],
+    departments: ['department_code', 'department_name', 'division_code', 'created_date'],
+    apikeys: ['api_key_id', 'app_name', 'created_date', 'last_used_date', 'expires_date']
+};
+
+// Validate sort field against allowed fields
+function validateSortField(entityType, field) {
+    const allowedFields = ALLOWED_SORT_FIELDS[entityType.toLowerCase()];
+    if (!allowedFields) {
+        throw new Error(`Unknown entity type: ${entityType}`);
+    }
+    
+    if (!allowedFields.includes(field)) {
+        throw new Error(`Invalid sort field: ${field}. Allowed fields: ${allowedFields.join(', ')}`);
+    }
+    
+    return true;
+}
+
+// Get sort parameters from request with validation
+const getSortParams = (req, entityType, defaultField = 'created_date', defaultOrder = 'DESC') => {
     const sort = req.query.sort || defaultField;
     const order = (req.query.order || defaultOrder).toUpperCase();
+    
+    // Validate sort field
+    try {
+        validateSortField(entityType, sort);
+    } catch (error) {
+        // Use default if invalid
+        return {
+            field: defaultField,
+            order: 'DESC'
+        };
+    }
     
     return {
         field: sort,
@@ -79,15 +113,19 @@ const getSortParams = (req, defaultField = 'created_date', defaultOrder = 'DESC'
     };
 };
 
-// Build ORDER BY clause for SQL
-const buildOrderByClause = (sortField, sortOrder, fieldMapping = {}) => {
+// Build ORDER BY clause for SQL with validation
+const buildOrderByClause = (entityType, sortField, sortOrder, fieldMapping = {}) => {
+    // Validate sort field first
+    validateSortField(entityType, sortField);
+    
     // Map field names if mapping provided
     const actualField = fieldMapping[sortField] || sortField;
     
     // Validate order
     const order = sortOrder === 'DESC' ? 'DESC' : 'ASC';
     
-    return `ORDER BY ${actualField} ${order}`;
+    // Use parameterized field name to prevent SQL injection
+    return `ORDER BY [${actualField}] ${order}`;
 };
 
 // Get filter parameters from request

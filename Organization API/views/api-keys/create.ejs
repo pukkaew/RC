@@ -1,0 +1,112 @@
+<%- include('../layouts/main', { body: ` 
+
+    <div class="max-w-2xl mx-auto">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Create API Key
+                </h2>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="/api-keys" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+    
+        <form method="post" action="/api-keys" class="mt-8 space-y-6">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            
+            <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+                <div class="md:grid md:grid-cols-3 md:gap-6">
+                    <div class="md:col-span-1">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">API Key Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Provide details about the application that will use this API key.
+                        </p>
+                    </div>
+                    <div class="mt-5 md:mt-0 md:col-span-2">
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6">
+                                <label for="app_name" class="block text-sm font-medium text-gray-700">
+                                    Application Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="app_name" id="app_name" required
+                                       maxlength="100"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="e.g. ERP System, HR Dashboard">
+                                <p class="mt-1 text-sm text-gray-500">Name of the application that will use this API key</p>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="description" class="block text-sm font-medium text-gray-700">
+                                    Description
+                                </label>
+                                <textarea name="description" id="description" rows="3"
+                                          maxlength="500"
+                                          class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                          placeholder="Describe the purpose of this API key..."></textarea>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="permissions" class="block text-sm font-medium text-gray-700">
+                                    Permissions <span class="text-red-500">*</span>
+                                </label>
+                                <select name="permissions" id="permissions" required
+                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                    <option value="read">Read Only - Can view organization data</option>
+                                    <option value="write">Write Only - Can modify organization data</option>
+                                    <option value="read_write">Read & Write - Full access to organization data</option>
+                                </select>
+                                <p class="mt-1 text-sm text-gray-500">Select the level of access for this API key</p>
+                            </div>
+    
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="expires_date" class="block text-sm font-medium text-gray-700">
+                                    Expiration Date
+                                </label>
+                                <input type="date" name="expires_date" id="expires_date"
+                                       min="<%= new Date().toISOString().split('T')[0] %>"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <p class="mt-1 text-sm text-gray-500">Leave empty for no expiration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">
+                            Important Security Notice
+                        </h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>The API key will only be shown once after creation</li>
+                                <li>Store it securely - you won't be able to retrieve it again</li>
+                                <li>If lost, you'll need to regenerate a new key</li>
+                                <li>Never share your API key publicly or commit it to version control</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="flex justify-end">
+                <a href="/api-keys" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-key mr-2"></i>
+                    Create API Key
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    ` }) %>

@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
+// Import middleware
+const { requireAuth, optionalAuth, login, logout, showLoginPage, storeReturnTo } = require('../middleware/auth');
+
 // Import controllers
 const companyController = require('../controllers/companyController');
 const dashboardController = require('../controllers/dashboardController');
@@ -13,10 +16,29 @@ const divisionRoutes = require('./divisionRoutes');
 const departmentRoutes = require('./departmentRoutes');
 const apiKeyRoutes = require('./apiKeyRoutes');
 
+// Store return URL before checking auth
+router.use(storeReturnTo);
+
+// Public routes (no auth required)
+router.get('/login', showLoginPage);
+router.post('/login', login);
+router.get('/logout', logout);
+
+// Health check route (public)
+router.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+// Apply auth middleware to all routes below this line
+router.use(requireAuth);
+
 // Middleware to set common variables for views
 router.use((req, res, next) => {
     res.locals.currentPath = req.path;
-    res.locals.user = req.user || { username: 'Admin' };
     res.locals.query = req.query;
     next();
 });
@@ -43,15 +65,6 @@ router.use('/api-keys', apiKeyRoutes);
 router.get('/docs', (req, res) => {
     res.render('docs/index', {
         title: 'API Documentation'
-    });
-});
-
-// Health check route
-router.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
     });
 });
 

@@ -34,8 +34,13 @@ class ApiLog {
             
             return true;
         } catch (error) {
+            // Log the error but don't throw to prevent disrupting API responses
             logger.error('Error in ApiLog.create:', error);
-            // Don't throw error for logging failures
+            logger.error('Failed to log API usage:', {
+                endpoint: logData.endpoint,
+                method: logData.method,
+                status: logData.response_status
+            });
             return false;
         }
     }

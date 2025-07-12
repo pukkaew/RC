@@ -33,7 +33,12 @@
       "compression": "^1.7.4",
       "express-rate-limit": "^6.10.0",
       "winston": "^3.10.0",
-      "crypto": "^1.0.1"
+      "express-session": "^1.17.3",
+      "connect-flash": "^0.1.1",
+      "connect-mssql": "^1.5.0",
+      "csurf": "^1.11.0",
+      "express-mongo-sanitize": "^2.2.0",
+      "xss": "^1.0.14"
     },
     "devDependencies": {
       "nodemon": "^3.0.1",
