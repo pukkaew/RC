@@ -1,0 +1,116 @@
+<%- include('../layouts/main', { body: ` 
+
+    <div class="max-w-2xl mx-auto">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Create Company
+                </h2>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="/companies" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+    
+        <form method="post" action="/companies" class="mt-8 space-y-6">
+            <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+                <div class="md:grid md:grid-cols-3 md:gap-6">
+                    <div class="md:col-span-1">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Company Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Basic information about the company.
+                        </p>
+                    </div>
+                    <div class="mt-5 md:mt-0 md:col-span-2">
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="company_code" class="block text-sm font-medium text-gray-700">
+                                    Company Code <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="company_code" id="company_code" required
+                                       maxlength="20"
+                                       pattern="[A-Z0-9_-]+"
+                                       title="Only uppercase letters, numbers, underscore and hyphen allowed"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="e.g. ABC, COMP01">
+                                <p class="mt-1 text-sm text-gray-500">Unique identifier for the company</p>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="company_name_th" class="block text-sm font-medium text-gray-700">
+                                    Thai Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="company_name_th" id="company_name_th" required
+                                       maxlength="200"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="ชื่อบริษัทภาษาไทย">
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="company_name_en" class="block text-sm font-medium text-gray-700">
+                                    English Name
+                                </label>
+                                <input type="text" name="company_name_en" id="company_name_en"
+                                       maxlength="200"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="Company name in English">
+                            </div>
+    
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="tax_id" class="block text-sm font-medium text-gray-700">
+                                    Tax ID
+                                </label>
+                                <input type="text" name="tax_id" id="tax_id"
+                                       maxlength="13"
+                                       pattern="[0-9]{13}"
+                                       title="Tax ID must be exactly 13 digits"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="13 digits">
+                                <p class="mt-1 text-sm text-gray-500">13-digit tax identification number</p>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="is_active" name="is_active" type="checkbox" checked
+                                               class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="is_active" class="font-medium text-gray-700">Active</label>
+                                        <p class="text-gray-500">This company is currently active and can be used in the system</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="flex justify-end">
+                <a href="/companies" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-save mr-2"></i>
+                    Create Company
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // Auto uppercase company code
+        document.getElementById('company_code').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        // Tax ID formatting
+        document.getElementById('tax_id').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    </script>
+    
+    ` }) %>

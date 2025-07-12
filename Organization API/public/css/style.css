@@ -1,0 +1,313 @@
+/* Modal backdrop */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    display: none;
+}
+
+.modal-backdrop.show {
+    display: block;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    @apply flex items-center space-x-2 text-sm text-gray-500;
+}
+
+.breadcrumb-item::after {
+    content: '/';
+    @apply mx-2 text-gray-400;
+}
+
+.breadcrumb-item:last-child::after {
+    content: '';
+}
+
+/* Custom checkbox */
+.custom-checkbox {
+    @apply h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded;
+}
+
+/* API Key display */
+.api-key-display {
+    @apply font-mono text-sm bg-gray-100 p-2 rounded border border-gray-300;
+    word-break: break-all;
+}
+
+/* Dashboard cards */
+.stat-card {
+    @apply bg-white overflow-hidden shadow rounded-lg;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    @apply shadow-lg;
+    transform: translateY(-2px);
+}
+
+/* Tree view for organization structure */
+.tree-view {
+    @apply ml-4;
+}
+
+.tree-node {
+    @apply relative pl-6;
+}
+
+.tree-node::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: #e5e7eb;
+}
+
+.tree-node::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1rem;
+    width: 1rem;
+    height: 1px;
+    background-color: #e5e7eb;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .responsive-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* Custom animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.slide-out-right {
+    animation: slideOutRight 0.3s ease-out;
+} Custom styles for Organization Structure Management System */
+
+/* Override Tailwind defaults for form elements */
+[type='text'],
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+    @apply border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fade animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Table hover effects */
+.table-hover tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Status badges */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+    @apply bg-green-100 text-green-800;
+}
+
+.badge-danger {
+    @apply bg-red-100 text-red-800;
+}
+
+.badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-info {
+    @apply bg-blue-100 text-blue-800;
+}
+
+/* Card hover effects */
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Navigation active indicator */
+.nav-active {
+    position: relative;
+}
+
+.nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #3b82f6;
+}
+
+/* Form validation states */
+.is-invalid {
+    @apply border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500;
+}
+
+.is-valid {
+    @apply border-green-300 text-green-900 placeholder-green-300 focus:ring-green-500 focus:border-green-500;
+}
+
+/* Tooltips */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #374151;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.875rem;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #374151 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-only {
+        display: block !important;
+    }
+    
+    body {
+        font-size: 12pt;
+    }
+    
+    a[href]:after {
+        content: none !important;
+    }
+}
+
+/*
