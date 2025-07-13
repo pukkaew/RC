@@ -78,23 +78,23 @@ class UploadController {
         uploadSessionId: Date.now() // Add session ID for this upload batch
       };
       
-      // Use high-precision timestamp for ordering
-      const receivedTimestamp = Date.now() + (pendingUpload.images.length / 1000); // Add milliseconds offset
+      // Use sequential order number instead of timestamp for guaranteed ordering
+      const imageOrder = pendingUpload.images.length + 1;
       
-      // Add the image to the pending uploads with precise timestamp
+      // Add the image to the pending uploads with guaranteed order
       pendingUpload.images.push({
         buffer: imageBuffer,
         messageId: messageId,
         contentType: 'image/jpeg',
         receivedAt: Date.now(),
-        receivedTimestamp: receivedTimestamp, // Precise timestamp for ordering
+        imageOrder: imageOrder, // Guaranteed sequential order
         sessionId: pendingUpload.uploadSessionId
       });
       
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
       
-      logger.info(`Received image ${pendingUpload.images.length} for user ${userId}, session ${pendingUpload.uploadSessionId}, timestamp ${receivedTimestamp}`);
+      logger.info(`Received image ${imageOrder} for user ${userId}, session ${pendingUpload.uploadSessionId}`);
       
       // Schedule processing with appropriate delay for image count
       this.scheduleImageProcessing(userId, lotNumber);
@@ -129,8 +129,8 @@ class UploadController {
         ));
       }
       
-      // Sort images by received timestamp to ensure correct order
-      pendingUpload.images.sort((a, b) => a.receivedTimestamp - b.receivedTimestamp);
+      // Sort images by imageOrder to ensure correct order
+      pendingUpload.images.sort((a, b) => a.imageOrder - b.imageOrder);
       
       // Log how many images we're processing
       logger.info(`Processing ${imageCount} images for Lot ${lotNumber} (User: ${userId}, Session: ${sessionId})`);
@@ -141,8 +141,8 @@ class UploadController {
       
       // Create files array with order preserved in filename
       const files = pendingUpload.images.map((image, index) => {
-        // Use index + 1 for order (1-based)
-        const orderPadded = String(index + 1).padStart(4, '0');
+        // Ensure order matches the imageOrder
+        const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
           originalname: `img_${sessionId}_${orderPadded}.jpg`, // This ensures correct ordering
@@ -240,15 +240,15 @@ class UploadController {
         uploadSessionId: Date.now() // Add session ID
       };
       
-      // Use high-precision timestamp
-      const receivedTimestamp = Date.now() + (pendingUpload.images.length / 1000);
+      // Use sequential order number
+      const imageOrder = pendingUpload.images.length + 1;
       
       pendingUpload.images.push({
         buffer: imageBuffer,
         messageId: messageId,
         contentType: 'image/jpeg',
         receivedAt: Date.now(),
-        receivedTimestamp: receivedTimestamp,
+        imageOrder: imageOrder,
         sessionId: pendingUpload.uploadSessionId
       });
       
@@ -385,8 +385,8 @@ class UploadController {
         this.uploadTimers.delete(userId);
       }
       
-      // Sort images by received timestamp
-      pendingUpload.images.sort((a, b) => a.receivedTimestamp - b.receivedTimestamp);
+      // Sort images by imageOrder
+      pendingUpload.images.sort((a, b) => a.imageOrder - b.imageOrder);
       
       // Use current date automatically
       const currentDate = new Date();
@@ -395,7 +395,7 @@ class UploadController {
       
       // Prepare files for processing with order in filename
       const files = pendingUpload.images.map((image, index) => {
-        const orderPadded = String(index + 1).padStart(4, '0');
+        const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
           originalname: `img_${sessionId}_${orderPadded}.jpg`,
