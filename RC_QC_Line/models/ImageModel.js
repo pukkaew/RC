@@ -1,4 +1,5 @@
-// Model for managing product images
+// Path: RC_QC_Line/models/ImageModel.js
+// Model for managing product images with proper ordering
 const sql = require('mssql');
 const dbService = require('../services/DatabaseService');
 const logger = require('../utils/Logger');
@@ -121,7 +122,7 @@ class ImageModel {
     }
   }
 
-  // Get images by lot ID and date
+  // Get images by lot ID and date - ORDER BY file_name which contains order
   async getByLotAndDate(lotId, imageDate) {
     try {
       const query = `
@@ -131,7 +132,40 @@ class ImageModel {
         WHERE i.lot_id = @lotId
           AND CONVERT(DATE, i.image_date) = CONVERT(DATE, @imageDate)
           AND i.status = 'active'
-        ORDER BY i.uploaded_at DESC
+        ORDER BY 
+          -- First, check if filename has our order pattern (timestamp_sessionId_order_uuid.ext)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) > 0
+            THEN 0
+            ELSE 1
+          END,
+          -- Extract sessionId (second segment)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            THEN SUBSTRING(
+              file_name,
+              CHARINDEX('_', file_name) + 1,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) - CHARINDEX('_', file_name) - 1
+            )
+            ELSE '999999999999999'
+          END,
+          -- Extract order number (third segment)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) > 0
+            THEN SUBSTRING(
+              file_name,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) - CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) - 1
+            )
+            ELSE '9999'
+          END,
+          -- Fall back to uploaded_at for old images
+          i.uploaded_at
       `;
       
       const params = [
@@ -151,7 +185,7 @@ class ImageModel {
     }
   }
 
-  // Get images by lot number and date
+  // Get images by lot number and date - ORDER BY file_name which contains order
   async getByLotNumberAndDate(lotNumber, imageDate) {
     try {
       const query = `
@@ -161,7 +195,40 @@ class ImageModel {
         WHERE l.lot_number = @lotNumber
           AND CONVERT(DATE, i.image_date) = CONVERT(DATE, @imageDate)
           AND i.status = 'active'
-        ORDER BY i.uploaded_at DESC
+        ORDER BY 
+          -- First, check if filename has our order pattern (timestamp_sessionId_order_uuid.ext)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) > 0
+            THEN 0
+            ELSE 1
+          END,
+          -- Extract sessionId (second segment)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            THEN SUBSTRING(
+              file_name,
+              CHARINDEX('_', file_name) + 1,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) - CHARINDEX('_', file_name) - 1
+            )
+            ELSE '999999999999999'
+          END,
+          -- Extract order number (third segment)
+          CASE 
+            WHEN CHARINDEX('_', file_name) > 0 
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) > 0
+            AND CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) > 0
+            THEN SUBSTRING(
+              file_name,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1,
+              CHARINDEX('_', file_name, CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) + 1) - CHARINDEX('_', file_name, CHARINDEX('_', file_name) + 1) - 1
+            )
+            ELSE '9999'
+          END,
+          -- Fall back to uploaded_at for old images
+          i.uploaded_at
       `;
       
       const params = [
@@ -173,6 +240,14 @@ class ImageModel {
       
       // Log query result
       logger.info(`Found ${result.recordset.length} images for lot ${lotNumber} on date ${imageDate}`);
+      
+      // Debug: Log first few filenames to check ordering
+      if (result.recordset.length > 0) {
+        logger.info(`First 3 filenames in order:`);
+        result.recordset.slice(0, 3).forEach((img, idx) => {
+          logger.info(`  ${idx + 1}. ${img.file_name}`);
+        });
+      }
       
       return result.recordset;
     } catch (error) {
