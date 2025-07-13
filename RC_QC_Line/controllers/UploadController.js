@@ -1,4 +1,5 @@
-// Controller for handling image uploads
+// Path: RC_QC_Line/controllers/UploadController.js
+// Controller for handling image uploads with order tracking
 const line = require('@line/bot-sdk');
 const fs = require('fs');
 const path = require('path');
@@ -73,19 +74,27 @@ class UploadController {
       let pendingUpload = this.pendingUploads.get(userId) || { 
         images: [], 
         lotNumber: lotNumber,
-        lastUpdateTime: Date.now()
+        lastUpdateTime: Date.now(),
+        uploadSessionId: Date.now() // Add session ID for this upload batch
       };
       
-      // Add the image to the pending uploads
+      // Calculate order for this image
+      const imageOrder = pendingUpload.images.length + 1;
+      
+      // Add the image to the pending uploads with order info
       pendingUpload.images.push({
         buffer: imageBuffer,
         messageId: messageId,
         contentType: 'image/jpeg',
-        receivedAt: Date.now()
+        receivedAt: Date.now(),
+        imageOrder: imageOrder, // Track order within this upload session
+        sessionId: pendingUpload.uploadSessionId
       });
       
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
+      
+      logger.info(`Received image ${imageOrder} for user ${userId}, session ${pendingUpload.uploadSessionId}`);
       
       // Schedule processing with appropriate delay for image count
       this.scheduleImageProcessing(userId, lotNumber);
@@ -111,6 +120,7 @@ class UploadController {
       }
       
       const imageCount = pendingUpload.images.length;
+      const sessionId = pendingUpload.uploadSessionId;
       
       // Send processing notification for large uploads
       if (imageCount > 10) {
@@ -120,17 +130,19 @@ class UploadController {
       }
       
       // Log how many images we're processing
-      logger.info(`Processing ${imageCount} images for Lot ${lotNumber} (User: ${userId})`);
+      logger.info(`Processing ${imageCount} images for Lot ${lotNumber} (User: ${userId}, Session: ${sessionId})`);
       
       // Use current date
       const currentDate = new Date();
       const formattedDate = dateFormatter.formatISODate(currentDate);
       
-      // Create files array from all pending images
+      // Create files array with order preserved in filename
       const files = pendingUpload.images.map((image, index) => {
+        // Include session ID and order in filename to ensure correct ordering
+        const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
-          originalname: `image_${Date.now()}_${index + 1}.jpg`,
+          originalname: `img_${sessionId}_${orderPadded}.jpg`, // This ensures correct ordering
           mimetype: image.contentType
         };
       });
@@ -221,14 +233,20 @@ class UploadController {
       // Store pending upload in memory
       const pendingUpload = this.pendingUploads.get(userId) || {
         images: [],
-        lastUpdateTime: Date.now()
+        lastUpdateTime: Date.now(),
+        uploadSessionId: Date.now() // Add session ID
       };
+      
+      // Calculate order for this image
+      const imageOrder = pendingUpload.images.length + 1;
       
       pendingUpload.images.push({
         buffer: imageBuffer,
         messageId: messageId,
         contentType: 'image/jpeg',
-        receivedAt: Date.now()
+        receivedAt: Date.now(),
+        imageOrder: imageOrder,
+        sessionId: pendingUpload.uploadSessionId
       });
       
       pendingUpload.lastUpdateTime = Date.now();
@@ -367,12 +385,14 @@ class UploadController {
       // Use current date automatically
       const currentDate = new Date();
       const formattedDate = dateFormatter.formatISODate(currentDate);
+      const sessionId = pendingUpload.uploadSessionId;
       
-      // Prepare files for processing
+      // Prepare files for processing with order in filename
       const files = pendingUpload.images.map((image, index) => {
+        const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
-          originalname: `image_${Date.now()}_${index + 1}.jpg`,
+          originalname: `img_${sessionId}_${orderPadded}.jpg`,
           mimetype: image.contentType
         };
       });
@@ -494,7 +514,8 @@ class UploadController {
           imageCount: upload.images.length,
           lastUpdateTime: new Date(upload.lastUpdateTime).toISOString(),
           lotNumber: upload.lotNumber || 'not set',
-          lotRequested: upload.lotRequested || false
+          lotRequested: upload.lotRequested || false,
+          sessionId: upload.uploadSessionId
         };
       }
       

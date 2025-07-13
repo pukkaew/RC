@@ -1,4 +1,5 @@
-// Utils for image compression
+// Path: RC_QC_Line/utils/ImageCompressor.js
+// Utils for image compression with order preservation
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
@@ -24,9 +25,22 @@ class ImageCompressor {
     }
   }
 
-  // Generate a unique filename
+  // Generate a unique filename preserving order info
   generateFilename(originalFilename) {
-    const extension = path.extname(originalFilename) || '.jpg'; // Default to .jpg if no extension
+    const extension = path.extname(originalFilename) || '.jpg';
+    
+    // Check if filename already has order info (img_sessionId_order.jpg)
+    const orderMatch = originalFilename.match(/img_(\d+)_(\d{4})/);
+    if (orderMatch) {
+      // Keep the session and order info in the new filename
+      const sessionId = orderMatch[1];
+      const order = orderMatch[2];
+      const timestamp = Date.now();
+      const uuid = uuidv4().slice(0, 8);
+      return `${timestamp}_${sessionId}_${order}_${uuid}${extension}`;
+    }
+    
+    // Default filename generation for non-ordered images
     const timestamp = Date.now();
     const uuid = uuidv4().slice(0, 8);
     return `${timestamp}-${uuid}${extension}`;
@@ -153,7 +167,8 @@ class ImageCompressor {
       logger.info(`Image compressed: ${originalFilename} -> ${filename}`, {
         originalSize,
         compressedSize,
-        compressionRatio: result.compressionRatio
+        compressionRatio: result.compressionRatio,
+        orderInfo: filename.includes('_') ? 'preserved' : 'none'
       });
       
       return result;

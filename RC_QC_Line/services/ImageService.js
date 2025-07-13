@@ -1,4 +1,5 @@
-// Service for image processing and management - Add Debug Logging
+// Path: RC_QC_Line/services/ImageService.js
+// Service for image processing and management with order support
 const path = require('path');
 const fs = require('fs');
 const imageCompressor = require('../utils/ImageCompressor');
@@ -116,7 +117,45 @@ class ImageService {
     }
   }
 
-  // Get images by lot number and date (optimized for large result sets) - ENHANCED WITH DEBUG
+  // Helper method to extract order from filename
+  extractOrderFromFilename(filename) {
+    // Pattern: timestamp_sessionId_order_uuid.jpg
+    const match = filename.match(/_(\d+)_(\d{4})_/);
+    if (match) {
+      return {
+        sessionId: parseInt(match[1]),
+        order: parseInt(match[2])
+      };
+    }
+    return null;
+  }
+
+  // Sort images by their upload order
+  sortImagesByOrder(images) {
+    return images.sort((a, b) => {
+      const orderA = this.extractOrderFromFilename(a.file_name);
+      const orderB = this.extractOrderFromFilename(b.file_name);
+      
+      // Both have order info - sort by session then order
+      if (orderA && orderB) {
+        if (orderA.sessionId === orderB.sessionId) {
+          return orderA.order - orderB.order;
+        }
+        return orderA.sessionId - orderB.sessionId;
+      }
+      
+      // Only A has order info - A comes first
+      if (orderA && !orderB) return -1;
+      
+      // Only B has order info - B comes first
+      if (!orderA && orderB) return 1;
+      
+      // Neither has order info - sort by uploaded_at
+      return new Date(a.uploaded_at) - new Date(b.uploaded_at);
+    });
+  }
+
+  // Get images by lot number and date (optimized for large result sets)
   async getImagesByLotAndDate(lotNumber, imageDate) {
     try {
       // Enhanced logging for debugging
@@ -147,14 +186,21 @@ class ImageService {
         };
       }
       
+      // Sort images by order
+      const sortedImages = this.sortImagesByOrder(images);
+      
       // Convert file paths to URLs
-      const imagesWithUrls = images.map(image => {
+      const imagesWithUrls = sortedImages.map((image, index) => {
         const filename = path.basename(image.file_path);
         return {
           ...image,
-          url: `/uploads/${filename}`
+          url: `/uploads/${filename}`,
+          displayOrder: index + 1 // Add display order for UI
         };
       });
+      
+      // Log order info
+      logger.info(`Images sorted. First few filenames: ${imagesWithUrls.slice(0, 3).map(img => img.file_name).join(', ')}`);
       
       // Log info for large result sets
       if (imagesWithUrls.length > 50) {
