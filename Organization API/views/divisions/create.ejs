@@ -1,0 +1,178 @@
+<!-- views/divisions/create.ejs -->
+<%- include('../layouts/header') %>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Create New Division</h1>
+            <p class="text-gray-600 mt-2">Add a new division to the organizational structure</p>
+        </div>
+
+        <!-- Form -->
+        <form action="/divisions" method="POST" class="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <!-- Division Code -->
+            <div>
+                <label for="division_code" class="block text-sm font-medium text-gray-700 mb-2">
+                    Division Code <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       id="division_code" 
+                       name="division_code" 
+                       required
+                       maxlength="20"
+                       pattern="[A-Za-z0-9]+"
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                       placeholder="e.g., IT, HR, FIN">
+                <p class="mt-1 text-sm text-gray-500">Letters and numbers only, max 20 characters</p>
+            </div>
+
+            <!-- Division Name -->
+            <div>
+                <label for="division_name" class="block text-sm font-medium text-gray-700 mb-2">
+                    Division Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       id="division_name" 
+                       name="division_name" 
+                       required
+                       maxlength="200"
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                       placeholder="e.g., ฝ่ายเทคโนโลยีสารสนเทศ">
+            </div>
+
+            <!-- Company -->
+            <div>
+                <label for="company_code" class="block text-sm font-medium text-gray-700 mb-2">
+                    Company <span class="text-red-500">*</span>
+                </label>
+                <select id="company_code" 
+                        name="company_code" 
+                        required
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Select Company</option>
+                    <% companies.forEach(company => { %>
+                        <option value="<%= company.company_code %>">
+                            <%= company.company_code %> - <%= company.company_name_th %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <!-- Branch (Optional) -->
+            <div>
+                <label for="branch_code" class="block text-sm font-medium text-gray-700 mb-2">
+                    Branch <span class="text-gray-400">(Optional)</span>
+                </label>
+                <select id="branch_code" 
+                        name="branch_code"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Company Level (No Branch)</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">Leave empty for company-level divisions</p>
+            </div>
+
+            <!-- Active Status -->
+            <div class="flex items-center">
+                <input type="checkbox" 
+                       id="is_active" 
+                       name="is_active" 
+                       value="true"
+                       checked
+                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <label for="is_active" class="ml-2 block text-sm text-gray-700">
+                    Active
+                </label>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-4 pt-4 border-t">
+                <a href="/divisions" 
+                   class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Create Division
+                </button>
+            </div>
+        </form>
+
+        <!-- Help Section -->
+        <div class="mt-8 bg-blue-50 rounded-lg p-6">
+            <h3 class="text-lg font-medium text-blue-900 mb-2">Guidelines</h3>
+            <ul class="space-y-2 text-sm text-blue-800">
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Division codes should be short and meaningful (e.g., IT for Information Technology)</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Company-level divisions don't belong to any specific branch</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Each division code must be unique across the entire system</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const companySelect = document.getElementById('company_code');
+    const branchSelect = document.getElementById('branch_code');
+    
+    // Load branches when company is selected
+    companySelect.addEventListener('change', function() {
+        const companyCode = this.value;
+        
+        // Clear branch options
+        branchSelect.innerHTML = '<option value="">Company Level (No Branch)</option>';
+        
+        if (companyCode) {
+            // Fetch branches for selected company
+            fetch(`/api/companies/${companyCode}/branches`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        data.data.forEach(branch => {
+                            const option = document.createElement('option');
+                            option.value = branch.branch_code;
+                            option.textContent = `${branch.branch_code} - ${branch.branch_name}`;
+                            if (branch.is_headquarters) {
+                                option.textContent += ' (Headquarters)';
+                            }
+                            branchSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading branches:', error);
+                });
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const divisionCode = document.getElementById('division_code').value;
+        
+        // Validate division code format
+        if (!/^[A-Za-z0-9]+$/.test(divisionCode)) {
+            e.preventDefault();
+            alert('Division code can only contain letters and numbers');
+            return;
+        }
+    });
+});
+</script>
+
+<%- include('../layouts/footer') %>
