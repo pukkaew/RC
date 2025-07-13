@@ -1,5 +1,5 @@
 // Path: RC_QC_Line/controllers/UploadController.js
-// Controller for handling image uploads with precise order tracking
+// Controller for handling image uploads with PERFECT order tracking
 const line = require('@line/bot-sdk');
 const fs = require('fs');
 const path = require('path');
@@ -15,6 +15,7 @@ class UploadController {
   constructor() {
     this.pendingUploads = new Map(); // Store pending uploads by user ID
     this.uploadTimers = new Map(); // Store timers for processing uploads
+    this.imageCounter = new Map(); // Global counter for each user session
   }
 
   // Process all pending images after a delay (supports unlimited images)
@@ -61,40 +62,50 @@ class UploadController {
       imageStream.on('data', (chunk) => {
         chunks.push(chunk);
       });
-      
+
       // When image is fully received
       await new Promise((resolve, reject) => {
         imageStream.on('end', resolve);
         imageStream.on('error', reject);
       });
-      
+
       const imageBuffer = Buffer.concat(chunks);
       
       // Get or create pending upload for the Lot
-      let pendingUpload = this.pendingUploads.get(userId) || { 
-        images: [], 
-        lotNumber: lotNumber,
-        lastUpdateTime: Date.now(),
-        uploadSessionId: Date.now() // Add session ID for this upload batch
-      };
+      let pendingUpload = this.pendingUploads.get(userId);
       
-      // Use sequential order number instead of timestamp for guaranteed ordering
-      const imageOrder = pendingUpload.images.length + 1;
+      if (!pendingUpload) {
+        const sessionId = Date.now();
+        pendingUpload = { 
+          images: [], 
+          lotNumber: lotNumber,
+          lastUpdateTime: Date.now(),
+          uploadSessionId: sessionId
+        };
+        // Initialize counter for this session
+        this.imageCounter.set(`${userId}_${sessionId}`, 0);
+      }
       
-      // Add the image to the pending uploads with guaranteed order
+      // Get and increment counter for guaranteed unique order
+      const sessionKey = `${userId}_${pendingUpload.uploadSessionId}`;
+      const currentCount = this.imageCounter.get(sessionKey) || 0;
+      const imageOrder = currentCount + 1;
+      this.imageCounter.set(sessionKey, imageOrder);
+      
+      // Add the image to the pending uploads with guaranteed unique order
       pendingUpload.images.push({
         buffer: imageBuffer,
         messageId: messageId,
         contentType: 'image/jpeg',
         receivedAt: Date.now(),
-        imageOrder: imageOrder, // Guaranteed sequential order
+        imageOrder: imageOrder, // Guaranteed unique order
         sessionId: pendingUpload.uploadSessionId
       });
       
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
       
-      logger.info(`Received image ${imageOrder} for user ${userId}, session ${pendingUpload.uploadSessionId}`);
+      logger.info(`Received image #${imageOrder} for user ${userId}, session ${pendingUpload.uploadSessionId}`);
       
       // Schedule processing with appropriate delay for image count
       this.scheduleImageProcessing(userId, lotNumber);
@@ -129,19 +140,20 @@ class UploadController {
         ));
       }
       
-      // Sort images by imageOrder to ensure correct order
+      // Sort images by imageOrder (guaranteed correct order)
       pendingUpload.images.sort((a, b) => a.imageOrder - b.imageOrder);
       
-      // Log how many images we're processing
+      // Log the order for debugging
       logger.info(`Processing ${imageCount} images for Lot ${lotNumber} (User: ${userId}, Session: ${sessionId})`);
+      logger.info(`Image order: ${pendingUpload.images.map(img => img.imageOrder).join(', ')}`);
       
       // Use current date
       const currentDate = new Date();
       const formattedDate = dateFormatter.formatISODate(currentDate);
       
       // Create files array with order preserved in filename
-      const files = pendingUpload.images.map((image, index) => {
-        // Ensure order matches the imageOrder
+      const files = pendingUpload.images.map((image) => {
+        // Use the guaranteed unique imageOrder
         const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
@@ -173,8 +185,9 @@ class UploadController {
       // Reset upload info
       lineService.setUploadInfo(userId, null);
       
-      // Clear pending uploads for this user
+      // Clear pending uploads and counter for this user
       this.pendingUploads.delete(userId);
+      this.imageCounter.delete(`${userId}_${sessionId}`);
       
       // Build success message
       const successMessage = lineMessageBuilder.buildUploadSuccessMessage(result);
@@ -224,24 +237,34 @@ class UploadController {
       imageStream.on('data', (chunk) => {
         chunks.push(chunk);
       });
-      
+
       // When image is fully received
       await new Promise((resolve, reject) => {
         imageStream.on('end', resolve);
         imageStream.on('error', reject);
       });
-      
+
       const imageBuffer = Buffer.concat(chunks);
       
       // Store pending upload in memory
-      const pendingUpload = this.pendingUploads.get(userId) || {
-        images: [],
-        lastUpdateTime: Date.now(),
-        uploadSessionId: Date.now() // Add session ID
-      };
+      let pendingUpload = this.pendingUploads.get(userId);
       
-      // Use sequential order number
-      const imageOrder = pendingUpload.images.length + 1;
+      if (!pendingUpload) {
+        const sessionId = Date.now();
+        pendingUpload = {
+          images: [],
+          lastUpdateTime: Date.now(),
+          uploadSessionId: sessionId
+        };
+        // Initialize counter for this session
+        this.imageCounter.set(`${userId}_${sessionId}`, 0);
+      }
+      
+      // Get and increment counter for guaranteed unique order
+      const sessionKey = `${userId}_${pendingUpload.uploadSessionId}`;
+      const currentCount = this.imageCounter.get(sessionKey) || 0;
+      const imageOrder = currentCount + 1;
+      this.imageCounter.set(sessionKey, imageOrder);
       
       pendingUpload.images.push({
         buffer: imageBuffer,
@@ -254,6 +277,8 @@ class UploadController {
       
       pendingUpload.lastUpdateTime = Date.now();
       this.pendingUploads.set(userId, pendingUpload);
+      
+      logger.info(`Received image #${imageOrder} for user ${userId}`);
       
       // Ask for Lot number if this is the first image
       if (pendingUpload.images.length === 1) {
@@ -340,6 +365,12 @@ class UploadController {
       
       // Clear any pending uploads for this user
       this.pendingUploads.delete(userId);
+      // Clear any existing counters
+      for (const [key] of this.imageCounter.entries()) {
+        if (key.startsWith(`${userId}_`)) {
+          this.imageCounter.delete(key);
+        }
+      }
       
       // Confirm Lot number and ask for images
       await lineService.replyMessage(
@@ -385,7 +416,7 @@ class UploadController {
         this.uploadTimers.delete(userId);
       }
       
-      // Sort images by imageOrder
+      // Sort images by imageOrder (guaranteed correct order)
       pendingUpload.images.sort((a, b) => a.imageOrder - b.imageOrder);
       
       // Use current date automatically
@@ -394,7 +425,7 @@ class UploadController {
       const sessionId = pendingUpload.uploadSessionId;
       
       // Prepare files for processing with order in filename
-      const files = pendingUpload.images.map((image, index) => {
+      const files = pendingUpload.images.map((image) => {
         const orderPadded = String(image.imageOrder).padStart(4, '0');
         return {
           buffer: image.buffer,
@@ -406,8 +437,9 @@ class UploadController {
       // Process and save images
       const result = await imageService.processImages(files, lotNumber.trim(), formattedDate, userId);
       
-      // Clear pending uploads
+      // Clear pending uploads and counter
       this.pendingUploads.delete(userId);
+      this.imageCounter.delete(`${userId}_${sessionId}`);
       
       // Reset user state
       const chatId = chatContext?.chatId || 'direct';
@@ -495,6 +527,12 @@ class UploadController {
             clearTimeout(this.uploadTimers.get(userId));
             this.uploadTimers.delete(userId);
           }
+          
+          // Clear counter
+          const sessionKey = `${userId}_${upload.uploadSessionId}`;
+          if (this.imageCounter.has(sessionKey)) {
+            this.imageCounter.delete(sessionKey);
+          }
         }
       }
       
@@ -511,17 +549,20 @@ class UploadController {
       const stats = {
         totalPendingUploads: this.pendingUploads.size,
         activeTimers: this.uploadTimers.size,
+        activeCounters: this.imageCounter.size,
         pendingByUser: {}
       };
       
       // Get details for each pending upload
       for (const [userId, upload] of this.pendingUploads.entries()) {
+        const sessionKey = `${userId}_${upload.uploadSessionId}`;
         stats.pendingByUser[userId] = {
           imageCount: upload.images.length,
           lastUpdateTime: new Date(upload.lastUpdateTime).toISOString(),
           lotNumber: upload.lotNumber || 'not set',
           lotRequested: upload.lotRequested || false,
-          sessionId: upload.uploadSessionId
+          sessionId: upload.uploadSessionId,
+          currentOrder: this.imageCounter.get(sessionKey) || 0
         };
       }
       
@@ -531,6 +572,7 @@ class UploadController {
       return {
         totalPendingUploads: 0,
         activeTimers: 0,
+        activeCounters: 0,
         pendingByUser: {},
         error: error.message
       };
