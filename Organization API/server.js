@@ -1,3 +1,4 @@
+// Path: /server.js
 // Load environment variables
 require('dotenv').config();
 
@@ -54,8 +55,10 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 
 // Body parsing middleware
@@ -82,114 +85,122 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Session configuration
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+const sessionConfig = {
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
     resave: false,
     saveUninitialized: false,
-    store: new MSSQLStore({
-        host: process.env.DB_SERVER,
-        port: parseInt(process.env.DB_PORT) || 1433,
-        database: process.env.DB_NAME,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        options: {
-            encrypt: process.env.DB_ENCRYPT === 'true',
-            trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true'
-        },
-        table: 'Sessions' // Table to store sessions
-    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
-}));
+};
+
+// Add SQL session store in production
+if (process.env.NODE_ENV === 'production' && process.env.DB_SERVER) {
+    sessionConfig.store = new MSSQLStore({
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        server: process.env.DB_SERVER,
+        database: process.env.DB_DATABASE,
+        options: {
+            encrypt: true,
+            trustServerCertificate: process.env.NODE_ENV === 'development'
+        }
+    });
+}
+
+app.use(session(sessionConfig));
 
 // Flash messages
 app.use(flash());
 
-// CSRF protection for web routes (exclude API routes)
+// CSRF protection (skip for API routes)
 const csrfProtection = csrf({ cookie: false });
-
-// Make flash messages available to all views
 app.use((req, res, next) => {
-    res.locals.success = req.flash('success');
-    res.locals.error = req.flash('error');
-    res.locals.info = req.flash('info');
-    res.locals.warning = req.flash('warning');
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    csrfProtection(req, res, next);
+});
+
+// Make CSRF token available to all views
+app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/')) {
+        res.locals.csrfToken = req.csrfToken ? req.csrfToken() : '';
+    }
+    res.locals.user = req.session?.user || null;
     next();
 });
 
-// Rate limiting for API
-const apiLimiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: 'Too many requests from this IP, please try again later.',
-    standardHeaders: true,
-    legacyHeaders: false,
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.'
 });
 
-// Apply rate limiting to API routes
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // more generous limit for API
+    message: 'Too many API requests from this IP, please try again later.'
+});
+
 app.use('/api/', apiLimiter);
+app.use(limiter);
 
 // Routes
-app.use('/api', apiRoutes); // API routes (no CSRF)
-app.use('/', csrfProtection, webRoutes); // Web routes (with CSRF)
+app.use('/', webRoutes);
+app.use('/api', apiRoutes);
 
 // 404 handler
-app.use((req, res, next) => {
-    const error = new Error('Not Found');
-    error.status = 404;
-    next(error);
+app.use((req, res) => {
+    res.status(404);
+    
+    if (req.path.startsWith('/api/')) {
+        return res.json({
+            success: false,
+            message: 'API endpoint not found'
+        });
+    }
+    
+    res.render('error', {
+        title: 'Page Not Found',
+        statusCode: 404,
+        message: 'The page you are looking for does not exist.',
+        error: null
+    });
 });
 
-// Error handling middleware (must be last)
+// Error handling middleware (should be last)
 app.use(errorHandler);
 
-// Start server
-async function startServer() {
+// Database connection and server startup
+const startServer = async () => {
     try {
-        // Test database connection
+        // Connect to database
         await connectDatabase();
         logger.info('Database connected successfully');
         
-        // Create sessions table if not exists
-        await createSessionsTable();
-
-        // Start listening
+        // Start server
         app.listen(PORT, () => {
             logger.info(`Server is running on port ${PORT}`);
-            logger.info(`Environment: ${process.env.NODE_ENV}`);
-            logger.info(`URL: http://localhost:${PORT}`);
+            logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+            
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`
+                    🚀 Server ready at:
+                    - Web: http://localhost:${PORT}
+                    - API: http://localhost:${PORT}/api
+                    - Docs: http://localhost:${PORT}/docs
+                `);
+            }
         });
     } catch (error) {
         logger.error('Failed to start server:', error);
         process.exit(1);
     }
-}
-
-// Create sessions table for storing sessions
-async function createSessionsTable() {
-    try {
-        const pool = getPool();
-        await pool.request().query(`
-            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Sessions' AND xtype='U')
-            CREATE TABLE Sessions (
-                sid VARCHAR(255) NOT NULL PRIMARY KEY,
-                session NVARCHAR(MAX) NOT NULL,
-                expires DATETIME NOT NULL
-            )
-        `);
-        logger.info('Sessions table ready');
-    } catch (error) {
-        logger.error('Error creating sessions table:', error);
-    }
-}
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+};
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
@@ -197,13 +208,23 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (error) => {
+    logger.error('Unhandled Rejection:', error);
+    process.exit(1);
+});
+
 // Graceful shutdown
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM signal received: closing HTTP server');
-    app.close(() => {
-        logger.info('HTTP server closed');
-        process.exit(0);
-    });
+process.on('SIGTERM', async () => {
+    logger.info('SIGTERM received, shutting down gracefully');
+    
+    // Close database connections
+    const pool = getPool();
+    if (pool) {
+        await pool.close();
+    }
+    
+    process.exit(0);
 });
 
 // Start the server
