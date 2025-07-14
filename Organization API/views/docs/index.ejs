@@ -1,0 +1,282 @@
+<!-- Path: /views/docs/index.ejs -->
+<%- include('../layouts/main', { body: ` 
+
+    <div class="max-w-7xl mx-auto">
+        <div class="prose max-w-none">
+            <h1>API Documentation</h1>
+            <p class="lead">Organization Structure Management API allows you to manage companies, branches, divisions, and departments through RESTful endpoints.</p>
+            
+            <h2>Base URL</h2>
+            <div class="bg-gray-100 p-4 rounded-lg font-mono text-sm">
+                <%= process.env.API_PREFIX || '/api/v1' %>
+            </div>
+            
+            <h2>Authentication</h2>
+            <p>All API requests require authentication using an API key. Include your API key in the request header:</p>
+            <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <pre><code>X-API-Key: YOUR_API_KEY</code></pre>
+            </div>
+            
+            <h2>Response Format</h2>
+            <p>All responses are returned in JSON format with the following structure:</p>
+            
+            <h3>Success Response</h3>
+            <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <pre><code>{
+        "success": true,
+        "data": { ... },
+        "message": "Success message"
+    }</code></pre>
+            </div>
+            
+            <h3>Error Response</h3>
+            <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <pre><code>{
+        "success": false,
+        "error": {
+            "code": "ERROR_CODE",
+            "message": "Error description",
+            "field": "field_name" // Optional
+        }
+    }</code></pre>
+            </div>
+            
+            <h2>Endpoints</h2>
+            
+            <!-- Companies -->
+            <div class="mt-8 border rounded-lg overflow-hidden">
+                <div class="bg-blue-600 text-white px-4 py-3">
+                    <h3 class="text-lg font-semibold mb-0">Companies</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies</td>
+                            <td class="px-4 py-3 text-sm">Get all companies with pagination</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies/{code}</td>
+                            <td class="px-4 py-3 text-sm">Get company by code</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">POST</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies</td>
+                            <td class="px-4 py-3 text-sm">Create new company</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">PUT</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies/{code}</td>
+                            <td class="px-4 py-3 text-sm">Update company</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">PATCH</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies/{code}/status</td>
+                            <td class="px-4 py-3 text-sm">Toggle company status</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Branches -->
+            <div class="mt-8 border rounded-lg overflow-hidden">
+                <div class="bg-green-600 text-white px-4 py-3">
+                    <h3 class="text-lg font-semibold mb-0">Branches</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/branches</td>
+                            <td class="px-4 py-3 text-sm">Get all branches with pagination</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/branches/{code}</td>
+                            <td class="px-4 py-3 text-sm">Get branch by code</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/companies/{code}/branches</td>
+                            <td class="px-4 py-3 text-sm">Get branches by company</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">POST</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/branches</td>
+                            <td class="px-4 py-3 text-sm">Create new branch</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">PUT</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/branches/{code}</td>
+                            <td class="px-4 py-3 text-sm">Update branch</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">PATCH</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/branches/{code}/status</td>
+                            <td class="px-4 py-3 text-sm">Toggle branch status</td>
+                            <td class="px-4 py-3 text-sm">write</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Special Endpoints -->
+            <div class="mt-8 border rounded-lg overflow-hidden">
+                <div class="bg-purple-600 text-white px-4 py-3">
+                    <h3 class="text-lg font-semibold mb-0">Special Endpoints</h3>
+                </div>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endpoint</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/organization-tree</td>
+                            <td class="px-4 py-3 text-sm">Get complete organization hierarchy</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/search</td>
+                            <td class="px-4 py-3 text-sm">Search across all entities</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">GET</span></td>
+                            <td class="px-4 py-3 font-mono text-sm">/statistics</td>
+                            <td class="px-4 py-3 text-sm">Get organization statistics</td>
+                            <td class="px-4 py-3 text-sm">read</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h2>Query Parameters</h2>
+            <p>Many endpoints support the following query parameters:</p>
+            <ul>
+                <li><code>page</code> - Page number (default: 1)</li>
+                <li><code>limit</code> - Items per page (default: 20, max: 100)</li>
+                <li><code>sort</code> - Field to sort by</li>
+                <li><code>order</code> - Sort order (asc/desc)</li>
+                <li><code>is_active</code> - Filter by active status (true/false)</li>
+                <li><code>search</code> - Search term</li>
+            </ul>
+            
+            <h2>Example Requests</h2>
+            
+            <h3>Get All Companies</h3>
+            <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <pre><code>GET /api/v1/companies?page=1&limit=10&is_active=true
+    
+    Headers:
+    X-API-Key: YOUR_API_KEY</code></pre>
+            </div>
+            
+            <h3>Create New Company</h3>
+            <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <pre><code>POST /api/v1/companies
+    
+    Headers:
+    X-API-Key: YOUR_API_KEY
+    Content-Type: application/json
+    
+    Body:
+    {
+        "company_code": "ABC",
+        "company_name_th": "บริษัท เอบีซี จำกัด",
+        "company_name_en": "ABC Company Limited",
+        "tax_id": "0105558123456",
+        "is_active": true
+    }</code></pre>
+            </div>
+            
+            <h2>Error Codes</h2>
+            <table class="min-w-full divide-y divide-gray-200 border rounded-lg overflow-hidden">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">MISSING_API_KEY</td>
+                        <td class="px-4 py-3 text-sm">API key was not provided</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">INVALID_API_KEY</td>
+                        <td class="px-4 py-3 text-sm">API key is invalid or expired</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">INSUFFICIENT_PERMISSIONS</td>
+                        <td class="px-4 py-3 text-sm">API key lacks required permissions</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">VALIDATION_ERROR</td>
+                        <td class="px-4 py-3 text-sm">Request data validation failed</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">NOT_FOUND</td>
+                        <td class="px-4 py-3 text-sm">Requested resource not found</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">DUPLICATE_CODE</td>
+                        <td class="px-4 py-3 text-sm">Entity code already exists</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-mono text-sm">RATE_LIMIT_EXCEEDED</td>
+                        <td class="px-4 py-3 text-sm">Too many requests</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="mt-12 bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Need an API Key?</h3>
+                        <p class="mt-1 text-sm text-blue-700">
+                            Visit the <a href="/api-keys" class="underline font-medium">API Keys</a> page to create and manage your API keys.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    ` }) %>

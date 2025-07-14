@@ -45,7 +45,12 @@
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1",
     "uuid": "^9.0.1",
-    "crypto": "^1.0.1"
+    "crypto": "^1.0.1",
+    "sanitize-html": "^2.11.0",
+    "node-cache": "^5.1.2",
+    "redis": "^4.6.10",
+    "connect-redis": "^7.1.0",
+    "rate-limit-redis": "^4.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",

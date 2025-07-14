@@ -1,5 +1,7 @@
-const { sql, executeQuery, executeProcedure } = require('../config/database');
+// Path: /src/models/ApiLog.js
+const { sql, executeQuery } = require('../config/database');
 const logger = require('../utils/logger');
+const ApiKey = require('./ApiKey');
 
 class ApiLog {
     constructor(data) {
@@ -16,12 +18,45 @@ class ApiLog {
         this.created_date = data.created_date;
     }
 
-    // Create new log entry
+    // Create new log entry - Fixed to use regular query instead of stored procedure
     static async create(logData) {
         try {
-            // Use stored procedure for better performance
-            const result = await executeProcedure('sp_LogAPIUsage', {
-                api_key_hash: logData.api_key_hash,
+            let apiKeyId = logData.api_key_id;
+            
+            // If no api_key_id but have api_key_hash, find the ID
+            if (!apiKeyId && logData.api_key_hash) {
+                const apiKey = await ApiKey.findByHash(logData.api_key_hash);
+                if (apiKey) {
+                    apiKeyId = apiKey.api_key_id;
+                }
+            }
+            
+            if (!apiKeyId) {
+                logger.warn('No valid API key for logging');
+                return false;
+            }
+            
+            // Insert log entry
+            const query = `
+                INSERT INTO API_Logs (
+                    api_key_id, endpoint, method, request_body,
+                    response_status, response_time_ms, ip_address,
+                    user_agent, error_message
+                )
+                VALUES (
+                    @api_key_id, @endpoint, @method, @request_body,
+                    @response_status, @response_time_ms, @ip_address,
+                    @user_agent, @error_message
+                );
+                
+                -- Update last used date for the API key
+                UPDATE API_Keys 
+                SET last_used_date = GETDATE() 
+                WHERE api_key_id = @api_key_id;
+            `;
+            
+            const inputs = {
+                api_key_id: apiKeyId,
                 endpoint: logData.endpoint,
                 method: logData.method,
                 request_body: logData.request_body,
@@ -30,8 +65,9 @@ class ApiLog {
                 ip_address: logData.ip_address,
                 user_agent: logData.user_agent,
                 error_message: logData.error_message
-            });
+            };
             
+            await executeQuery(query, inputs);
             return true;
         } catch (error) {
             // Log the error but don't throw to prevent disrupting API responses
@@ -49,7 +85,7 @@ class ApiLog {
     static async findAll(filters = {}) {
         try {
             let query = `
-                SELECT TOP 1000 
+                SELECT TOP ${filters.limit || 1000} 
                     l.log_id, l.api_key_id, l.endpoint, l.method,
                     l.request_body, l.response_status, l.response_time_ms,
                     l.ip_address, l.user_agent, l.error_message, l.created_date,

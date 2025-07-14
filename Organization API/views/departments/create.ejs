@@ -1,0 +1,123 @@
+<!-- Path: /views/departments/create.ejs -->
+<%- include('../layouts/main', { body: ` 
+
+    <div class="max-w-2xl mx-auto">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Create Department
+                </h2>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="/departments" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+    
+        <form method="post" action="/departments" class="mt-8 space-y-6">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            
+            <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+                <div class="md:grid md:grid-cols-3 md:gap-6">
+                    <div class="md:col-span-1">
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Department Information</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Basic information about the department.
+                        </p>
+                    </div>
+                    <div class="mt-5 md:mt-0 md:col-span-2">
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="department_code" class="block text-sm font-medium text-gray-700">
+                                    Department Code <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="department_code" id="department_code" required
+                                       maxlength="20"
+                                       pattern="[A-Z0-9_-]+"
+                                       title="Only uppercase letters, numbers, underscore and hyphen allowed"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="e.g. HR001, IT001">
+                                <p class="mt-1 text-sm text-gray-500">Unique identifier for the department</p>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="department_name" class="block text-sm font-medium text-gray-700">
+                                    Department Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="department_name" id="department_name" required
+                                       maxlength="200"
+                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="e.g. แผนกบุคคล, แผนกไอที">
+                            </div>
+    
+                            <div class="col-span-6">
+                                <label for="division_code" class="block text-sm font-medium text-gray-700">
+                                    Division <span class="text-red-500">*</span>
+                                </label>
+                                <select name="division_code" id="division_code" required
+                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                    <option value="">Select a division</option>
+                                    <% divisions.forEach(function(division) { %>
+                                        <% if (division.is_active) { %>
+                                            <option value="<%= division.division_code %>" 
+                                                    <%= selectedDivision === division.division_code ? 'selected' : '' %>>
+                                                <%= division.division_code %> - <%= division.division_name %>
+                                                (<%= division.company_name_th %>)
+                                            </option>
+                                        <% } %>
+                                    <% }); %>
+                                </select>
+                            </div>
+    
+                            <div class="col-span-6">
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="is_active" name="is_active" type="checkbox" checked
+                                               class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="is_active" class="font-medium text-gray-700">Active</label>
+                                        <p class="text-gray-500">This department is currently active and can be used in the system</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>Note:</strong> Departments must belong to a division. Make sure to select the correct division for this department.
+                        </p>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="flex justify-end">
+                <a href="/departments" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-save mr-2"></i>
+                    Create Department
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // Auto uppercase department code
+        document.getElementById('department_code').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    </script>
+    
+    ` }) %>

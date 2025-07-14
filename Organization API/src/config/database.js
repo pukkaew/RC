@@ -1,11 +1,12 @@
+// Path: /src/config/database.js
 const sql = require('mssql');
 const logger = require('../utils/logger');
 
-// Database configuration
+// Database configuration - Fixed to use correct env variable names
 const config = {
     server: process.env.DB_SERVER || 'localhost',
     port: parseInt(process.env.DB_PORT) || 1433,
-    database: process.env.DB_NAME || 'OrgStructureDB',
+    database: process.env.DB_DATABASE || 'OrgStructureDB', // Changed from DB_NAME
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     pool: {
@@ -19,6 +20,11 @@ const config = {
         enableArithAbort: true
     }
 };
+
+// For Windows Authentication (optional)
+if (process.env.DB_TRUSTED_CONNECTION === 'true') {
+    config.options.trustedConnection = true;
+}
 
 // Connection pool
 let pool;
