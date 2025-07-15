@@ -24,8 +24,8 @@ const { validateEnv } = require('./src/config/validateEnv');
 const webRoutes = require('./src/routes/web');
 const apiRoutes = require('./src/routes/api');
 
-// Import middleware
-const errorHandler = require('./src/middleware/errorHandler');
+// Import middleware - แก้ไขจุดนี้
+const { errorHandler } = require('./src/middleware/errorHandler');
 const { requireAuth } = require('./src/middleware/auth');
 const { cleanRequestBody } = require('./src/utils/xss');
 
