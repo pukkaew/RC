@@ -1,5 +1,4 @@
 // Path: /server.js
-// Load environment variables
 require('dotenv').config();
 
 const express = require('express');
@@ -24,9 +23,8 @@ const { validateEnv } = require('./src/config/validateEnv');
 const webRoutes = require('./src/routes/web');
 const apiRoutes = require('./src/routes/api');
 
-// Import middleware - แก้ไขจุดนี้
+// Import middleware - Fixed destructuring
 const { errorHandler } = require('./src/middleware/errorHandler');
-const { requireAuth } = require('./src/middleware/auth');
 const { cleanRequestBody } = require('./src/utils/xss');
 
 // Validate environment variables
@@ -96,8 +94,8 @@ const sessionConfig = {
     }
 };
 
-// Add SQL session store in production
-if (process.env.NODE_ENV === 'production' && process.env.DB_SERVER) {
+// Add SQL session store in production if database is available
+if (process.env.NODE_ENV === 'production' && process.env.DB_SERVER && process.env.USE_DATABASE !== 'false') {
     sessionConfig.store = new MSSQLStore({
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
@@ -178,9 +176,8 @@ app.use(errorHandler);
 // Database connection and server startup
 const startServer = async () => {
     try {
-        // Connect to database
+        // Connect to database (optional)
         await connectDatabase();
-        logger.info('Database connected successfully');
         
         // Start server
         app.listen(PORT, () => {
@@ -193,6 +190,10 @@ const startServer = async () => {
                     - Web: http://localhost:${PORT}
                     - API: http://localhost:${PORT}/api
                     - Docs: http://localhost:${PORT}/docs
+                    
+                    📝 Default credentials:
+                    - Username: admin
+                    - Password: admin123
                 `);
             }
         });
