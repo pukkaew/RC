@@ -1,46 +1,42 @@
 <!-- Path: /views/auth/login.ejs -->
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Organization Structure Management</title>
-    
-    <!-- Tailwind CSS -->
+    <title><%= title %> - Organization Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
-    <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="text-center">
-                <i class="fas fa-sitemap text-blue-600 text-5xl"></i>
-                <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-                    Organization Structure Management
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <div class="mx-auto flex justify-center">
+                    <div class="bg-blue-600 p-3 rounded-lg">
+                        <i class="fas fa-building text-white text-3xl"></i>
+                    </div>
+                </div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    Organization Management System
                 </h2>
-                <p class="mt-2 text-sm text-gray-600">
+                <p class="mt-2 text-center text-sm text-gray-600">
                     Sign in to your account
                 </p>
             </div>
-        </div>
-
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            
             <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                <!-- Flash Messages -->
-                <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
-                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                        <span class="block sm:inline"><%= error %></span>
+                <% if (error && error.length > 0) { %>
+                    <div class="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative" role="alert">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <span><%= error %></span>
                     </div>
                 <% } %>
                 
-                <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
-                    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                        <span class="block sm:inline"><%= success %></span>
+                <% if (success && success.length > 0) { %>
+                    <div class="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded relative" role="alert">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span><%= success %></span>
                     </div>
                 <% } %>
 
@@ -51,9 +47,13 @@
                         <label for="username" class="block text-sm font-medium text-gray-700">
                             Username
                         </label>
-                        <div class="mt-1">
-                            <input id="username" name="username" type="text" autocomplete="username" required
-                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input id="username" name="username" type="text" required
+                                   class="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="Enter your username">
                         </div>
                     </div>
 
@@ -61,9 +61,13 @@
                         <label for="password" class="block text-sm font-medium text-gray-700">
                             Password
                         </label>
-                        <div class="mt-1">
-                            <input id="password" name="password" type="password" autocomplete="current-password" required
-                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <div class="mt-1 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-gray-400"></i>
+                            </div>
+                            <input id="password" name="password" type="password" required
+                                   class="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                   placeholder="Enter your password">
                         </div>
                     </div>
 
@@ -98,8 +102,8 @@
 
                     <div class="mt-4 rounded-md bg-gray-50 px-4 py-3">
                         <p class="text-sm text-gray-600">
-                            <strong>Username:</strong> admin<br>
-                            <strong>Password:</strong> admin123
+                            <strong>Admin:</strong> admin / admin123<br>
+                            <strong>User:</strong> user / user123
                         </p>
                     </div>
                 </div>

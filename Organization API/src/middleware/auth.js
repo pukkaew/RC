@@ -1,14 +1,18 @@
+// Path: /src/middleware/auth.js
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 
 // User store (in production, this should be in database)
+// Default passwords:
+// - admin: admin123
+// - user: user123
 const users = {
     admin: {
         id: 1,
         username: 'admin',
         email: 'admin@organization.com',
-        // Password: Admin@123 (hashed)
-        password: '$2a$10$5K3kG7M5TqJqU1O8nZHyNuGhR8CxOXlZYHjPqV3F8Y.6hHm3qW8Aq',
+        // Password: admin123 (hashed)
+        password: '$2a$10$YwQ8.0ykpZMoVH7rGvxRZexTKNl0GvfGCHrHvEMDJFP.W9B9o/Jru',
         role: 'admin',
         permissions: ['read', 'write', 'delete', 'manage_users']
     },
@@ -16,8 +20,8 @@ const users = {
         id: 2,
         username: 'user',
         email: 'user@organization.com',
-        // Password: User@123 (hashed)
-        password: '$2a$10$Yx8sV4XKpJg8NzHHWZLYaOkHcVpBEcHZBqJqU1O8nZHyNuGhR8Cx',
+        // Password: user123 (hashed)
+        password: '$2a$10$4J3CdJKzQy4VbNYXoKrV7.XK4QmhFZbH9ySVkxhSHvDKvGzPnEtTy',
         role: 'user',
         permissions: ['read']
     }
@@ -66,21 +70,17 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Check if user has required permission
+// Check for specific permission
 const requirePermission = (permission) => {
     return (req, res, next) => {
-        if (!req.user) {
-            return requireAuth(req, res, next);
-        }
-        
-        if (!req.user.permissions || !req.user.permissions.includes(permission)) {
+        if (!req.user || !req.user.permissions.includes(permission)) {
             // For API requests
             if (req.path.startsWith('/api/')) {
                 return res.status(403).json({
                     success: false,
                     error: {
                         code: 'FORBIDDEN',
-                        message: 'Insufficient permissions'
+                        message: 'You do not have permission to access this resource'
                     }
                 });
             }
@@ -94,25 +94,17 @@ const requirePermission = (permission) => {
     };
 };
 
-// Check if user has any of the required permissions
+// Check for any of the specified permissions
 const requireAnyPermission = (permissions) => {
     return (req, res, next) => {
-        if (!req.user) {
-            return requireAuth(req, res, next);
-        }
-        
-        const hasPermission = permissions.some(permission => 
-            req.user.permissions && req.user.permissions.includes(permission)
-        );
-        
-        if (!hasPermission) {
+        if (!req.user || !permissions.some(p => req.user.permissions.includes(p))) {
             // For API requests
             if (req.path.startsWith('/api/')) {
                 return res.status(403).json({
                     success: false,
                     error: {
                         code: 'FORBIDDEN',
-                        message: 'Insufficient permissions'
+                        message: 'You do not have permission to access this resource'
                     }
                 });
             }
@@ -126,25 +118,17 @@ const requireAnyPermission = (permissions) => {
     };
 };
 
-// Check if user has all required permissions
+// Check for all specified permissions
 const requireAllPermissions = (permissions) => {
     return (req, res, next) => {
-        if (!req.user) {
-            return requireAuth(req, res, next);
-        }
-        
-        const hasAllPermissions = permissions.every(permission => 
-            req.user.permissions && req.user.permissions.includes(permission)
-        );
-        
-        if (!hasAllPermissions) {
+        if (!req.user || !permissions.every(p => req.user.permissions.includes(p))) {
             // For API requests
             if (req.path.startsWith('/api/')) {
                 return res.status(403).json({
                     success: false,
                     error: {
                         code: 'FORBIDDEN',
-                        message: 'Insufficient permissions'
+                        message: 'You do not have permission to access this resource'
                     }
                 });
             }
@@ -276,6 +260,14 @@ async function generatePasswordHash(password) {
     return await bcrypt.hash(password, salt);
 }
 
+// Helper function to create password hashes for testing
+// Run this to generate new password hashes:
+// node -e "require('./src/middleware/auth').generatePasswordHash('admin123').then(console.log)"
+async function testGenerateHashes() {
+    console.log('admin123:', await generatePasswordHash('admin123'));
+    console.log('user123:', await generatePasswordHash('user123'));
+}
+
 module.exports = {
     requireAuth,
     requirePermission,
@@ -286,5 +278,6 @@ module.exports = {
     showLoginPage,
     storeReturnTo,
     optionalAuth,
-    generatePasswordHash
+    generatePasswordHash,
+    testGenerateHashes
 };
