@@ -103,7 +103,9 @@ const showDashboard = async (req, res) => {
             ]
         };
         
+        // Render view using res.render with view name
         res.render('dashboard/index', {
+            view: '../dashboard/index',
             title: 'Dashboard',
             stats,
             recentApiLogs,

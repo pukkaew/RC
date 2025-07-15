@@ -30,38 +30,38 @@
             </div>
             
             <nav class="mt-6">
-                <a href="/" class="flex items-center px-6 py-3 <%= currentPath === '/' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                <a href="/" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath === '/' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                     <i class="fas fa-home mr-3"></i>
                     Dashboard
                 </a>
                 
-                <a href="/companies" class="flex items-center px-6 py-3 <%= currentPath.includes('/companies') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                <a href="/companies" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/companies') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                     <i class="fas fa-building mr-3"></i>
                     Companies
                 </a>
                 
-                <a href="/branches" class="flex items-center px-6 py-3 <%= currentPath.includes('/branches') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                <a href="/branches" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/branches') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                     <i class="fas fa-code-branch mr-3"></i>
                     Branches
                 </a>
                 
-                <a href="/divisions" class="flex items-center px-6 py-3 <%= currentPath.includes('/divisions') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                <a href="/divisions" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/divisions') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                     <i class="fas fa-sitemap mr-3"></i>
                     Divisions
                 </a>
                 
-                <a href="/departments" class="flex items-center px-6 py-3 <%= currentPath.includes('/departments') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                <a href="/departments" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/departments') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                     <i class="fas fa-users mr-3"></i>
                     Departments
                 </a>
                 
                 <div class="mt-6 pt-6 border-t border-gray-700">
-                    <a href="/api-keys" class="flex items-center px-6 py-3 <%= currentPath.includes('/api-keys') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                    <a href="/api-keys" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/api-keys') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                         <i class="fas fa-key mr-3"></i>
                         API Keys
                     </a>
                     
-                    <a href="/docs" class="flex items-center px-6 py-3 <%= currentPath.includes('/docs') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
+                    <a href="/docs" class="flex items-center px-6 py-3 <%= typeof currentPath !== 'undefined' && currentPath.includes('/docs') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' %> transition-colors">
                         <i class="fas fa-book mr-3"></i>
                         API Docs
                     </a>
@@ -84,7 +84,7 @@
                         <div class="relative">
                             <button class="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
                                 <i class="fas fa-user-circle text-2xl mr-2"></i>
-                                <span><%= user ? user.username : 'Guest' %></span>
+                                <span><%= typeof user !== 'undefined' && user ? user.username : 'Guest' %></span>
                                 <i class="fas fa-chevron-down ml-1 text-xs"></i>
                             </button>
                             
@@ -126,7 +126,7 @@
                 <% } %>
                 
                 <!-- Page Content -->
-                <%- typeof body !== 'undefined' ? body : '' %>
+                <%- include(view) %>
             </main>
         </div>
     </div>
