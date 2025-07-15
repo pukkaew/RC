@@ -8,8 +8,8 @@ const users = {
         id: 1,
         username: 'admin',
         email: 'admin@organization.com',
-        // Password: admin123 (hash ใหม่ที่สร้างเมื่อสักครู่)
-        password: '$2a$10$5dK3hFwGpuBzKp8jQ7yQKuG1h0E5HqkBvNbXzX9mI8XoW3BvZ7uW.',
+        // Password: admin123
+        password: '$2a$10$VHfrT501zIGvyQ087wYsOuni0pwQ8Vg2UV3q6r46PDnIcX1USQwj2',
         role: 'admin',
         permissions: ['read', 'write', 'delete', 'manage_users']
     },
@@ -17,8 +17,8 @@ const users = {
         id: 2,
         username: 'user',
         email: 'user@organization.com',
-        // Password: user123 (hash ใหม่ที่สร้างเมื่อสักครู่)
-        password: '$2a$10$8VxGpH2mKXO0XBgYO8RqB.6RqZKiCvM5vQGnXfVZ4iL5aTpI3Kfnq',
+        // Password: user123
+        password: '$2a$10$pnrkWH9Lem68SjVCRYLRGOiseYGateF9kMKkV/bpg.a5oL.22f5mG',
         role: 'user',
         permissions: ['read']
     }
@@ -126,12 +126,10 @@ const requireAllPermissions = (permissions) => {
     };
 };
 
-// Login handler - เพิ่ม debug logging
+// Login handler
 const login = async (req, res) => {
     try {
         const { username, password } = req.body;
-        
-        console.log('Login attempt:', { username, password: '***' }); // Debug log
         
         if (!username || !password) {
             req.flash('error', 'Username and password are required');
@@ -139,8 +137,6 @@ const login = async (req, res) => {
         }
         
         const user = users[username.toLowerCase()];
-        console.log('User found:', user ? 'Yes' : 'No'); // Debug log
-        
         if (!user) {
             logger.warn(`Failed login attempt for username: ${username}`);
             req.flash('error', 'Invalid username or password');
@@ -148,8 +144,6 @@ const login = async (req, res) => {
         }
         
         const isValidPassword = await bcrypt.compare(password, user.password);
-        console.log('Password valid:', isValidPassword); // Debug log
-        
         if (!isValidPassword) {
             logger.warn(`Failed login attempt for username: ${username}`);
             req.flash('error', 'Invalid username or password');
@@ -168,7 +162,6 @@ const login = async (req, res) => {
         
     } catch (error) {
         logger.error('Login error:', error);
-        console.error('Login error details:', error); // Debug log
         req.flash('error', 'An error occurred during login');
         res.redirect('/login');
     }
@@ -208,7 +201,7 @@ function getUserById(userId) {
 }
 
 const storeReturnTo = (req, res, next) => {
-    if (!req.session && req.method === 'GET' && 
+    if (!req.session.userId && req.method === 'GET' && 
         !req.path.includes('/login') && 
         !req.path.includes('/api/') &&
         !req.path.includes('.')) {
@@ -240,19 +233,6 @@ const optionalAuth = (req, res, next) => {
 async function generatePasswordHash(password) {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
-}
-
-// Test function - สำหรับทดสอบ password
-async function testPassword() {
-    console.log('\n🔐 Testing passwords:');
-    console.log('admin password hash:', users.admin.password);
-    console.log('admin123 matches:', await bcrypt.compare('admin123', users.admin.password));
-    console.log('');
-}
-
-// เรียก test function เมื่อ start server (ในโหมด development)
-if (process.env.NODE_ENV === 'development') {
-    testPassword();
 }
 
 module.exports = {
