@@ -1,68 +1,45 @@
+// Path: /src/utils/logger.js
 const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
 
 // Create logs directory if it doesn't exist
-const logsDir = path.join(__dirname, '../../logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
+const logDir = process.env.LOG_DIR || 'logs';
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
 }
 
-// Define log format
-const logFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    winston.format.json()
-);
-
-// Define custom format for console
-const consoleFormat = winston.format.combine(
-    winston.format.colorize(),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(({ timestamp, level, message, ...metadata }) => {
-        let msg = `${timestamp} [${level}]: ${message}`;
-        if (Object.keys(metadata).length > 0) {
-            msg += ` ${JSON.stringify(metadata)}`;
-        }
-        return msg;
-    })
-);
-
-// Create logger instance
+// Logger configuration
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
-    format: logFormat,
+    format: winston.format.combine(
+        winston.format.timestamp({
+            format: 'YYYY-MM-DD HH:mm:ss'
+        }),
+        winston.format.json()
+    ),
     defaultMeta: { service: 'org-structure-api' },
     transports: [
-        // Write all logs with level 'error' and below to error.log
-        new winston.transports.File({
-            filename: path.join(logsDir, 'error.log'),
-            level: 'error',
-            maxsize: 5242880, // 5MB
-            maxFiles: 5,
+        // Console transport
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.printf(({ timestamp, level, message, ...meta }) => {
+                    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+                    return `${timestamp} [${level}]: ${message}${metaStr}`;
+                })
+            )
         }),
-        // Write all logs to combined.log
+        // File transport for errors
         new winston.transports.File({
-            filename: path.join(logsDir, 'combined.log'),
-            maxsize: 5242880, // 5MB
-            maxFiles: 5,
+            filename: path.join(logDir, 'error.log'),
+            level: 'error'
         }),
-    ],
+        // File transport for all logs
+        new winston.transports.File({
+            filename: path.join(logDir, 'app.log')
+        })
+    ]
 });
-
-// If we're not in production, log to the console
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: consoleFormat,
-    }));
-}
-
-// Create a stream object with a 'write' function for Morgan
-logger.stream = {
-    write: function(message) {
-        logger.info(message.trim());
-    },
-};
 
 module.exports = logger;
