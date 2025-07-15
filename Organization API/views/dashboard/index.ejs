@@ -1,5 +1,5 @@
+<!-- Path: /views/dashboard/index.ejs -->
 <%- include('../layouts/main', { body: ` 
-
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p class="mt-2 text-sm text-gray-600">ภาพรวมระบบจัดการโครงสร้างองค์กร</p>
@@ -15,10 +15,10 @@
                 </dt>
                 <dd class="mt-1 flex items-baseline">
                     <span class="text-3xl font-semibold text-gray-900">
-                        <%= stats.companies.total_companies %>
+                        ${stats.companies.total_companies}
                     </span>
                     <span class="ml-2 text-sm text-green-600">
-                        <%= stats.companies.active_companies %> ใช้งาน
+                        ${stats.companies.active_companies} ใช้งาน
                     </span>
                 </dd>
             </div>
@@ -37,10 +37,10 @@
                 </dt>
                 <dd class="mt-1 flex items-baseline">
                     <span class="text-3xl font-semibold text-gray-900">
-                        <%= stats.branches.total_branches %>
+                        ${stats.branches.total_branches}
                     </span>
                     <span class="ml-2 text-sm text-green-600">
-                        <%= stats.branches.active_branches %> ใช้งาน
+                        ${stats.branches.active_branches} ใช้งาน
                     </span>
                 </dd>
             </div>
@@ -55,14 +55,14 @@
         <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <dt class="text-sm font-medium text-gray-500 truncate">
-                    <i class="fas fa-th-large mr-2"></i>ฝ่ายทั้งหมด
+                    <i class="fas fa-sitemap mr-2"></i>ฝ่ายทั้งหมด
                 </dt>
                 <dd class="mt-1 flex items-baseline">
                     <span class="text-3xl font-semibold text-gray-900">
-                        <%= stats.divisions.total_divisions %>
+                        ${stats.divisions.total_divisions}
                     </span>
                     <span class="ml-2 text-sm text-green-600">
-                        <%= stats.divisions.active_divisions %> ใช้งาน
+                        ${stats.divisions.active_divisions} ใช้งาน
                     </span>
                 </dd>
             </div>
@@ -81,10 +81,10 @@
                 </dt>
                 <dd class="mt-1 flex items-baseline">
                     <span class="text-3xl font-semibold text-gray-900">
-                        <%= stats.departments.total_departments %>
+                        ${stats.departments.total_departments}
                     </span>
                     <span class="ml-2 text-sm text-green-600">
-                        <%= stats.departments.active_departments %> ใช้งาน
+                        ${stats.departments.active_departments} ใช้งาน
                     </span>
                 </dd>
             </div>
@@ -93,25 +93,6 @@
                     ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
-        </div>
-    </div>
-    
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- API Usage Chart -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-chart-line mr-2"></i>API Usage (Last 24 Hours)
-            </h3>
-            <canvas id="apiUsageChart" height="300"></canvas>
-        </div>
-    
-        <!-- Entity Distribution Chart -->
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-chart-pie mr-2"></i>Entity Distribution
-            </h3>
-            <canvas id="entityChart" height="300"></canvas>
         </div>
     </div>
     
@@ -125,122 +106,108 @@
             <dl class="space-y-2">
                 <div class="flex justify-between">
                     <dt class="text-sm text-gray-500">Total Keys:</dt>
-                    <dd class="text-sm font-medium text-gray-900"><%= stats.apiKeys.total_keys %></dd>
+                    <dd class="text-sm font-medium text-gray-900">${stats.apiKeys.total_keys}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-sm text-gray-500">Active Keys:</dt>
-                    <dd class="text-sm font-medium text-green-600"><%= stats.apiKeys.active_keys %></dd>
+                    <dd class="text-sm font-medium text-green-600">${stats.apiKeys.active_keys}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-sm text-gray-500">Expired Keys:</dt>
-                    <dd class="text-sm font-medium text-red-600"><%= stats.apiKeys.expired_keys %></dd>
+                    <dt class="text-sm text-gray-500">Read Only:</dt>
+                    <dd class="text-sm font-medium text-gray-900">${stats.apiKeys.read_only_keys}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Read/Write:</dt>
+                    <dd class="text-sm font-medium text-gray-900">${stats.apiKeys.read_write_keys}</dd>
                 </div>
             </dl>
-            <div class="mt-4">
-                <a href="/api-keys" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                    Manage API Keys <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
         </div>
     
-        <!-- API Performance -->
+        <!-- API Usage Stats -->
         <div class="bg-white shadow rounded-lg p-6">
             <h3 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-tachometer-alt mr-2"></i>API Performance (24h)
+                <i class="fas fa-chart-bar mr-2"></i>API Usage (24h)
             </h3>
             <dl class="space-y-2">
                 <div class="flex justify-between">
                     <dt class="text-sm text-gray-500">Total Requests:</dt>
-                    <dd class="text-sm font-medium text-gray-900"><%= stats.apiUsage.total_requests || 0 %></dd>
+                    <dd class="text-sm font-medium text-gray-900">${stats.apiUsage.total_requests}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-sm text-gray-500">Avg Response Time:</dt>
-                    <dd class="text-sm font-medium text-gray-900"><%= Math.round(stats.apiUsage.avg_response_time || 0) %>ms</dd>
+                    <dt class="text-sm text-gray-500">Successful:</dt>
+                    <dd class="text-sm font-medium text-green-600">${stats.apiUsage.successful_requests}</dd>
                 </div>
                 <div class="flex justify-between">
-                    <dt class="text-sm text-gray-500">Success Rate:</dt>
-                    <dd class="text-sm font-medium text-green-600">
-                        <%= stats.apiUsage.total_requests > 0 ? ((stats.apiUsage.successful_requests / stats.apiUsage.total_requests) * 100).toFixed(1) : 0 %>%
-                    </dd>
+                    <dt class="text-sm text-gray-500">Failed:</dt>
+                    <dd class="text-sm font-medium text-red-600">${stats.apiUsage.failed_requests}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Avg Response:</dt>
+                    <dd class="text-sm font-medium text-gray-900">${stats.apiUsage.average_response_time}ms</dd>
                 </div>
             </dl>
         </div>
     
-        <!-- Top Endpoints -->
+        <!-- System Info -->
         <div class="bg-white shadow rounded-lg p-6">
             <h3 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-route mr-2"></i>Top API Endpoints
+                <i class="fas fa-info-circle mr-2"></i>System Info
             </h3>
-            <ul class="space-y-2">
-                <% endpointStats.forEach(function(endpoint) { %>
-                    <li class="flex justify-between text-sm">
-                        <span class="text-gray-600 truncate">
-                            <span class="font-medium"><%= endpoint.method %></span> <%= endpoint.endpoint %>
-                        </span>
-                        <span class="text-gray-900 font-medium ml-2"><%= endpoint.request_count %></span>
-                    </li>
-                <% }); %>
-            </ul>
+            <dl class="space-y-2">
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Version:</dt>
+                    <dd class="text-sm font-medium text-gray-900">1.0.0</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Environment:</dt>
+                    <dd class="text-sm font-medium text-gray-900">Development</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Last Update:</dt>
+                    <dd class="text-sm font-medium text-gray-900">Today</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500">Status:</dt>
+                    <dd class="text-sm font-medium text-green-600">
+                        <i class="fas fa-check-circle"></i> Healthy
+                    </dd>
+                </div>
+            </dl>
         </div>
     </div>
     
     <!-- Recent Activities -->
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">
-                <i class="fas fa-history mr-2"></i>Recent Activities
-            </h3>
-        </div>
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">
+            <i class="fas fa-history mr-2"></i>Recent Activities
+        </h3>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Type
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Entity
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Action
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            By
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Date
-                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <% recentActivities.forEach(function(activity) { %>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    <% if (activity.entity_type === 'Company') { %>
-                                        bg-blue-100 text-blue-800
-                                    <% } else if (activity.entity_type === 'Branch') { %>
-                                        bg-green-100 text-green-800
-                                    <% } else if (activity.entity_type === 'Division') { %>
-                                        bg-yellow-100 text-yellow-800
-                                    <% } else { %>
-                                        bg-purple-100 text-purple-800
-                                    <% } %>
-                                ">
-                                    <%= activity.entity_type %>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    ${activity.entity_type}
                                 </span>
+                                <span class="ml-2 text-sm text-gray-900">${activity.entity_name}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">${activity.action}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <%= activity.entity_name %> (<%= activity.entity_code %>)
+                                ${activity.created_by || activity.updated_by}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span class="capitalize"><%= activity.action %></span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <%= activity.activity_by %>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <%= new Date(activity.activity_date).toLocaleString('th-TH') %>
+                                ${new Date(activity.action_date).toLocaleString('th-TH')}
                             </td>
                         </tr>
                     <% }); %>
@@ -248,67 +215,4 @@
             </table>
         </div>
     </div>
-    
-    <script>
-        // Parse chart data
-        const chartData = <%- chartData %>;
-        
-        // API Usage Chart
-        const apiCtx = document.getElementById('apiUsageChart').getContext('2d');
-        new Chart(apiCtx, {
-            type: 'line',
-            data: {
-                labels: chartData.hourlyRequests.map(h => h.hour + ':00'),
-                datasets: [{
-                    label: 'API Requests',
-                    data: chartData.hourlyRequests.map(h => h.requests),
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-        
-        // Entity Distribution Chart
-        const entityCtx = document.getElementById('entityChart').getContext('2d');
-        new Chart(entityCtx, {
-            type: 'doughnut',
-            data: {
-                labels: chartData.entityDistribution.map(e => e.name),
-                datasets: [{
-                    data: chartData.entityDistribution.map(e => e.value),
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(251, 191, 36, 0.8)',
-                        'rgba(139, 92, 246, 0.8)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                }
-            }
-        });
-    </script>
-    
-    ` }) %>
+` }) %>
