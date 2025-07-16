@@ -1,131 +1,113 @@
 // Path: /src/controllers/dashboardController.js
+const { asyncHandler } = require('../middleware/errorHandler');
+const companyService = require('../services/companyService');
+const organizationService = require('../services/organizationService');
+const apiLogService = require('../services/apiLogService');
 const logger = require('../utils/logger');
 
-// Simple dashboard controller without database
-const showDashboard = async (req, res) => {
+/**
+ * Dashboard Controller
+ * Handles dashboard views and statistics
+ */
+
+// Show dashboard
+const index = asyncHandler(async (req, res) => {
     try {
-        // Mock data for testing (ในระบบจริงจะดึงจาก database)
-        const stats = {
-            companies: {
-                total_companies: 5,
-                active_companies: 4
-            },
-            branches: {
-                total_branches: 12,
-                active_branches: 10
-            },
-            divisions: {
-                total_divisions: 25,
-                active_divisions: 22
-            },
-            departments: {
-                total_departments: 48,
-                active_departments: 45
-            },
-            apiKeys: {
-                total_keys: 8,
-                active_keys: 7,
-                read_only_keys: 3,
-                write_only_keys: 1,
-                read_write_keys: 4
-            },
-            apiUsage: {
-                total_requests: 1523,
-                successful_requests: 1456,
-                failed_requests: 67,
-                average_response_time: 123
-            }
-        };
+        // Get organization statistics
+        const stats = await organizationService.getOrganizationStats();
         
-        // Mock recent activities
-        const recentActivities = [
-            {
-                entity_type: 'Company',
-                entity_code: 'COMP001',
-                entity_name: 'บริษัท ABC จำกัด',
-                action: 'created',
-                created_by: 'admin',
-                action_date: new Date()
-            },
-            {
-                entity_type: 'Branch',
-                entity_code: 'BR001',
-                entity_name: 'สาขาเชียงใหม่',
-                action: 'updated',
-                updated_by: 'admin',
-                action_date: new Date(Date.now() - 3600000)
-            }
-        ];
+        // Get API usage statistics for today
+        const apiStats = await apiLogService.getTodayStats();
         
-        // Mock recent API logs
-        const recentApiLogs = [
-            {
-                endpoint: '/api/v1/companies',
-                method: 'GET',
-                response_status: 200,
-                response_time_ms: 45,
-                created_date: new Date()
-            },
-            {
-                endpoint: '/api/v1/branches',
-                method: 'POST',
-                response_status: 201,
-                response_time_ms: 123,
-                created_date: new Date(Date.now() - 600000)
-            }
-        ];
+        // Get recent activities
+        const activities = await organizationService.getRecentActivities(10);
         
-        // Mock endpoint stats
-        const endpointStats = [
-            { endpoint: '/api/v1/companies', method: 'GET', request_count: 234, avg_response_time: 45 },
-            { endpoint: '/api/v1/branches', method: 'GET', request_count: 189, avg_response_time: 52 },
-            { endpoint: '/api/v1/departments', method: 'GET', request_count: 156, avg_response_time: 38 },
-            { endpoint: '/api/v1/divisions', method: 'GET', request_count: 134, avg_response_time: 41 },
-            { endpoint: '/api/v1/companies', method: 'POST', request_count: 89, avg_response_time: 124 }
-        ];
-        
-        // Mock chart data
-        const chartData = {
-            hourlyRequests: Array.from({ length: 24 }, (_, i) => ({
-                hour: i,
-                requests: Math.floor(Math.random() * 100) + 20
-            })),
-            entityDistribution: [
-                { name: 'Companies', value: stats.companies.total_companies },
-                { name: 'Branches', value: stats.branches.total_branches },
-                { name: 'Divisions', value: stats.divisions.total_divisions },
-                { name: 'Departments', value: stats.departments.total_departments }
-            ],
-            apiKeyTypes: [
-                { name: 'Read Only', value: stats.apiKeys.read_only_keys },
-                { name: 'Write Only', value: stats.apiKeys.write_only_keys },
-                { name: 'Read/Write', value: stats.apiKeys.read_write_keys }
-            ]
-        };
-        
-        // Render view using res.render with view name
+        // Render dashboard view
         res.render('dashboard/index', {
-            view: '../dashboard/index',
             title: 'Dashboard',
-            stats,
-            recentApiLogs,
-            recentActivities,
-            endpointStats,
-            chartData: JSON.stringify(chartData),
-            success: req.flash('success'),
-            error: req.flash('error')
+            pageTitle: 'แดชบอร์ด',
+            pageDescription: 'ภาพรวมระบบจัดการโครงสร้างองค์กร',
+            currentPath: '/',
+            stats: stats,
+            apiStats: apiStats,
+            activities: activities,
+            user: req.user || null
         });
-        
     } catch (error) {
         logger.error('Dashboard error:', error);
-        res.render('error', {
-            title: 'Error',
-            message: 'Failed to load dashboard',
-            error: process.env.NODE_ENV === 'development' ? error : null
+        res.render('dashboard/index', {
+            title: 'Dashboard',
+            pageTitle: 'แดชบอร์ด',
+            pageDescription: 'ภาพรวมระบบจัดการโครงสร้างองค์กร',
+            currentPath: '/',
+            stats: {
+                totalCompanies: 0,
+                totalBranches: 0,
+                totalDivisions: 0,
+                totalDepartments: 0,
+                active_divisions: 0,
+                headquarters_count: 0
+            },
+            apiStats: {
+                todayCalls: 0
+            },
+            activities: [],
+            error: 'ไม่สามารถโหลดข้อมูลได้'
         });
     }
-};
+});
+
+// Get chart data via AJAX
+const getChartData = asyncHandler(async (req, res) => {
+    const { type, period = '7days' } = req.query;
+    
+    let data;
+    switch (type) {
+        case 'organization':
+            data = await organizationService.getOrganizationChartData();
+            break;
+        case 'api':
+            data = await apiLogService.getUsageChartData(period);
+            break;
+        default:
+            return res.status(400).json({ error: 'Invalid chart type' });
+    }
+    
+    res.json({ success: true, data });
+});
+
+// Export stats as JSON/CSV
+const exportStats = asyncHandler(async (req, res) => {
+    const { format = 'json' } = req.query;
+    const stats = await organizationService.getOrganizationStats();
+    
+    if (format === 'csv') {
+        const csv = convertStatsToCSV(stats);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="organization-stats.csv"');
+        res.send(csv);
+    } else {
+        res.json(stats);
+    }
+});
+
+// Helper function to convert stats to CSV
+function convertStatsToCSV(stats) {
+    const rows = [
+        ['Metric', 'Value'],
+        ['Total Companies', stats.totalCompanies],
+        ['Total Branches', stats.totalBranches],
+        ['Total Divisions', stats.totalDivisions],
+        ['Total Departments', stats.totalDepartments],
+        ['Active Divisions', stats.active_divisions],
+        ['Headquarters', stats.headquarters_count]
+    ];
+    
+    return rows.map(row => row.join(',')).join('\n');
+}
 
 module.exports = {
-    showDashboard
+    index,
+    getChartData,
+    exportStats
 };
