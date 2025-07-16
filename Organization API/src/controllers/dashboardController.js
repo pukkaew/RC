@@ -107,6 +107,7 @@ function convertStatsToCSV(stats) {
 }
 
 module.exports = {
+    showDashboard: index,  // Map to expected function name
     index,
     getChartData,
     exportStats
