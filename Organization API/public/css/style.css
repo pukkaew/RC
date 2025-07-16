@@ -32,7 +32,7 @@
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-primary-500 rounded transition-colors hover:bg-primary-600;
+    @apply bg-ruxchai-blue-500 rounded transition-colors hover:bg-ruxchai-blue-600;
   }
 }
 
@@ -44,15 +44,15 @@
   }
   
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply bg-ruxchai-blue-500 text-white hover:bg-ruxchai-blue-600 focus:ring-ruxchai-blue-500;
   }
   
   .btn-secondary {
-    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+    @apply bg-ruxchai-green-500 text-white hover:bg-ruxchai-green-600 focus:ring-ruxchai-green-500;
   }
   
   .btn-outline {
-    @apply bg-transparent border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-500;
+    @apply bg-transparent border-2 border-ruxchai-blue-500 text-ruxchai-blue-500 hover:bg-ruxchai-blue-500 hover:text-white focus:ring-ruxchai-blue-500;
   }
   
   .btn-ghost {
@@ -65,7 +65,7 @@
   
   /* Form elements */
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors;
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ruxchai-blue-500 focus:border-ruxchai-blue-500 transition-colors;
   }
   
   .form-label {
@@ -104,11 +104,11 @@
   }
   
   .badge-primary {
-    @apply bg-primary-100 text-primary-800;
+    @apply bg-ruxchai-blue-100 text-ruxchai-blue-800;
   }
   
   .badge-success {
-    @apply bg-success-100 text-success-800;
+    @apply bg-ruxchai-green-100 text-ruxchai-green-800;
   }
   
   .badge-warning {
@@ -134,7 +134,7 @@
   }
   
   .alert-success {
-    @apply bg-success-50 text-success-800 border border-success-200;
+    @apply bg-ruxchai-green-50 text-ruxchai-green-800 border border-ruxchai-green-200;
   }
   
   .alert-error {
@@ -146,7 +146,7 @@
   }
   
   .alert-info {
-    @apply bg-primary-50 text-primary-800 border border-primary-200;
+    @apply bg-ruxchai-blue-50 text-ruxchai-blue-800 border border-ruxchai-blue-200;
   }
 }
 
