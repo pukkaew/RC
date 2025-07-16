@@ -1,3 +1,4 @@
+// Path: /src/routes/divisionRoutes.js
 const express = require('express');
 const router = express.Router();
 const divisionController = require('../controllers/divisionController');
@@ -11,7 +12,7 @@ router.get('/',
     divisionController.showDivisionsPage
 );
 
-// Display create form
+// Display create form (ต้องอยู่ก่อน /:code)
 router.get('/new', divisionController.showCreateDivisionForm);
 
 // Create division
@@ -19,6 +20,13 @@ router.post('/',
     divisionValidator.createDivisionRules(),
     validate,
     divisionController.handleCreateDivision
+);
+
+// Display division details
+router.get('/:code', 
+    divisionValidator.getDivisionByCodeRules(),
+    validate,
+    divisionController.showDivisionDetails
 );
 
 // Display edit form
@@ -35,16 +43,18 @@ router.post('/:code',
     divisionController.handleUpdateDivision
 );
 
+// Delete division
+router.post('/:code/delete',
+    divisionValidator.getDivisionByCodeRules(),
+    validate,
+    divisionController.handleDeleteDivision
+);
+
 // Toggle status
 router.post('/:code/toggle-status', 
     divisionValidator.getDivisionByCodeRules(),
     validate,
     divisionController.handleToggleStatus
-);
-
-// AJAX: Get branches by company
-router.get('/ajax/company/:companyCode/branches', 
-    divisionController.getBranchesByCompany
 );
 
 module.exports = router;

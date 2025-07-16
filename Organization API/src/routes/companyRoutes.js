@@ -1,3 +1,4 @@
+// Path: /src/routes/companyRoutes.js
 const express = require('express');
 const router = express.Router();
 const companyController = require('../controllers/companyController');
@@ -11,7 +12,7 @@ router.get('/',
     companyController.showCompaniesPage
 );
 
-// Display create form
+// Display create form (ต้องอยู่ก่อน /:code)
 router.get('/new', companyController.showCreateCompanyForm);
 
 // Create company
@@ -19,6 +20,13 @@ router.post('/',
     companyValidator.createCompanyRules(),
     validate,
     companyController.handleCreateCompany
+);
+
+// Display company details
+router.get('/:code', 
+    companyValidator.getCompanyByCodeRules(),
+    validate,
+    companyController.showCompanyDetails
 );
 
 // Display edit form
@@ -33,6 +41,13 @@ router.post('/:code',
     companyValidator.updateCompanyRules(),
     validate,
     companyController.handleUpdateCompany
+);
+
+// Delete company
+router.post('/:code/delete',
+    companyValidator.getCompanyByCodeRules(),
+    validate,
+    companyController.handleDeleteCompany
 );
 
 // Toggle status

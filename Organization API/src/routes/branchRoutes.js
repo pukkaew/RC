@@ -1,3 +1,4 @@
+// Path: /src/routes/branchRoutes.js
 const express = require('express');
 const router = express.Router();
 const branchController = require('../controllers/branchController');
@@ -11,7 +12,7 @@ router.get('/',
     branchController.showBranchesPage
 );
 
-// Display create form
+// Display create form (ต้องอยู่ก่อน /:code)
 router.get('/new', branchController.showCreateBranchForm);
 
 // Create branch
@@ -19,6 +20,13 @@ router.post('/',
     branchValidator.createBranchRules(),
     validate,
     branchController.handleCreateBranch
+);
+
+// Display branch details
+router.get('/:code', 
+    branchValidator.getBranchByCodeRules(),
+    validate,
+    branchController.showBranchDetails
 );
 
 // Display edit form
@@ -33,6 +41,13 @@ router.post('/:code',
     branchValidator.updateBranchRules(),
     validate,
     branchController.handleUpdateBranch
+);
+
+// Delete branch
+router.post('/:code/delete',
+    branchValidator.getBranchByCodeRules(),
+    validate,
+    branchController.handleDeleteBranch
 );
 
 // Toggle status
