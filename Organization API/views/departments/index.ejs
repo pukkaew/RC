@@ -1,224 +1,362 @@
-<!-- Path: /views/departments/index.ejs -->
-<%- include('../layouts/main', { 
-    title: 'Departments',
-    activeMenu: 'departments',
-    body: ` 
-    <div class="space-y-6">
-        <!-- Page Header -->
-        <div class="bg-white shadow-sm rounded-lg p-6">
-            <div class="sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Departments</h1>
-                    <p class="mt-2 text-sm text-gray-700">Manage departments within divisions</p>
+<!-- Path: /views/dashboard/index.ejs -->
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Organization Structure Management System">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    
+    <title>Dashboard - Organization Management</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': {
+                            50: '#E6F4FB',
+                            100: '#CCE9F7',
+                            200: '#99D3EE',
+                            300: '#66BDE6',
+                            400: '#33A6DD',
+                            500: '#0090D3',
+                            600: '#0073A9',
+                            700: '#00567F',
+                            800: '#003A54',
+                            900: '#001D2A',
+                        },
+                        'success': {
+                            50: '#E8F5E7',
+                            100: '#D1EBCF',
+                            200: '#A3D79F',
+                            300: '#75C36F',
+                            400: '#47AF3F',
+                            500: '#3AAA35',
+                            600: '#2E882A',
+                            700: '#22661F',
+                            800: '#164415',
+                            900: '#0B220A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-full bg-gray-50 custom-scrollbar">
+    <div class="min-h-full">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold text-primary-600">
+                                <i class="fas fa-building mr-2"></i>
+                                Organization Management
+                            </h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="/dashboard" class="bg-primary-50 text-primary-700 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-chart-line mr-1"></i> Dashboard
+                                </a>
+                                <a href="/companies" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-building mr-1"></i> Companies
+                                </a>
+                                <a href="/branches" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-code-branch mr-1"></i> Branches
+                                </a>
+                                <a href="/divisions" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-sitemap mr-1"></i> Divisions
+                                </a>
+                                <a href="/departments" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-users mr-1"></i> Departments
+                                </a>
+                                <a href="/api-keys" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-key mr-1"></i> API Keys
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <button type="button" class="rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                                <span class="sr-only">View notifications</span>
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            <div class="ml-3 relative">
+                                <a href="/docs" class="text-gray-700 hover:text-primary-600 text-sm font-medium">
+                                    <i class="fas fa-book mr-1"></i> API Docs
+                                </a>
+                            </div>
+                            <div class="ml-3 relative">
+                                <a href="/logout" class="text-gray-700 hover:text-primary-600 text-sm font-medium">
+                                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="-mr-2 flex md:hidden">
+                        <button type="button" class="inline-flex items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" id="mobile-menu-button">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="mt-4 sm:mt-0">
-                    <a href="/departments/new" class="btn btn-primary">
-                        <i class="fas fa-plus mr-2"></i>
-                        Add New Department
+            </div>
+            
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobile-menu">
+                <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
+                    <a href="/dashboard" class="bg-primary-50 text-primary-700 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-chart-line mr-1"></i> Dashboard
+                    </a>
+                    <a href="/companies" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-building mr-1"></i> Companies
+                    </a>
+                    <a href="/branches" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-code-branch mr-1"></i> Branches
+                    </a>
+                    <a href="/divisions" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-sitemap mr-1"></i> Divisions
+                    </a>
+                    <a href="/departments" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-users mr-1"></i> Departments
+                    </a>
+                    <a href="/api-keys" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-key mr-1"></i> API Keys
+                    </a>
+                    <hr class="my-2 border-gray-200">
+                    <a href="/logout" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
                     </a>
                 </div>
             </div>
-        </div>
+        </nav>
         
-        <!-- Filters Section -->
-        <div class="bg-white shadow-sm rounded-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-filter mr-2"></i>Filters
-            </h2>
-            <form method="get" action="/departments" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                <div>
-                    <label for="company_code" class="form-label">Company</label>
-                    <select name="company_code" id="company_code" class="form-input">
-                        <option value="">All Companies</option>
-                        <% if (typeof companies !== 'undefined' && companies) { %>
-                            <% companies.forEach(company => { %>
-                                <option value="<%= company.company_code %>" 
-                                        <%= query.company_code === company.company_code ? 'selected' : '' %>>
-                                    <%= company.company_name_th %>
-                                </option>
-                            <% }) %>
-                        <% } %>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="division_code" class="form-label">Division</label>
-                    <select name="division_code" id="division_code" class="form-input">
-                        <option value="">All Divisions</option>
-                        <% if (typeof divisions !== 'undefined' && divisions) { %>
-                            <% divisions.forEach(division => { %>
-                                <option value="<%= division.division_code %>" 
-                                        <%= query.division_code === division.division_code ? 'selected' : '' %>>
-                                    <%= division.division_name %>
-                                </option>
-                            <% }) %>
-                        <% } %>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="is_active" class="form-label">Status</label>
-                    <select name="is_active" id="is_active" class="form-input">
-                        <option value="">All Status</option>
-                        <option value="true" <%= query.is_active === 'true' ? 'selected' : '' %>>Active</option>
-                        <option value="false" <%= query.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="search" class="form-label">Search</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                        <input type="text" 
-                               name="search" 
-                               id="search" 
-                               value="<%= query.search || '' %>"
-                               placeholder="Search by code or name..."
-                               class="form-input pl-10">
+        <!-- Main Content -->
+        <main class="py-8">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <!-- Welcome Section -->
+                <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                    <div class="p-6 bg-gradient-to-r from-primary-500 to-primary-600">
+                        <h1 class="text-3xl font-bold text-white">
+                            Welcome to Organization Management System
+                        </h1>
+                        <p class="mt-2 text-primary-100">
+                            Manage your organization structure efficiently
+                        </p>
                     </div>
                 </div>
                 
-                <div class="sm:col-span-4 flex justify-end">
-                    <button type="submit" class="btn btn-ghost">
-                        <i class="fas fa-search mr-2"></i>
-                        Apply Filters
-                    </button>
+                <!-- Statistics Cards -->
+                <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Companies Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-building text-3xl text-primary-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Companies
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' && stats.companies || 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/companies" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Branches Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-code-branch text-3xl text-success-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Branches
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' && stats.branches || 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/branches" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Divisions Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-sitemap text-3xl text-yellow-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Divisions
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' && stats.divisions || 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/divisions" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Departments Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-users text-3xl text-purple-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Departments
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' && stats.departments || 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/departments" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </form>
-        </div>
-        
-        <!-- Departments Table -->
-        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
-            <div class="table-responsive">
-                <div class="table-wrapper">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department Code
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department Name
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Division
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Company
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th scope="col" class="relative px-6 py-3">
-                                    <span class="sr-only">Actions</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <% if (typeof departments !== 'undefined' && departments.length > 0) { %>
-                                <% departments.forEach(function(department) { %>
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                <%= department.department_code %>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">
-                                                <%= department.department_name %>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-500">
-                                                <%= department.division_code %> - <%= department.division_name %>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-500">
-                                                <%= department.company_code %> - <%= department.company_name %>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <% if (department.is_active) { %>
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                    Active
-                                                </span>
-                                            <% } else { %>
-                                                <span class="badge badge-gray">
-                                                    <i class="fas fa-times-circle mr-1"></i>
-                                                    Inactive
-                                                </span>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="/departments/<%= department.department_code %>/edit" 
-                                               class="text-primary-600 hover:text-primary-900 mr-3"
-                                               title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form action="/departments/<%= department.department_code %>/toggle-status" 
-                                                  method="POST" 
-                                                  class="inline">
-                                                <% if (typeof csrfToken !== 'undefined') { %>
-                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                <% } %>
-                                                <button type="submit" 
-                                                        class="<%= department.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-success-600 hover:text-success-900' %>" 
-                                                        title="<%= department.is_active ? 'Deactivate' : 'Activate' %>">
-                                                    <i class="fas fa-power-off"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        No departments found.
-                                    </td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
+                
+                <!-- Recent Activity & Quick Actions -->
+                <div class="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <!-- Quick Actions -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                Quick Actions
+                            </h3>
+                            <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <a href="/companies/new" class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Company
+                                </a>
+                                <a href="/branches/new" class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-success-600 hover:bg-success-700">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Branch
+                                </a>
+                                <a href="/divisions/new" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Division
+                                </a>
+                                <a href="/departments/new" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Department
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- API Usage -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                API Usage (Last 30 Days)
+                            </h3>
+                            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">
+                                        Total API Calls
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                        <%= typeof apiStats !== 'undefined' && apiStats.totalCalls || 0 %>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">
+                                        Active API Keys
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                        <%= typeof apiStats !== 'undefined' && apiStats.activeKeys || 0 %>
+                                    </dd>
+                                </div>
+                            </dl>
+                            <div class="mt-5">
+                                <a href="/api-keys" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+                                    Manage API Keys <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
         
-        <!-- Pagination -->
-        <% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
-            <%- include('../partials/pagination', { pagination, query }) %>
-        <% } %>
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 mt-auto">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="py-4 text-center text-sm text-gray-500">
+                    <p>&copy; <%= new Date().getFullYear() %> Organization Management System. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
     </div>
     
+    <!-- Main JavaScript -->
+    <script src="/js/main.js"></script>
+    
+    <!-- Page specific scripts -->
     <script>
-    // Dynamic division loading based on company selection
-    document.getElementById('company_code').addEventListener('change', function() {
-        const companyCode = this.value;
-        const divisionSelect = document.getElementById('division_code');
-        
-        // Clear existing options
-        divisionSelect.innerHTML = '<option value="">All Divisions</option>';
-        
-        if (companyCode) {
-            // Fetch divisions for selected company
-            fetch(\`/api/companies/\${companyCode}/divisions\`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.data) {
-                        data.data.forEach(division => {
-                            const option = document.createElement('option');
-                            option.value = division.division_code;
-                            option.textContent = \`\${division.division_code} - \${division.division_name}\`;
-                            divisionSelect.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error loading divisions:', error));
-        }
-    });
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
     </script>
-    ` 
-}) %>
+</body>
+</html>
