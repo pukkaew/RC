@@ -1,262 +1,202 @@
 <!-- Path: /views/dashboard/index.ejs -->
-<div class="space-y-6">
-    <!-- Welcome Section -->
-    <div class="bg-gradient-to-r from-primary-600 to-primary-800 rounded-lg shadow-lg p-6 text-white">
-        <h1 class="text-3xl font-bold">Dashboard</h1>
-        <p class="mt-2 text-primary-100">ภาพรวมระบบจัดการโครงสร้างองค์กร</p>
-        <div class="mt-4">
-            <p class="text-sm text-primary-200">Welcome back, <%= typeof user !== 'undefined' && user ? user.username : 'Admin' %>!</p>
-            <p class="text-xs text-primary-200 mt-1">Last login: <%= new Date().toLocaleString('th-TH') %></p>
+<% 
+  const pageTitle = 'แดชบอร์ด';
+  const pageDescription = 'ภาพรวมระบบจัดการห้องเย็น';
+  const currentPath = '/';
+%>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Companies Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-ruxchai-grey-500">บริษัททั้งหมด</p>
+                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">
+                        <%= typeof stats !== 'undefined' ? stats.totalCompanies : '0' %>
+                    </p>
+                    <p class="text-xs text-ruxchai-green-600 mt-2">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        +12% จากเดือนที่แล้ว
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-gradient-to-br from-ruxchai-blue-400 to-ruxchai-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-building text-white text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-ruxchai-blue-50 px-6 py-3 border-t border-ruxchai-blue-100">
+            <a href="/companies" class="text-sm text-ruxchai-blue-600 hover:text-ruxchai-blue-700 font-medium flex items-center">
+                ดูทั้งหมด
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
         </div>
     </div>
     
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Companies Card -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="p-3 bg-primary-100 rounded-lg">
-                            <i class="fas fa-building text-2xl text-primary-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                บริษัททั้งหมด
-                            </dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">
-                                    <%= typeof stats !== 'undefined' && stats.companies ? stats.companies.total_companies : 0 %>
-                                </div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    <i class="fas fa-check-circle mr-1"></i>
-                                    <%= typeof stats !== 'undefined' && stats.companies ? stats.companies.active_companies : 0 %> ใช้งาน
-                                </div>
-                            </dd>
-                        </dl>
-                    </div>
+    <!-- Active Storage Rooms Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-ruxchai-grey-500">ห้องเย็นที่ใช้งาน</p>
+                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">24</p>
+                    <p class="text-xs text-ruxchai-grey-500 mt-2">
+                        จากทั้งหมด 30 ห้อง
+                    </p>
                 </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-                <div class="text-sm">
-                    <a href="/companies" class="font-medium text-primary-600 hover:text-primary-500">
-                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
+                <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-warehouse text-white text-xl"></i>
                 </div>
             </div>
         </div>
-        
-        <!-- Branches Card -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="p-3 bg-blue-100 rounded-lg">
-                            <i class="fas fa-code-branch text-2xl text-blue-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                สาขาทั้งหมด
-                            </dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">
-                                    <%= typeof stats !== 'undefined' && stats.branches ? stats.branches.total_branches : 0 %>
-                                </div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    <i class="fas fa-check-circle mr-1"></i>
-                                    <%= typeof stats !== 'undefined' && stats.branches ? stats.branches.active_branches : 0 %> ใช้งาน
-                                </div>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-                <div class="text-sm">
-                    <a href="/branches" class="font-medium text-primary-600 hover:text-primary-500">
-                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Divisions Card -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="p-3 bg-purple-100 rounded-lg">
-                            <i class="fas fa-sitemap text-2xl text-purple-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                ฝ่ายทั้งหมด
-                            </dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">
-                                    <%= typeof stats !== 'undefined' && stats.divisions ? stats.divisions.total_divisions : 0 %>
-                                </div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    <i class="fas fa-check-circle mr-1"></i>
-                                    <%= typeof stats !== 'undefined' && stats.divisions ? stats.divisions.active_divisions : 0 %> ใช้งาน
-                                </div>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-                <div class="text-sm">
-                    <a href="/divisions" class="font-medium text-primary-600 hover:text-primary-500">
-                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Departments Card -->
-        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="p-3 bg-green-100 rounded-lg">
-                            <i class="fas fa-users text-2xl text-green-600"></i>
-                        </div>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                แผนกทั้งหมด
-                            </dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">
-                                    <%= typeof stats !== 'undefined' && stats.departments ? stats.departments.total_departments : 0 %>
-                                </div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    <i class="fas fa-check-circle mr-1"></i>
-                                    <%= typeof stats !== 'undefined' && stats.departments ? stats.departments.active_departments : 0 %> ใช้งาน
-                                </div>
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-5 py-3">
-                <div class="text-sm">
-                    <a href="/departments" class="font-medium text-primary-600 hover:text-primary-500">
-                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                </div>
+        <div class="bg-cyan-50 px-6 py-3 border-t border-cyan-100">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-cyan-600 font-medium">อัตราการใช้งาน</span>
+                <span class="text-sm font-bold text-cyan-700">80%</span>
             </div>
         </div>
     </div>
     
-    <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Organization Distribution Chart -->
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-chart-pie mr-2"></i>Organization Distribution
-            </h2>
-            <div class="relative" style="height: 300px;">
-                <canvas id="distributionChart"></canvas>
+    <!-- Temperature Status Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-ruxchai-grey-500">อุณหภูมิเฉลี่ย</p>
+                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">-18°C</p>
+                    <div class="flex items-center mt-2">
+                        <span class="w-2 h-2 bg-ruxchai-green-500 rounded-full mr-2 animate-pulse"></span>
+                        <span class="text-xs text-ruxchai-green-600">อยู่ในเกณฑ์ปกติ</span>
+                    </div>
+                </div>
+                <div class="w-12 h-12 bg-gradient-to-br from-ruxchai-green-400 to-ruxchai-green-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-temperature-low text-white text-xl"></i>
+                </div>
             </div>
         </div>
-        
-        <!-- API Usage Chart -->
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">
-                <i class="fas fa-chart-line mr-2"></i>API Usage (Last 24 Hours)
-            </h2>
-            <div class="relative" style="height: 300px;">
-                <canvas id="apiUsageChart"></canvas>
-            </div>
+        <div class="bg-ruxchai-green-50 px-6 py-3 border-t border-ruxchai-green-100">
+            <a href="/temperature" class="text-sm text-ruxchai-green-600 hover:text-ruxchai-green-700 font-medium flex items-center">
+                ดูรายละเอียด
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
         </div>
     </div>
     
-    <!-- Recent Activities & API Logs -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Activities -->
-        <div class="bg-white rounded-lg shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">
-                    <i class="fas fa-history mr-2"></i>Recent Activities
-                </h2>
+    <!-- API Usage Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-ruxchai-grey-500">API Calls วันนี้</p>
+                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">1,247</p>
+                    <p class="text-xs text-ruxchai-grey-500 mt-2">
+                        จาก 5,000 calls/day
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <i class="fas fa-plug text-white text-xl"></i>
+                </div>
             </div>
-            <div class="p-6">
-                <% if (typeof recentActivities !== 'undefined' && recentActivities && recentActivities.length > 0) { %>
-                    <div class="flow-root">
-                        <ul class="-mb-8">
-                            <% recentActivities.forEach(function(activity, index) { %>
-                                <li>
-                                    <div class="relative pb-8">
-                                        <% if (index !== recentActivities.length - 1) { %>
-                                            <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                        <% } %>
-                                        <div class="relative flex space-x-3">
-                                            <div>
-                                                <span class="h-8 w-8 rounded-full bg-<%= activity.color %>-100 flex items-center justify-center">
-                                                    <i class="fas fa-<%= activity.icon %> text-<%= activity.color %>-600 text-sm"></i>
-                                                </span>
-                                            </div>
-                                            <div class="min-w-0 flex-1 pt-1.5">
-                                                <div>
-                                                    <p class="text-sm text-gray-500">
-                                                        <%= activity.description %>
-                                                    </p>
-                                                </div>
-                                                <div class="mt-1 text-xs text-gray-400">
-                                                    <%= activity.time %>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                            <% }); %>
-                        </ul>
-                    </div>
-                <% } else { %>
-                    <p class="text-sm text-gray-500 text-center py-4">No recent activities</p>
-                <% } %>
+        </div>
+        <div class="bg-purple-50 px-6 py-3 border-t border-purple-100">
+            <div class="w-full bg-purple-200 rounded-full h-2">
+                <div class="bg-purple-600 h-2 rounded-full" style="width: 25%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Temperature Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-ruxchai-grey-800">อุณหภูมิห้องเย็น (24 ชั่วโมง)</h3>
+            <button class="text-sm text-ruxchai-grey-500 hover:text-ruxchai-blue-500">
+                <i class="fas fa-download mr-1"></i>
+                ดาวน์โหลด
+            </button>
+        </div>
+        <canvas id="temperatureChart" height="300"></canvas>
+    </div>
+    
+    <!-- Storage Usage Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-ruxchai-grey-800">การใช้พื้นที่เก็บสินค้า</h3>
+            <select class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-ruxchai-blue-500">
+                <option>สัปดาห์นี้</option>
+                <option>เดือนนี้</option>
+                <option>ปีนี้</option>
+            </select>
+        </div>
+        <canvas id="storageChart" height="300"></canvas>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="p-6 border-b border-gray-100">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-ruxchai-grey-800">กิจกรรมล่าสุด</h3>
+            <a href="#" class="text-sm text-ruxchai-blue-600 hover:text-ruxchai-blue-700 font-medium">
+                ดูทั้งหมด
+            </a>
+        </div>
+    </div>
+    <div class="divide-y divide-gray-100">
+        <!-- Activity Item -->
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start space-x-3">
+                <div class="w-10 h-10 bg-ruxchai-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-snowflake text-ruxchai-blue-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-ruxchai-grey-800">
+                        <span class="font-medium">ห้องเย็น A-01</span> อุณหภูมิต่ำกว่าเกณฑ์ (-22°C)
+                    </p>
+                    <p class="text-xs text-ruxchai-grey-500 mt-1">5 นาทีที่แล้ว</p>
+                </div>
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                    เตือน
+                </span>
             </div>
         </div>
         
-        <!-- Recent API Logs -->
-        <div class="bg-white rounded-lg shadow-sm">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">
-                    <i class="fas fa-server mr-2"></i>Recent API Calls
-                </h2>
+        <!-- Activity Item -->
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start space-x-3">
+                <div class="w-10 h-10 bg-ruxchai-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-check text-ruxchai-green-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-ruxchai-grey-800">
+                        <span class="font-medium">สาขาชลบุรี</span> เพิ่มห้องเย็นใหม่ 2 ห้อง
+                    </p>
+                    <p class="text-xs text-ruxchai-grey-500 mt-1">1 ชั่วโมงที่แล้ว</p>
+                </div>
+                <span class="px-2 py-1 bg-ruxchai-green-100 text-ruxchai-green-700 text-xs font-medium rounded-full">
+                    สำเร็จ
+                </span>
             </div>
-            <div class="p-6">
-                <% if (typeof recentApiLogs !== 'undefined' && recentApiLogs && recentApiLogs.length > 0) { %>
-                    <div class="space-y-3">
-                        <% recentApiLogs.forEach(function(log) { %>
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium <%= log.method === 'GET' ? 'bg-green-100 text-green-800' : log.method === 'POST' ? 'bg-blue-100 text-blue-800' : log.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' %>">
-                                        <%= log.method %>
-                                    </span>
-                                    <span class="text-sm text-gray-600"><%= log.endpoint %></span>
-                                </div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="text-xs text-gray-500"><%= log.response_time_ms %>ms</span>
-                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <%= log.response_status >= 200 && log.response_status < 300 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
-                                        <%= log.response_status %>
-                                    </span>
-                                </div>
-                            </div>
-                        <% }); %>
-                    </div>
-                <% } else { %>
-                    <p class="text-sm text-gray-500 text-center py-4">No recent API calls</p>
-                <% } %>
+        </div>
+        
+        <!-- Activity Item -->
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start space-x-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-key text-purple-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-ruxchai-grey-800">
+                        API Key <span class="font-mono bg-gray-100 px-1 rounded">prod_key_xxx</span> ถูกสร้างขึ้น
+                    </p>
+                    <p class="text-xs text-ruxchai-grey-500 mt-1">2 ชั่วโมงที่แล้ว</p>
+                </div>
+                <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                    ระบบ
+                </span>
             </div>
         </div>
     </div>
@@ -264,22 +204,54 @@
 
 <!-- Chart Scripts -->
 <script>
-    // Chart data from server
-    const chartData = <%- typeof chartData !== 'undefined' ? chartData : '{}' %>;
+    // Temperature Chart
+    const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+    new Chart(tempCtx, {
+        type: 'line',
+        data: {
+            labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+            datasets: [{
+                label: 'ห้อง A',
+                data: [-18, -18.5, -17.8, -18.2, -18.1, -18.3, -18],
+                borderColor: '#0090D3',
+                backgroundColor: 'rgba(0, 144, 211, 0.1)',
+                tension: 0.3
+            }, {
+                label: 'ห้อง B',
+                data: [-20, -19.8, -20.2, -19.9, -20.1, -20, -19.9],
+                borderColor: '#3AAA35',
+                backgroundColor: 'rgba(58, 170, 53, 0.1)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
     
-    // Distribution Chart
-    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-    new Chart(distributionCtx, {
+    // Storage Chart
+    const storageCtx = document.getElementById('storageChart').getContext('2d');
+    new Chart(storageCtx, {
         type: 'doughnut',
         data: {
-            labels: chartData.entityDistribution ? chartData.entityDistribution.map(item => item.name) : [],
+            labels: ['ใช้งาน', 'ว่าง', 'ซ่อมบำรุง'],
             datasets: [{
-                data: chartData.entityDistribution ? chartData.entityDistribution.map(item => item.value) : [],
+                data: [65, 30, 5],
                 backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(168, 85, 247, 0.8)',
-                    'rgba(251, 146, 60, 0.8)'
+                    '#0090D3',
+                    '#3AAA35',
+                    '#555452'
                 ],
                 borderWidth: 0
             }]
@@ -290,49 +262,6 @@
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
-                    }
-                }
-            }
-        }
-    });
-    
-    // API Usage Chart
-    const apiUsageCtx = document.getElementById('apiUsageChart').getContext('2d');
-    new Chart(apiUsageCtx, {
-        type: 'line',
-        data: {
-            labels: chartData.hourlyRequests ? chartData.hourlyRequests.map(item => item.hour + ':00') : [],
-            datasets: [{
-                label: 'API Requests',
-                data: chartData.hourlyRequests ? chartData.hourlyRequests.map(item => item.requests) : [],
-                borderColor: 'rgba(59, 130, 246, 1)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
                 }
             }
         }
