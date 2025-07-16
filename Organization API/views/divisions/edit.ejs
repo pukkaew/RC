@@ -1,189 +1,159 @@
-<!-- views/divisions/edit.ejs -->
-<%- include('../layouts/header') %>
-
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto">
-        <!-- Page Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Edit Division</h1>
-            <p class="text-gray-600 mt-2">Update division information</p>
-        </div>
-
-        <!-- Division Info Card -->
-        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <span class="text-sm text-gray-600">Division Code:</span>
-                    <p class="font-medium"><%= division.division_code %></p>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-600">Current Company:</span>
-                    <p class="font-medium"><%= division.company_code %> - <%= division.company_name %></p>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-600">Created:</span>
-                    <p class="font-medium"><%= new Date(division.created_date).toLocaleString('th-TH') %></p>
-                </div>
-                <div>
-                    <span class="text-sm text-gray-600">Last Modified:</span>
-                    <p class="font-medium"><%= new Date(division.modified_date).toLocaleString('th-TH') %></p>
+<!-- Path: /views/divisions/edit.ejs -->
+<%- include('../layouts/main', { 
+    title: 'Edit Division',
+    activeMenu: 'divisions',
+    body: ` 
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-sm rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-900">Edit Division</h2>
+                    <a href="/divisions" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </a>
                 </div>
             </div>
-        </div>
-
-        <!-- Main Form -->
-        <form action="/divisions/<%= division.division_code %>" method="POST" class="bg-white rounded-lg shadow-sm p-6 space-y-6">
-            <!-- Division Name -->
-            <div>
-                <label for="division_name" class="block text-sm font-medium text-gray-700 mb-2">
-                    Division Name <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       id="division_name" 
-                       name="division_name" 
-                       value="<%= division.division_name %>"
-                       required
-                       maxlength="200"
-                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-            </div>
-
-            <!-- Form Actions -->
-            <div class="flex justify-end space-x-4 pt-4 border-t">
-                <a href="/divisions" 
-                   class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition duration-200">
-                    Cancel
-                </a>
-                <button type="submit" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                    Update Division
-                </button>
-            </div>
-        </form>
-
-        <!-- Move Division Section -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Move Division</h3>
-            <form action="/divisions/<%= division.division_code %>/move" method="POST" class="space-y-4">
-                <div>
-                    <label for="new_branch_code" class="block text-sm font-medium text-gray-700 mb-2">
-                        Move to Branch
-                    </label>
-                    <select id="new_branch_code" 
-                            name="branch_code"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">Company Level (No Branch)</option>
-                        <% branches.forEach(branch => { %>
-                            <option value="<%= branch.branch_code %>" 
-                                    <%= division.branch_code === branch.branch_code ? 'selected' : '' %>>
-                                <%= branch.branch_code %> - <%= branch.branch_name %>
-                                <% if (branch.is_headquarters) { %>(HQ)<% } %>
-                            </option>
-                        <% }) %>
-                    </select>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Currently: <%= division.branch_code ? `${division.branch_code} - ${division.branch_name}` : 'Company Level' %>
-                    </p>
+            
+            <form method="post" action="/divisions/<%= division.division_code %>" class="p-6">
+                <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% } %>
+                
+                <div class="space-y-6">
+                    <!-- Division Info Card -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Division Code:</span>
+                                <span class="text-gray-900 font-medium ml-2"><%= division.division_code %></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Current Company:</span>
+                                <span class="text-gray-900 font-medium ml-2">
+                                    <%= division.company_code %> - <%= division.company_name %>
+                                </span>
+                            </div>
+                            <% if (division.branch_code) { %>
+                                <div class="col-span-2">
+                                    <span class="text-gray-500">Current Branch:</span>
+                                    <span class="text-gray-900 font-medium ml-2">
+                                        <%= division.branch_code %> - <%= division.branch_name %>
+                                    </span>
+                                </div>
+                            <% } else { %>
+                                <div class="col-span-2">
+                                    <span class="text-gray-500">Level:</span>
+                                    <span class="text-gray-900 font-medium ml-2">Company Level (No Branch)</span>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Division code, company, and branch cannot be changed after creation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Division Name -->
+                    <div>
+                        <label for="division_name" class="form-label">
+                            Division Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="division_name" 
+                               name="division_name" 
+                               required
+                               maxlength="200"
+                               value="<%= division.division_name %>"
+                               class="form-input">
+                    </div>
+                    
+                    <!-- Status Notice -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Status: <strong><%= division.is_active ? 'Active' : 'Inactive' %></strong>
+                                </p>
+                                <p class="text-sm text-yellow-700 mt-1">
+                                    To change status, use the toggle button on the division list page.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Related Information -->
+                    <% if (typeof division.department_count !== 'undefined' && division.department_count > 0) { %>
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-users text-blue-500 mr-3"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-900">
+                                        This division has <%= division.department_count %> department(s)
+                                    </p>
+                                    <a href="/departments?division_code=<%= division.division_code %>" 
+                                       class="text-sm text-blue-700 hover:text-blue-900 underline">
+                                        View departments →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                    
+                    <!-- Metadata -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Created:</span>
+                                <span class="text-gray-900 ml-2">
+                                    <%= new Date(division.created_date).toLocaleString('th-TH') %>
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Created by:</span>
+                                <span class="text-gray-900 ml-2"><%= division.created_by %></span>
+                            </div>
+                            <% if (division.updated_date) { %>
+                                <div>
+                                    <span class="text-gray-500">Updated:</span>
+                                    <span class="text-gray-900 ml-2">
+                                        <%= new Date(division.updated_date).toLocaleString('th-TH') %>
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Updated by:</span>
+                                    <span class="text-gray-900 ml-2"><%= division.updated_by %></span>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex justify-end">
-                    <button type="submit" 
-                            class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                            onclick="return confirm('Are you sure you want to move this division?')">
-                        Move Division
+                
+                <!-- Form Actions -->
+                <div class="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
+                    <a href="/divisions" class="btn btn-ghost">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Cancel
+                    </a>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        Update Division
                     </button>
                 </div>
             </form>
         </div>
-
-        <!-- Departments Section -->
-        <% if (division.departments && division.departments.length > 0) { %>
-            <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
-                    Departments in this Division (<%= division.departments.length %>)
-                </h3>
-                <div class="space-y-2">
-                    <% division.departments.forEach(dept => { %>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
-                                <span class="font-medium"><%= dept.department_code %></span> - 
-                                <%= dept.department_name %>
-                            </div>
-                            <div>
-                                <% if (dept.is_active) { %>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        Active
-                                    </span>
-                                <% } else { %>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Inactive
-                                    </span>
-                                <% } %>
-                            </div>
-                        </div>
-                    <% }) %>
-                </div>
-                <div class="mt-4">
-                    <a href="/departments?division_code=<%= division.division_code %>" 
-                       class="text-blue-600 hover:text-blue-800 text-sm">
-                        Manage Departments →
-                    </a>
-                </div>
-            </div>
-        <% } %>
-
-        <!-- Danger Zone -->
-        <div class="bg-red-50 rounded-lg p-6 mt-6">
-            <h3 class="text-lg font-medium text-red-900 mb-4">Danger Zone</h3>
-            
-            <!-- Toggle Status -->
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <p class="text-sm text-red-700">
-                        <%= division.is_active ? 'Deactivate' : 'Activate' %> this division
-                    </p>
-                    <p class="text-xs text-red-600 mt-1">
-                        <%= division.is_active 
-                            ? 'This will prevent new departments from being added' 
-                            : 'This will make the division available for use' %>
-                    </p>
-                </div>
-                <form action="/divisions/<%= division.division_code %>/toggle-status" method="POST" class="inline">
-                    <button type="submit" 
-                            class="<%= division.is_active ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' %> text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                            onclick="return confirm('Are you sure you want to <%= division.is_active ? 'deactivate' : 'activate' %> this division?')">
-                        <%= division.is_active ? 'Deactivate' : 'Activate' %> Division
-                    </button>
-                </form>
-            </div>
-            
-            <% if (!division.departments || division.departments.length === 0) { %>
-                <!-- Delete (only if no departments) -->
-                <div class="pt-4 border-t border-red-200">
-                    <p class="text-sm text-red-700 mb-2">
-                        Permanently delete this division
-                    </p>
-                    <p class="text-xs text-red-600 mb-4">
-                        This action cannot be undone. The division will be permanently removed.
-                    </p>
-                    <form action="/divisions/<%= division.division_code %>/delete" method="POST" class="inline">
-                        <button type="submit" 
-                                class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                                onclick="return confirm('Are you absolutely sure? This action cannot be undone!')">
-                            Delete Division
-                        </button>
-                    </form>
-                </div>
-            <% } else { %>
-                <div class="pt-4 border-t border-red-200">
-                    <p class="text-sm text-red-700">
-                        Cannot delete division with existing departments
-                    </p>
-                    <p class="text-xs text-red-600 mt-1">
-                        Please remove or reassign all departments before deleting this division.
-                    </p>
-                </div>
-            <% } %>
-        </div>
     </div>
-</div>
-
-<%- include('../layouts/footer') %>
+    ` 
+}) %>

@@ -1,280 +1,224 @@
 <!-- Path: /views/departments/index.ejs -->
-<div class="space-y-6">
-    <!-- Page Header -->
-    <div class="bg-white shadow-sm rounded-lg p-6">
-        <div class="sm:flex sm:items-center sm:justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Departments</h1>
-                <p class="mt-2 text-sm text-gray-700">Manage all departments within your organizational divisions</p>
-            </div>
-            <div class="mt-4 sm:mt-0">
-                <a href="/departments/new" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all">
-                    <i class="fas fa-plus mr-2"></i>
-                    Add New Department
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Filters Section -->
-    <div class="bg-white shadow-sm rounded-lg p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-filter mr-2"></i>Filters
-        </h2>
-        <form method="get" action="/departments" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <div>
-                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400"></i>
-                    </div>
-                    <input type="text" 
-                           name="search" 
-                           id="search" 
-                           value="<%= query.search || '' %>"
-                           placeholder="Search by code or name..."
-                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+<%- include('../layouts/main', { 
+    title: 'Departments',
+    activeMenu: 'departments',
+    body: ` 
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Departments</h1>
+                    <p class="mt-2 text-sm text-gray-700">Manage departments within divisions</p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <a href="/departments/new" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add New Department
+                    </a>
                 </div>
             </div>
-            
-            <div>
-                <label for="company_code" class="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                <select name="company_code"
-                        id="company_code"
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                    <option value="">All Companies</option>
-                    <% if (typeof companies !== 'undefined' && companies) { %>
-                        <% companies.forEach(function(company) { %>
-                            <option value="<%= company.company_code %>" <%= query.company_code === company.company_code ? 'selected' : '' %>>
-                                <%= company.company_name_th %>
-                            </option>
-                        <% }); %>
-                    <% } %>
-                </select>
-            </div>
-            
-            <div>
-                <label for="division_code" class="block text-sm font-medium text-gray-700 mb-1">Division</label>
-                <select name="division_code"
-                        id="division_code"
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                    <option value="">All Divisions</option>
-                    <% if (typeof divisions !== 'undefined' && divisions) { %>
-                        <% divisions.forEach(function(division) { %>
-                            <option value="<%= division.division_code %>" <%= query.division_code === division.division_code ? 'selected' : '' %>>
-                                <%= division.division_name %>
-                            </option>
-                        <% }); %>
-                    <% } %>
-                </select>
-            </div>
-            
-            <div>
-                <label for="is_active" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select name="is_active"
-                        id="is_active"
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                    <option value="">All Status</option>
-                    <option value="true" <%= query.is_active === 'true' ? 'selected' : '' %>>Active</option>
-                    <option value="false" <%= query.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
-                </select>
-            </div>
-            
-            <div class="sm:col-span-4 flex justify-end">
-                <button type="submit"
-                        class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all">
-                    <i class="fas fa-search mr-2"></i>
-                    Apply Filters
-                </button>
-            </div>
-        </form>
-    </div>
-    
-    <!-- Departments Table -->
-    <div class="bg-white shadow-sm rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Department Code
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Department Name
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Division
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Company
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Branch
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th scope="col" class="relative px-6 py-3">
-                            <span class="sr-only">Actions</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <% if (typeof departments !== 'undefined' && departments && departments.length > 0) { %>
-                        <% departments.forEach(function(dept) { %>
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">
-                                        <%= dept.department_code %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">
-                                        <%= dept.department_name %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm">
-                                        <div class="font-medium text-gray-900"><%= dept.division_code %></div>
-                                        <% if (dept.division_name) { %>
-                                            <div class="text-xs text-gray-500"><%= dept.division_name %></div>
-                                        <% } %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500">
-                                        <%= dept.company_name_th || dept.company_code %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500">
-                                        <%= dept.branch_name || '-' %>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <% if (dept.is_active) { %>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <span class="w-2 h-2 mr-1.5 bg-green-400 rounded-full"></span>
-                                            Active
-                                        </span>
-                                    <% } else { %>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            <span class="w-2 h-2 mr-1.5 bg-gray-400 rounded-full"></span>
-                                            Inactive
-                                        </span>
-                                    <% } %>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div class="flex items-center justify-end space-x-2">
-                                        <a href="/departments/<%= dept.department_code %>"
-                                           class="text-gray-600 hover:text-gray-900 transition-colors"
-                                           title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="/departments/<%= dept.department_code %>/edit"
-                                           class="text-primary-600 hover:text-primary-900 transition-colors"
-                                           title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <form method="POST"
-                                              action="/departments/<%= dept.department_code %>/toggle-status"
-                                              class="inline-block">
-                                            <button type="submit"
-                                                    class="text-yellow-600 hover:text-yellow-900 transition-colors"
-                                                    title="<%= dept.is_active ? 'Deactivate' : 'Activate' %>"
-                                                    onclick="return confirm('Are you sure you want to <%= dept.is_active ? 'deactivate' : 'activate' %> this department?')">
-                                                <i class="fas fa-power-off"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
+        </div>
+        
+        <!-- Filters Section -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-filter mr-2"></i>Filters
+            </h2>
+            <form method="get" action="/departments" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <div>
+                    <label for="company_code" class="form-label">Company</label>
+                    <select name="company_code" id="company_code" class="form-input">
+                        <option value="">All Companies</option>
+                        <% if (typeof companies !== 'undefined' && companies) { %>
+                            <% companies.forEach(company => { %>
+                                <option value="<%= company.company_code %>" 
+                                        <%= query.company_code === company.company_code ? 'selected' : '' %>>
+                                    <%= company.company_name_th %>
+                                </option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="division_code" class="form-label">Division</label>
+                    <select name="division_code" id="division_code" class="form-input">
+                        <option value="">All Divisions</option>
+                        <% if (typeof divisions !== 'undefined' && divisions) { %>
+                            <% divisions.forEach(division => { %>
+                                <option value="<%= division.division_code %>" 
+                                        <%= query.division_code === division.division_code ? 'selected' : '' %>>
+                                    <%= division.division_name %>
+                                </option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="is_active" class="form-label">Status</label>
+                    <select name="is_active" id="is_active" class="form-input">
+                        <option value="">All Status</option>
+                        <option value="true" <%= query.is_active === 'true' ? 'selected' : '' %>>Active</option>
+                        <option value="false" <%= query.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="search" class="form-label">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               value="<%= query.search || '' %>"
+                               placeholder="Search by code or name..."
+                               class="form-input pl-10">
+                    </div>
+                </div>
+                
+                <div class="sm:col-span-4 flex justify-end">
+                    <button type="submit" class="btn btn-ghost">
+                        <i class="fas fa-search mr-2"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Departments Table -->
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="table-responsive">
+                <div class="table-wrapper">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Department Code
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Department Name
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Division
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Company
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col" class="relative px-6 py-3">
+                                    <span class="sr-only">Actions</span>
+                                </th>
                             </tr>
-                        <% }); %>
-                    <% } else { %>
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
-                                <div class="text-gray-500">
-                                    <i class="fas fa-users text-4xl mb-3"></i>
-                                    <p class="text-lg font-medium">No departments found</p>
-                                    <p class="text-sm mt-1">Get started by creating your first department</p>
-                                    <a href="/departments/new" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">
-                                        <i class="fas fa-plus mr-2"></i>
-                                        Add Department
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    <% } %>
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (typeof departments !== 'undefined' && departments.length > 0) { %>
+                                <% departments.forEach(function(department) { %>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <%= department.department_code %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                <%= department.department_name %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">
+                                                <%= department.division_code %> - <%= department.division_name %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">
+                                                <%= department.company_code %> - <%= department.company_name %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <% if (department.is_active) { %>
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Active
+                                                </span>
+                                            <% } else { %>
+                                                <span class="badge badge-gray">
+                                                    <i class="fas fa-times-circle mr-1"></i>
+                                                    Inactive
+                                                </span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="/departments/<%= department.department_code %>/edit" 
+                                               class="text-primary-600 hover:text-primary-900 mr-3"
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="/departments/<%= department.department_code %>/toggle-status" 
+                                                  method="POST" 
+                                                  class="inline">
+                                                <% if (typeof csrfToken !== 'undefined') { %>
+                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <% } %>
+                                                <button type="submit" 
+                                                        class="<%= department.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-success-600 hover:text-success-900' %>" 
+                                                        title="<%= department.is_active ? 'Deactivate' : 'Activate' %>">
+                                                    <i class="fas fa-power-off"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        No departments found.
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         
         <!-- Pagination -->
-        <% if (typeof pagination !== 'undefined' && pagination && pagination.pages > 1) { %>
-            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1 flex justify-between sm:hidden">
-                        <% if (pagination.hasPrev) { %>
-                            <a href="?page=<%= pagination.page - 1 %>&<%= new URLSearchParams(query).toString() %>"
-                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-                                Previous
-                            </a>
-                        <% } %>
-                        <% if (pagination.hasNext) { %>
-                            <a href="?page=<%= pagination.page + 1 %>&<%= new URLSearchParams(query).toString() %>"
-                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-                                Next
-                            </a>
-                        <% } %>
-                    </div>
-                    
-                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                        <div>
-                            <p class="text-sm text-gray-700">
-                                Showing
-                                <span class="font-medium"><%= (pagination.page - 1) * pagination.limit + 1 %></span>
-                                to
-                                <span class="font-medium"><%= Math.min(pagination.page * pagination.limit, pagination.total) %></span>
-                                of
-                                <span class="font-medium"><%= pagination.total %></span>
-                                results
-                            </p>
-                        </div>
-                        <div>
-                            <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
-                                <% if (pagination.hasPrev) { %>
-                                    <a href="?page=<%= pagination.page - 1 %>&<%= new URLSearchParams(query).toString() %>"
-                                       class="relative inline-flex items-center px-2 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                <% } %>
-                                
-                                <% for(let i = 1; i <= pagination.pages; i++) { %>
-                                    <% if (i === pagination.page) { %>
-                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary-50 text-sm font-medium text-primary-600">
-                                            <%= i %>
-                                        </span>
-                                    <% } else if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) { %>
-                                        <a href="?page=<%= i %>&<%= new URLSearchParams(query).toString() %>"
-                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                            <%= i %>
-                                        </a>
-                                    <% } else if (i === pagination.page - 3 || i === pagination.page + 3) { %>
-                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                            ...
-                                        </span>
-                                    <% } %>
-                                <% } %>
-                                
-                                <% if (pagination.hasNext) { %>
-                                    <a href="?page=<%= pagination.page + 1 %>&<%= new URLSearchParams(query).toString() %>"
-                                       class="relative inline-flex items-center px-2 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
-                                <% } %>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
+            <%- include('../partials/pagination', { pagination, query }) %>
         <% } %>
+    </div>
+    
+    <script>
+    // Dynamic division loading based on company selection
+    document.getElementById('company_code').addEventListener('change', function() {
+        const companyCode = this.value;
+        const divisionSelect = document.getElementById('division_code');
+        
+        // Clear existing options
+        divisionSelect.innerHTML = '<option value="">All Divisions</option>';
+        
+        if (companyCode) {
+            // Fetch divisions for selected company
+            fetch(\`/api/companies/\${companyCode}/divisions\`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        data.data.forEach(division => {
+                            const option = document.createElement('option');
+                            option.value = division.division_code;
+                            option.textContent = \`\${division.division_code} - \${division.division_name}\`;
+                            divisionSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading divisions:', error));
+        }
+    });
+    </script>
+    ` 
+}) %>

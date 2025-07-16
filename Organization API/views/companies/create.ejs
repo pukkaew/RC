@@ -1,229 +1,210 @@
 <!-- Path: /views/companies/create.ejs -->
-<!-- Page Header -->
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-ruxchai-grey-800">เพิ่มบริษัทใหม่</h1>
-    <p class="text-sm text-ruxchai-grey-500 mt-1">กรอกข้อมูลเพื่อสร้างบริษัทใหม่ในระบบ</p>
-</div>
-
-<!-- Form Card -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <form action="/companies" method="POST" class="space-y-6" data-validate>
-        <!-- CSRF Token -->
-        <% if (typeof csrfToken !== 'undefined') { %>
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <% } %>
-        
-        <!-- Company Code Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label for="company_code" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    รหัสบริษัท <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       id="company_code" 
-                       name="company_code" 
-                       required
-                       maxlength="20"
-                       pattern="[A-Z0-9-]+"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="ABC, XYZ, TECH">
-                <p class="text-xs text-ruxchai-grey-500 mt-1">ใช้ตัวอักษรภาษาอังกฤษตัวใหญ่ ตัวเลข และ - เท่านั้น</p>
+<%- include('../layouts/main', { 
+    title: 'Create Company',
+    activeMenu: 'companies',
+    body: ` 
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-sm rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-900">Create New Company</h2>
+                    <a href="/companies" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
             </div>
             
-            <div>
-                <label for="tax_id" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    เลขประจำตัวผู้เสียภาษี <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       id="tax_id" 
-                       name="tax_id" 
-                       required
-                       maxlength="13"
-                       pattern="[0-9]{13}"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="0105558123456">
-                <p class="text-xs text-ruxchai-grey-500 mt-1">ตัวเลข 13 หลัก</p>
-            </div>
+            <form method="post" action="/companies" class="p-6">
+                <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% } %>
+                
+                <div class="space-y-6">
+                    <!-- Company Code -->
+                    <div>
+                        <label for="company_code" class="form-label">
+                            Company Code <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="company_code" 
+                               name="company_code" 
+                               required
+                               maxlength="20"
+                               pattern="[A-Z0-9]+"
+                               class="form-input uppercase"
+                               placeholder="e.g., COMP001">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Use uppercase letters and numbers only. This cannot be changed later.
+                        </p>
+                    </div>
+                    
+                    <!-- Thai Name -->
+                    <div>
+                        <label for="company_name_th" class="form-label">
+                            Thai Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="company_name_th" 
+                               name="company_name_th" 
+                               required
+                               maxlength="200"
+                               class="form-input"
+                               placeholder="ชื่อบริษัทภาษาไทย">
+                    </div>
+                    
+                    <!-- English Name -->
+                    <div>
+                        <label for="company_name_en" class="form-label">
+                            English Name
+                        </label>
+                        <input type="text" 
+                               id="company_name_en" 
+                               name="company_name_en" 
+                               maxlength="200"
+                               class="form-input"
+                               placeholder="Company Name in English">
+                    </div>
+                    
+                    <!-- Tax ID -->
+                    <div>
+                        <label for="tax_id" class="form-label">
+                            Tax ID
+                        </label>
+                        <input type="text" 
+                               id="tax_id" 
+                               name="tax_id" 
+                               maxlength="13"
+                               pattern="[0-9]{13}"
+                               class="form-input"
+                               placeholder="13-digit tax ID">
+                        <p class="mt-1 text-sm text-gray-500">
+                            Enter 13-digit tax identification number
+                        </p>
+                    </div>
+                    
+                    <!-- Website -->
+                    <div>
+                        <label for="website" class="form-label">
+                            Website
+                        </label>
+                        <input type="url" 
+                               id="website" 
+                               name="website" 
+                               class="form-input"
+                               placeholder="https://www.example.com">
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="form-label">
+                            Email
+                        </label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               class="form-input"
+                               placeholder="contact@example.com">
+                    </div>
+                    
+                    <!-- Phone -->
+                    <div>
+                        <label for="phone" class="form-label">
+                            Phone
+                        </label>
+                        <input type="tel" 
+                               id="phone" 
+                               name="phone" 
+                               class="form-input"
+                               placeholder="02-123-4567">
+                    </div>
+                    
+                    <!-- Address -->
+                    <div>
+                        <label for="address" class="form-label">
+                            Address
+                        </label>
+                        <textarea id="address" 
+                                  name="address" 
+                                  rows="3"
+                                  class="form-input"
+                                  placeholder="Company address"></textarea>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div>
+                        <label class="form-label">Status</label>
+                        <div class="flex items-center space-x-6 mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" 
+                                       name="is_active" 
+                                       value="true" 
+                                       checked
+                                       class="text-primary-600 focus:ring-primary-500">
+                                <span class="ml-2 text-sm text-gray-700">Active</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" 
+                                       name="is_active" 
+                                       value="false"
+                                       class="text-primary-600 focus:ring-primary-500">
+                                <span class="ml-2 text-sm text-gray-700">Inactive</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
+                    <a href="/companies" class="btn btn-ghost">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Cancel
+                    </a>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button type="reset" class="btn btn-outline">
+                            <i class="fas fa-redo mr-2"></i>
+                            Reset
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save mr-2"></i>
+                            Create Company
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
         
-        <!-- Company Name Section -->
-        <div class="space-y-4">
-            <div>
-                <label for="company_name_th" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    ชื่อบริษัท (ภาษาไทย) <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       id="company_name_th" 
-                       name="company_name_th" 
-                       required
-                       maxlength="200"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="บริษัท รุ่งชัย จำกัด">
-            </div>
-            
-            <div>
-                <label for="company_name_en" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    ชื่อบริษัท (ภาษาอังกฤษ) <span class="text-red-500">*</span>
-                </label>
-                <input type="text" 
-                       id="company_name_en" 
-                       name="company_name_en" 
-                       required
-                       maxlength="200"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="Ruxchai Company Limited">
-            </div>
-        </div>
-        
-        <!-- Address Section -->
-        <div>
-            <label for="address" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                ที่อยู่
-            </label>
-            <textarea id="address" 
-                      name="address" 
-                      rows="3"
-                      maxlength="500"
-                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                      placeholder="เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"></textarea>
-        </div>
-        
-        <!-- Contact Section -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label for="phone" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    เบอร์โทรศัพท์
-                </label>
-                <input type="tel" 
-                       id="phone" 
-                       name="phone" 
-                       maxlength="50"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="02-XXX-XXXX">
-            </div>
-            
-            <div>
-                <label for="email" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    อีเมล
-                </label>
-                <input type="email" 
-                       id="email" 
-                       name="email" 
-                       maxlength="100"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="info@company.com">
-            </div>
-            
-            <div>
-                <label for="website" class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                    เว็บไซต์
-                </label>
-                <input type="url" 
-                       id="website" 
-                       name="website" 
-                       maxlength="200"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500"
-                       placeholder="https://www.company.com">
-            </div>
-        </div>
-        
-        <!-- Status Section -->
-        <div>
-            <label class="block text-sm font-medium text-ruxchai-grey-700 mb-2">
-                สถานะ
-            </label>
-            <div class="flex items-center space-x-6">
-                <label class="flex items-center">
-                    <input type="radio" 
-                           name="is_active" 
-                           value="1" 
-                           checked
-                           class="w-4 h-4 text-ruxchai-blue-600 border-gray-300 focus:ring-ruxchai-blue-500">
-                    <span class="ml-2 text-sm text-ruxchai-grey-700">ใช้งาน</span>
-                </label>
-                <label class="flex items-center">
-                    <input type="radio" 
-                           name="is_active" 
-                           value="0"
-                           class="w-4 h-4 text-ruxchai-blue-600 border-gray-300 focus:ring-ruxchai-blue-500">
-                    <span class="ml-2 text-sm text-ruxchai-grey-700">ไม่ใช้งาน</span>
-                </label>
-            </div>
-        </div>
-        
-        <!-- Form Actions -->
-        <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-            <a href="/companies" 
-               class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
-                <i class="fas fa-arrow-left"></i>
-                <span>ยกเลิก</span>
-            </a>
-            
-            <div class="flex items-center space-x-3">
-                <button type="reset" 
-                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-redo mr-2"></i>
-                    ล้างข้อมูล
-                </button>
-                <button type="submit" 
-                        class="px-6 py-2 bg-ruxchai-blue-500 text-white rounded-lg hover:bg-ruxchai-blue-600 transition-colors flex items-center space-x-2">
-                    <i class="fas fa-save"></i>
-                    <span>บันทึก</span>
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- Help Section -->
-<div class="mt-6 bg-ruxchai-blue-50 rounded-lg p-4 border border-ruxchai-blue-100">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            <i class="fas fa-info-circle text-ruxchai-blue-400 text-lg"></i>
-        </div>
-        <div class="ml-3">
-            <h3 class="text-sm font-medium text-ruxchai-blue-800">คำแนะนำ</h3>
-            <div class="mt-2 text-sm text-ruxchai-blue-700">
-                <ul class="list-disc list-inside space-y-1">
-                    <li>รหัสบริษัทจะไม่สามารถแก้ไขได้หลังจากสร้างแล้ว</li>
-                    <li>เลขประจำตัวผู้เสียภาษีต้องเป็นเลข 13 หลักเท่านั้น</li>
-                    <li>ชื่อบริษัทภาษาไทยและภาษาอังกฤษเป็นข้อมูลที่จำเป็น</li>
-                </ul>
+        <!-- Help Section -->
+        <div class="mt-6 bg-primary-50 rounded-lg p-4 border border-primary-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-primary-400 text-lg"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-primary-800">Guidelines</h3>
+                    <div class="mt-2 text-sm text-primary-700">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Company code cannot be changed after creation</li>
+                            <li>Tax ID must be exactly 13 digits</li>
+                            <li>Thai name is required for all companies</li>
+                            <li>All companies start as active by default</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<script>
-// Auto uppercase for company code
-document.getElementById('company_code').addEventListener('input', function(e) {
-    e.target.value = e.target.value.toUpperCase();
-});
-
-// Tax ID formatting
-document.getElementById('tax_id').addEventListener('input', function(e) {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-});
-
-// Form validation
-document.querySelector('form[data-validate]').addEventListener('submit', function(e) {
-    const requiredFields = this.querySelectorAll('[required]');
-    let isValid = true;
     
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            isValid = false;
-            field.classList.add('border-red-500');
-            field.classList.remove('border-gray-300');
-        } else {
-            field.classList.remove('border-red-500');
-            field.classList.add('border-gray-300');
-        }
+    <script>
+    // Auto uppercase for company code
+    document.getElementById('company_code').addEventListener('input', function(e) {
+        e.target.value = e.target.value.toUpperCase();
     });
     
-    if (!isValid) {
-        e.preventDefault();
-        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
-    }
-});
-</script>
+    // Tax ID formatting
+    document.getElementById('tax_id').addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+    </script>
+    ` 
+}) %>

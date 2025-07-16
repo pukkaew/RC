@@ -1,176 +1,142 @@
 <!-- Path: /views/departments/edit.ejs -->
-<%- include('../layouts/main', { body: ` 
-
-    <div class="max-w-2xl mx-auto">
-        <div class="md:flex md:items-center md:justify-between">
-            <div class="flex-1 min-w-0">
-                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                    Edit Department
-                </h2>
+<%- include('../layouts/main', { 
+    title: 'Edit Department',
+    activeMenu: 'departments',
+    body: ` 
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-sm rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-900">Edit Department</h2>
+                    <a href="/departments" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
             </div>
-            <div class="mt-4 flex md:mt-0 md:ml-4">
-                <a href="/departments" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Back to List
-                </a>
-            </div>
-        </div>
-    
-        <form method="post" action="/departments/<%= department.department_code %>" class="mt-8 space-y-6">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             
-            <div class="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-                <div class="md:grid md:grid-cols-3 md:gap-6">
-                    <div class="md:col-span-1">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">Department Information</h3>
-                        <p class="mt-1 text-sm text-gray-500">
-                            Update department information. Department code cannot be changed.
-                        </p>
+            <form method="post" action="/departments/<%= department.department_code %>" class="p-6">
+                <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% } %>
+                
+                <div class="space-y-6">
+                    <!-- Department Info Card -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Department Code:</span>
+                                <span class="text-gray-900 font-medium ml-2"><%= department.department_code %></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Division:</span>
+                                <span class="text-gray-900 font-medium ml-2">
+                                    <%= department.division_code %> - <%= department.division_name %>
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Company:</span>
+                                <span class="text-gray-900 font-medium ml-2">
+                                    <%= department.company_code %> - <%= department.company_name %>
+                                </span>
+                            </div>
+                            <% if (department.branch_code) { %>
+                                <div>
+                                    <span class="text-gray-500">Branch:</span>
+                                    <span class="text-gray-900 font-medium ml-2">
+                                        <%= department.branch_code %> - <%= department.branch_name %>
+                                    </span>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
-                    <div class="mt-5 md:mt-0 md:col-span-2">
-                        <div class="grid grid-cols-6 gap-6">
-                            <div class="col-span-6 sm:col-span-3">
-                                <label for="department_code" class="block text-sm font-medium text-gray-700">
-                                    Department Code
-                                </label>
-                                <input type="text" id="department_code" value="<%= department.department_code %>" disabled
-                                       class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-gray-100">
-                                <p class="mt-1 text-sm text-gray-500">Department code cannot be changed</p>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-yellow-400"></i>
                             </div>
-    
-                            <div class="col-span-6">
-                                <label for="department_name" class="block text-sm font-medium text-gray-700">
-                                    Department Name <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="department_name" id="department_name" required
-                                       maxlength="200"
-                                       value="<%= department.department_name %>"
-                                       class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-    
-                            <div class="col-span-6">
-                                <label for="division_display" class="block text-sm font-medium text-gray-700">
-                                    Current Division
-                                </label>
-                                <input type="text" id="division_display" 
-                                       value="<%= department.division_code %> - <%= department.division_name %>" 
-                                       disabled
-                                       class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-gray-100">
-                                <p class="mt-1 text-sm text-gray-500">
-                                    Company: <%= department.company_name_th %>
-                                    <% if (department.branch_name) { %>
-                                        | Branch: <%= department.branch_name %>
-                                    <% } %>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Department code and division cannot be changed after creation.
                                 </p>
                             </div>
-    
-                            <div class="col-span-6">
-                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
-                                        </div>
-                                        <div class="ml-3">
-                                            <p class="text-sm text-yellow-700">
-                                                Status: <%= department.is_active ? 'Active' : 'Inactive' %>
-                                            </p>
-                                            <p class="text-sm text-yellow-700">
-                                                To change status, use the toggle button on the department list page.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Department Name -->
+                    <div>
+                        <label for="department_name" class="form-label">
+                            Department Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="department_name" 
+                               name="department_name" 
+                               required
+                               maxlength="200"
+                               value="<%= department.department_name %>"
+                               class="form-input">
+                    </div>
+                    
+                    <!-- Status Notice -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
                             </div>
-    
-                            <% if (department.created_date || department.updated_date) { %>
-                                <div class="col-span-6 border-t pt-4">
-                                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
-                                        <% if (department.created_date) { %>
-                                            <div class="sm:col-span-1">
-                                                <dt class="text-sm font-medium text-gray-500">Created</dt>
-                                                <dd class="mt-1 text-sm text-gray-900">
-                                                    <%= new Date(department.created_date).toLocaleString('th-TH') %>
-                                                    <% if (department.created_by) { %>
-                                                        by <%= department.created_by %>
-                                                    <% } %>
-                                                </dd>
-                                            </div>
-                                        <% } %>
-                                        <% if (department.updated_date) { %>
-                                            <div class="sm:col-span-1">
-                                                <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
-                                                <dd class="mt-1 text-sm text-gray-900">
-                                                    <%= new Date(department.updated_date).toLocaleString('th-TH') %>
-                                                    <% if (department.updated_by) { %>
-                                                        by <%= department.updated_by %>
-                                                    <% } %>
-                                                </dd>
-                                            </div>
-                                        <% } %>
-                                    </dl>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Status: <strong><%= department.is_active ? 'Active' : 'Inactive' %></strong>
+                                </p>
+                                <p class="text-sm text-yellow-700 mt-1">
+                                    To change status, use the toggle button on the department list page.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metadata -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Created:</span>
+                                <span class="text-gray-900 ml-2">
+                                    <%= new Date(department.created_date).toLocaleString('th-TH') %>
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Created by:</span>
+                                <span class="text-gray-900 ml-2"><%= department.created_by %></span>
+                            </div>
+                            <% if (department.updated_date) { %>
+                                <div>
+                                    <span class="text-gray-500">Updated:</span>
+                                    <span class="text-gray-900 ml-2">
+                                        <%= new Date(department.updated_date).toLocaleString('th-TH') %>
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Updated by:</span>
+                                    <span class="text-gray-900 ml-2"><%= department.updated_by %></span>
                                 </div>
                             <% } %>
                         </div>
                     </div>
                 </div>
-            </div>
-    
-            <div class="flex justify-end">
-                <a href="/departments" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Cancel
-                </a>
-                <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-save mr-2"></i>
-                    Update Department
-                </button>
-            </div>
-        </form>
-    
-        <!-- Move Department Section -->
-        <div class="mt-8 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-            <div class="md:grid md:grid-cols-3 md:gap-6">
-                <div class="md:col-span-1">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">Move Department</h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Move this department to a different division.
-                    </p>
+                
+                <!-- Form Actions -->
+                <div class="mt-8 pt-6 border-t border-gray-200 flex items-center justify-between">
+                    <a href="/departments" class="btn btn-ghost">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Cancel
+                    </a>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i>
+                        Update Department
+                    </button>
                 </div>
-                <div class="mt-5 md:mt-0 md:col-span-2">
-                    <form method="post" action="/departments/<%= department.department_code %>/move">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        
-                        <div class="grid grid-cols-6 gap-6">
-                            <div class="col-span-6">
-                                <label for="division_code" class="block text-sm font-medium text-gray-700">
-                                    New Division <span class="text-red-500">*</span>
-                                </label>
-                                <select name="division_code" id="division_code" required
-                                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                    <option value="">Select a division</option>
-                                    <% divisions.forEach(function(division) { %>
-                                        <% if (division.is_active && division.division_code !== department.division_code) { %>
-                                            <option value="<%= division.division_code %>">
-                                                <%= division.division_code %> - <%= division.division_name %>
-                                                (<%= division.company_name_th %>)
-                                            </option>
-                                        <% } %>
-                                    <% }); %>
-                                </select>
-                            </div>
-                        </div>
-    
-                        <div class="mt-5">
-                            <button type="submit" 
-                                    onclick="return confirm('Are you sure you want to move this department to a different division?')"
-                                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                                <i class="fas fa-exchange-alt mr-2"></i>
-                                Move Department
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
-    
-    ` }) %>
+    ` 
+}) %>

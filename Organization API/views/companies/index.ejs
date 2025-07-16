@@ -1,241 +1,186 @@
 <!-- Path: /views/companies/index.ejs -->
-<!-- Page Header with Actions -->
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-ruxchai-grey-800">รายการบริษัท</h1>
-        <p class="text-sm text-ruxchai-grey-500 mt-1">จัดการข้อมูลบริษัทในระบบทั้งหมด</p>
-    </div>
-    <div class="flex items-center gap-3">
-        <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
-            <i class="fas fa-download"></i>
-            <span class="text-sm font-medium">Export</span>
-        </button>
-        <a href="/companies/create" class="px-4 py-2 bg-ruxchai-blue-500 text-white rounded-lg hover:bg-ruxchai-blue-600 transition-colors flex items-center space-x-2">
-            <i class="fas fa-plus"></i>
-            <span class="text-sm font-medium">เพิ่มบริษัท</span>
-        </a>
-    </div>
-</div>
-
-<!-- Filter Section -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-            <label class="block text-sm font-medium text-ruxchai-grey-700 mb-2">ค้นหา</label>
-            <div class="relative">
-                <input type="text" 
-                       id="searchInput"
-                       placeholder="ชื่อบริษัท, รหัส, Tax ID..." 
-                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+<%- include('../layouts/main', { 
+    title: 'Companies',
+    activeMenu: 'companies',
+    body: ` 
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Companies</h1>
+                    <p class="mt-2 text-sm text-gray-700">Manage all companies in your organization</p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <a href="/companies/new" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add New Company
+                    </a>
+                </div>
             </div>
         </div>
         
-        <div>
-            <label class="block text-sm font-medium text-ruxchai-grey-700 mb-2">สถานะ</label>
-            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500">
-                <option value="">ทั้งหมด</option>
-                <option value="active">ใช้งาน</option>
-                <option value="inactive">ไม่ใช้งาน</option>
-            </select>
+        <!-- Filters Section -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-filter mr-2"></i>Filters
+            </h2>
+            <form method="get" action="/companies" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label for="search" class="form-label">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               value="<%= typeof filters !== 'undefined' && filters.search || '' %>"
+                               placeholder="Search by code or name..."
+                               class="form-input pl-10">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="is_active" class="form-label">Status</label>
+                    <select name="is_active" id="is_active" class="form-input">
+                        <option value="">All Status</option>
+                        <option value="true" <%= typeof filters !== 'undefined' && filters.is_active === 'true' ? 'selected' : '' %>>Active</option>
+                        <option value="false" <%= typeof filters !== 'undefined' && filters.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" class="btn btn-ghost w-full">
+                        <i class="fas fa-search mr-2"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
         </div>
         
-        <div>
-            <label class="block text-sm font-medium text-ruxchai-grey-700 mb-2">เรียงตาม</label>
-            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-ruxchai-blue-500 focus:ring-1 focus:ring-ruxchai-blue-500">
-                <option value="name">ชื่อบริษัท</option>
-                <option value="code">รหัสบริษัท</option>
-                <option value="created">วันที่สร้าง</option>
-            </select>
+        <!-- Companies Table -->
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="table-responsive">
+                <div class="table-wrapper">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Company Code
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Thai Name
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    English Name
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Tax ID
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col" class="relative px-6 py-3">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (typeof companies !== 'undefined' && companies.length > 0) { %>
+                                <% companies.forEach(function(company) { %>
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <%= company.company_code %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                <%= company.company_name_th %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">
+                                                <%= company.company_name_en || '-' %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">
+                                                <%= company.tax_id || '-' %>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <% if (company.is_active) { %>
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Active
+                                                </span>
+                                            <% } else { %>
+                                                <span class="badge badge-gray">
+                                                    <i class="fas fa-times-circle mr-1"></i>
+                                                    Inactive
+                                                </span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="/companies/<%= company.company_code %>" 
+                                               class="text-primary-600 hover:text-primary-900 mr-3"
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/companies/<%= company.company_code %>/edit" 
+                                               class="text-success-600 hover:text-success-900 mr-3"
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="text-red-600 hover:text-red-900"
+                                                    title="Delete"
+                                                    onclick="confirmDelete('<%= company.company_code %>')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        No companies found.
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         
-        <div class="flex items-end">
-            <button class="w-full px-4 py-2 bg-ruxchai-grey-100 text-ruxchai-grey-700 rounded-lg hover:bg-ruxchai-grey-200 transition-colors">
-                <i class="fas fa-filter mr-2"></i>
-                กรองข้อมูล
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Companies Table -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        รหัสบริษัท
-                    </th>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ชื่อบริษัท
-                    </th>
-                    <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tax ID
-                    </th>
-                    <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        สาขา
-                    </th>
-                    <th class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        สถานะ
-                    </th>
-                    <th class="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        การจัดการ
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                <% if (typeof companies !== 'undefined' && companies.length > 0) { %>
-                    <% companies.forEach(company => { %>
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-medium text-ruxchai-blue-600">
-                                    <%= company.company_code %>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">
-                                        <%= company.company_name_th %>
-                                    </p>
-                                    <p class="text-xs text-gray-500">
-                                        <%= company.company_name_en %>
-                                    </p>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm text-gray-600 font-mono">
-                                    <%= company.tax_id %>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-ruxchai-blue-100 text-ruxchai-blue-800">
-                                    <%= company.branch_count || 0 %> สาขา
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <% if (company.is_active) { %>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-ruxchai-green-100 text-ruxchai-green-800">
-                                        <i class="fas fa-circle text-xs mr-1"></i>
-                                        ใช้งาน
-                                    </span>
-                                <% } else { %>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-circle text-xs mr-1"></i>
-                                        ไม่ใช้งาน
-                                    </span>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <div class="flex items-center justify-end space-x-2">
-                                    <a href="/companies/<%= company.company_code %>" 
-                                       class="text-ruxchai-grey-500 hover:text-ruxchai-blue-600 transition-colors"
-                                       title="ดูรายละเอียด">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="/companies/<%= company.company_code %>/edit" 
-                                       class="text-ruxchai-grey-500 hover:text-ruxchai-green-600 transition-colors"
-                                       title="แก้ไข">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button class="text-ruxchai-grey-500 hover:text-red-600 transition-colors"
-                                            title="ลบ"
-                                            onclick="confirmDelete('<%= company.company_code %>')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    <% }); %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center">
-                                <i class="fas fa-building text-4xl text-gray-300 mb-3"></i>
-                                <p class="text-gray-500">ไม่พบข้อมูลบริษัท</p>
-                                <a href="/companies/create" class="mt-3 text-sm text-ruxchai-blue-600 hover:text-ruxchai-blue-700">
-                                    เพิ่มบริษัทแรก
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
+        <!-- Pagination -->
+        <% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
+            <%- include('../partials/pagination', { pagination, query }) %>
+        <% } %>
     </div>
     
-    <!-- Pagination -->
-    <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-            <div class="text-sm text-gray-700">
-                แสดง <span class="font-medium"><%= pagination.startItem %></span> ถึง 
-                <span class="font-medium"><%= pagination.endItem %></span> จาก 
-                <span class="font-medium"><%= pagination.totalItems %></span> รายการ
-            </div>
-            <div class="flex items-center space-x-2">
-                <% if (pagination.currentPage > 1) { %>
-                    <a href="?page=<%= pagination.currentPage - 1 %>" 
-                       class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                <% } %>
-                
-                <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-                    <% if (i === pagination.currentPage) { %>
-                        <span class="px-3 py-1 bg-ruxchai-blue-500 text-white rounded-md">
-                            <%= i %>
-                        </span>
-                    <% } else { %>
-                        <a href="?page=<%= i %>" 
-                           class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
-                            <%= i %>
-                        </a>
-                    <% } %>
-                <% } %>
-                
-                <% if (pagination.currentPage < pagination.totalPages) { %>
-                    <a href="?page=<%= pagination.currentPage + 1 %>" 
-                       class="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                <% } %>
-            </div>
-        </div>
-    <% } %>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<script>
-function confirmDelete(companyCode) {
-    if (confirm(`ต้องการลบบริษัทรหัส ${companyCode} หรือไม่?\n\nการลบบริษัทจะลบข้อมูลที่เกี่ยวข้องทั้งหมด รวมถึง:\n- สาขา\n- ฝ่าย\n- แผนก`)) {
-        // Create form and submit
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/companies/${companyCode}/delete`;
-        
-        // Add CSRF token if needed
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        if (csrfToken) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = '_csrf';
-            input.value = csrfToken;
-            form.appendChild(input);
+    <script>
+    function confirmDelete(companyCode) {
+        if (confirm(\`Are you sure you want to delete company \${companyCode}?\\n\\nThis will delete all related data including:\\n- Branches\\n- Divisions\\n- Departments\`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = \`/companies/\${companyCode}/delete\`;
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (csrfToken) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '_csrf';
+                input.value = csrfToken;
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
         }
-        
-        document.body.appendChild(form);
-        form.submit();
     }
-}
-
-// Live search
-document.getElementById('searchInput')?.addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-});
-</script>
+    </script>
+    ` 
+}) %>

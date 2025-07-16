@@ -1,154 +1,185 @@
 <!-- Path: /views/api-keys/index.ejs -->
 <%- include('../layouts/main', { 
-    title: 'API Keys Management',
+    title: 'API Keys',
+    activeMenu: 'api-keys',
     body: ` 
-    <div class="sm:flex sm:items-center">
-        <div class="sm:flex-auto">
-            <h1 class="text-2xl font-semibold text-gray-900">API Keys</h1>
-            <p class="mt-2 text-sm text-gray-700">Manage API keys for accessing the organization structure API.</p>
+    <div class="space-y-6">
+        <!-- Page Header -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">API Keys</h1>
+                    <p class="mt-2 text-sm text-gray-700">Manage API keys for accessing the organization structure API</p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <a href="/api-keys/new" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create API Key
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-            <a href="/api-keys/new" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto">
-                <i class="fas fa-plus mr-2"></i>
-                Create API Key
-            </a>
+        
+        <!-- Filters Section -->
+        <div class="bg-white shadow-sm rounded-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-filter mr-2"></i>Filters
+            </h2>
+            <form method="get" action="/api-keys" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <div>
+                    <label for="search" class="form-label">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               value="<%= query.search || '' %>"
+                               placeholder="Search by app name..."
+                               class="form-input pl-10">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="is_active" class="form-label">Status</label>
+                    <select name="is_active" id="is_active" class="form-input">
+                        <option value="">All Status</option>
+                        <option value="true" <%= query.is_active === 'true' ? 'selected' : '' %>>Active</option>
+                        <option value="false" <%= query.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="permissions" class="form-label">Permissions</label>
+                    <select name="permissions" id="permissions" class="form-input">
+                        <option value="">All Permissions</option>
+                        <option value="read" <%= query.permissions === 'read' ? 'selected' : '' %>>Read Only</option>
+                        <option value="write" <%= query.permissions === 'write' ? 'selected' : '' %>>Write Only</option>
+                        <option value="read_write" <%= query.permissions === 'read_write' ? 'selected' : '' %>>Read & Write</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" class="btn btn-ghost w-full">
+                        <i class="fas fa-search mr-2"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
         </div>
-    </div>
-    
-    <!-- Filters -->
-    <div class="mt-6 bg-white shadow rounded-lg p-4">
-        <form method="get" action="/api-keys" class="sm:flex sm:items-center sm:space-x-4">
-            <div class="flex-1">
-                <label for="search" class="sr-only">Search</label>
-                <input type="text" name="search" id="search" value="<%= query.search || '' %>" 
-                       placeholder="Search by app name or description..." 
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-            </div>
-            
-            <div>
-                <select name="is_active" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    <option value="">All Status</option>
-                    <option value="true" <%= query.is_active === 'true' ? 'selected' : '' %>>Active</option>
-                    <option value="false" <%= query.is_active === 'false' ? 'selected' : '' %>>Inactive</option>
-                </select>
-            </div>
-            
-            <div>
-                <select name="permissions" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    <option value="">All Permissions</option>
-                    <option value="read" <%= query.permissions === 'read' ? 'selected' : '' %>>Read Only</option>
-                    <option value="write" <%= query.permissions === 'write' ? 'selected' : '' %>>Write Only</option>
-                    <option value="read_write" <%= query.permissions === 'read_write' ? 'selected' : '' %>>Read & Write</option>
-                </select>
-            </div>
-            
-            <div class="mt-3 sm:mt-0">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-search mr-2"></i>
-                    Filter
-                </button>
-                <a href="/api-keys" class="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-times mr-2"></i>
-                    Clear
-                </a>
-            </div>
-        </form>
-    </div>
-    
-    <!-- Table -->
-    <div class="mt-6 flex flex-col">
-        <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-300">
+        
+        <!-- API Keys Table -->
+        <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+            <div class="table-responsive">
+                <div class="table-wrapper">
+                    <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     App Name
                                 </th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Description
                                 </th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Permissions
                                 </th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Usage
                                 </th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Created
                                 </th>
-                                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            <% if (apiKeys && apiKeys.length > 0) { %>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (typeof apiKeys !== 'undefined' && apiKeys.length > 0) { %>
                                 <% apiKeys.forEach(function(apiKey) { %>
-                                    <tr>
-                                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                            <a href="/api-keys/<%= apiKey.api_key_id %>" class="text-blue-600 hover:text-blue-900">
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <a href="/api-keys/<%= apiKey.api_key_id %>" 
+                                               class="text-sm font-medium text-primary-600 hover:text-primary-900">
                                                 <%= apiKey.app_name %>
                                             </a>
                                         </td>
-                                        <td class="px-3 py-4 text-sm text-gray-500">
-                                            <div class="max-w-xs truncate" title="<%= apiKey.description %>">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500 max-w-xs truncate" 
+                                                 title="<%= apiKey.description %>">
                                                 <%= apiKey.description || '-' %>
                                             </div>
                                         </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <% if (apiKey.permissions === 'read') { %>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    <i class="fas fa-eye mr-1"></i> Read Only
+                                                <span class="badge badge-primary">
+                                                    <i class="fas fa-eye mr-1"></i>
+                                                    Read Only
                                                 </span>
                                             <% } else if (apiKey.permissions === 'write') { %>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    <i class="fas fa-pen mr-1"></i> Write Only
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-edit mr-1"></i>
+                                                    Write Only
                                                 </span>
                                             <% } else { %>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="fas fa-check-double mr-1"></i> Read & Write
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-double mr-1"></i>
+                                                    Read & Write
                                                 </span>
                                             <% } %>
                                         </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            <% if (apiKey.total_requests) { %>
-                                                <%= apiKey.total_requests.toLocaleString() %> requests
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                <%= apiKey.usage_count || 0 %> requests
+                                            </div>
+                                            <% if (apiKey.last_used_date) { %>
+                                                <div class="text-xs text-gray-500">
+                                                    Last: <%= new Date(apiKey.last_used_date).toLocaleDateString() %>
+                                                </div>
                                             <% } else { %>
-                                                No usage yet
+                                                <div class="text-xs text-gray-500">Never used</div>
                                             <% } %>
                                         </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <% if (apiKey.is_active) { %>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle mr-1"></i>
                                                     Active
                                                 </span>
                                             <% } else { %>
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <span class="badge badge-gray">
+                                                    <i class="fas fa-times-circle mr-1"></i>
                                                     Inactive
                                                 </span>
                                             <% } %>
                                         </td>
-                                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            <%= new Date(apiKey.created_date).toLocaleDateString() %>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">
+                                                <%= new Date(apiKey.created_date).toLocaleDateString() %>
+                                            </div>
                                         </td>
-                                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                            <a href="/api-keys/<%= apiKey.api_key_id %>" class="text-blue-600 hover:text-blue-900 mr-3">
-                                                <i class="fas fa-eye"></i> View
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="/api-keys/<%= apiKey.api_key_id %>" 
+                                               class="text-primary-600 hover:text-primary-900 mr-3"
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
                                             </a>
-                                            <form method="POST" action="/api-keys/<%= apiKey.api_key_id %>/toggle-status" class="inline">
-                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900" 
+                                            <form action="/api-keys/<%= apiKey.api_key_id %>/toggle-status" 
+                                                  method="POST" 
+                                                  class="inline">
+                                                <% if (typeof csrfToken !== 'undefined') { %>
+                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <% } %>
+                                                <button type="submit" 
+                                                        class="<%= apiKey.is_active ? 'text-yellow-600 hover:text-yellow-900' : 'text-success-600 hover:text-success-900' %>" 
+                                                        title="<%= apiKey.is_active ? 'Deactivate' : 'Activate' %>"
                                                         onclick="return confirm('Are you sure you want to <%= apiKey.is_active ? 'deactivate' : 'activate' %> this API key?')">
-                                                    <% if (apiKey.is_active) { %>
-                                                        <i class="fas fa-toggle-on"></i> Deactivate
-                                                    <% } else { %>
-                                                        <i class="fas fa-toggle-off"></i> Activate
-                                                    <% } %>
+                                                    <i class="fas fa-power-off"></i>
                                                 </button>
                                             </form>
                                         </td>
@@ -156,8 +187,8 @@
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No API keys found
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        No API keys found.
                                     </td>
                                 </tr>
                             <% } %>
@@ -166,11 +197,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Pagination -->
+        <% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
+            <%- include('../partials/pagination', { pagination, query }) %>
+        <% } %>
     </div>
-    
-    <!-- Pagination -->
-    <% if (pagination && pagination.pages > 1) { %>
-        <%- include('../partials/pagination', { pagination, query }) %>
-    <% } %>
     ` 
 }) %>
