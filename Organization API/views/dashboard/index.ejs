@@ -1,216 +1,340 @@
 <!-- Path: /views/dashboard/index.ejs -->
-<div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-    <p class="mt-2 text-sm text-gray-600">ภาพรวมระบบจัดการโครงสร้างองค์กร</p>
+<div class="space-y-6">
+    <!-- Welcome Section -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-800 rounded-lg shadow-lg p-6 text-white">
+        <h1 class="text-3xl font-bold">Dashboard</h1>
+        <p class="mt-2 text-primary-100">ภาพรวมระบบจัดการโครงสร้างองค์กร</p>
+        <div class="mt-4">
+            <p class="text-sm text-primary-200">Welcome back, <%= typeof user !== 'undefined' && user ? user.username : 'Admin' %>!</p>
+            <p class="text-xs text-primary-200 mt-1">Last login: <%= new Date().toLocaleString('th-TH') %></p>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Companies Card -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="p-3 bg-primary-100 rounded-lg">
+                            <i class="fas fa-building text-2xl text-primary-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">
+                                บริษัททั้งหมด
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">
+                                    <%= typeof stats !== 'undefined' && stats.companies ? stats.companies.total_companies : 0 %>
+                                </div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <%= typeof stats !== 'undefined' && stats.companies ? stats.companies.active_companies : 0 %> ใช้งาน
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <a href="/companies" class="font-medium text-primary-600 hover:text-primary-500">
+                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Branches Card -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-code-branch text-2xl text-blue-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">
+                                สาขาทั้งหมด
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">
+                                    <%= typeof stats !== 'undefined' && stats.branches ? stats.branches.total_branches : 0 %>
+                                </div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <%= typeof stats !== 'undefined' && stats.branches ? stats.branches.active_branches : 0 %> ใช้งาน
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <a href="/branches" class="font-medium text-primary-600 hover:text-primary-500">
+                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Divisions Card -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="fas fa-sitemap text-2xl text-purple-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">
+                                ฝ่ายทั้งหมด
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">
+                                    <%= typeof stats !== 'undefined' && stats.divisions ? stats.divisions.total_divisions : 0 %>
+                                </div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <%= typeof stats !== 'undefined' && stats.divisions ? stats.divisions.active_divisions : 0 %> ใช้งาน
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <a href="/divisions" class="font-medium text-primary-600 hover:text-primary-500">
+                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Departments Card -->
+        <div class="bg-white overflow-hidden shadow-sm rounded-lg card-hover">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-users text-2xl text-green-600"></i>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">
+                                แผนกทั้งหมด
+                            </dt>
+                            <dd class="flex items-baseline">
+                                <div class="text-2xl font-semibold text-gray-900">
+                                    <%= typeof stats !== 'undefined' && stats.departments ? stats.departments.total_departments : 0 %>
+                                </div>
+                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    <%= typeof stats !== 'undefined' && stats.departments ? stats.departments.active_departments : 0 %> ใช้งาน
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <a href="/departments" class="font-medium text-primary-600 hover:text-primary-500">
+                        ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Organization Distribution Chart -->
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-chart-pie mr-2"></i>Organization Distribution
+            </h2>
+            <div class="relative" style="height: 300px;">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- API Usage Chart -->
+        <div class="bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i class="fas fa-chart-line mr-2"></i>API Usage (Last 24 Hours)
+            </h2>
+            <div class="relative" style="height: 300px;">
+                <canvas id="apiUsageChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activities & API Logs -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Activities -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-history mr-2"></i>Recent Activities
+                </h2>
+            </div>
+            <div class="p-6">
+                <% if (typeof recentActivities !== 'undefined' && recentActivities && recentActivities.length > 0) { %>
+                    <div class="flow-root">
+                        <ul class="-mb-8">
+                            <% recentActivities.forEach(function(activity, index) { %>
+                                <li>
+                                    <div class="relative pb-8">
+                                        <% if (index !== recentActivities.length - 1) { %>
+                                            <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
+                                        <% } %>
+                                        <div class="relative flex space-x-3">
+                                            <div>
+                                                <span class="h-8 w-8 rounded-full bg-<%= activity.color %>-100 flex items-center justify-center">
+                                                    <i class="fas fa-<%= activity.icon %> text-<%= activity.color %>-600 text-sm"></i>
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0 flex-1 pt-1.5">
+                                                <div>
+                                                    <p class="text-sm text-gray-500">
+                                                        <%= activity.description %>
+                                                    </p>
+                                                </div>
+                                                <div class="mt-1 text-xs text-gray-400">
+                                                    <%= activity.time %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% } else { %>
+                    <p class="text-sm text-gray-500 text-center py-4">No recent activities</p>
+                <% } %>
+            </div>
+        </div>
+        
+        <!-- Recent API Logs -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">
+                    <i class="fas fa-server mr-2"></i>Recent API Calls
+                </h2>
+            </div>
+            <div class="p-6">
+                <% if (typeof recentApiLogs !== 'undefined' && recentApiLogs && recentApiLogs.length > 0) { %>
+                    <div class="space-y-3">
+                        <% recentApiLogs.forEach(function(log) { %>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium <%= log.method === 'GET' ? 'bg-green-100 text-green-800' : log.method === 'POST' ? 'bg-blue-100 text-blue-800' : log.method === 'PUT' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' %>">
+                                        <%= log.method %>
+                                    </span>
+                                    <span class="text-sm text-gray-600"><%= log.endpoint %></span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs text-gray-500"><%= log.response_time_ms %>ms</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <%= log.response_status >= 200 && log.response_status < 300 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+                                        <%= log.response_status %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-sm text-gray-500 text-center py-4">No recent API calls</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Statistics Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Companies Card -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">
-                <i class="fas fa-building mr-2"></i>บริษัททั้งหมด
-            </dt>
-            <dd class="mt-1 flex items-baseline">
-                <span class="text-3xl font-semibold text-gray-900">
-                    <%= stats.companies.total_companies %>
-                </span>
-                <span class="ml-2 text-sm text-green-600">
-                    <%= stats.companies.active_companies %> ใช้งาน
-                </span>
-            </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-4 sm:px-6">
-            <a href="/companies" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-    </div>
-
-    <!-- Branches Card -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">
-                <i class="fas fa-code-branch mr-2"></i>สาขาทั้งหมด
-            </dt>
-            <dd class="mt-1 flex items-baseline">
-                <span class="text-3xl font-semibold text-gray-900">
-                    <%= stats.branches.total_branches %>
-                </span>
-                <span class="ml-2 text-sm text-green-600">
-                    <%= stats.branches.active_branches %> ใช้งาน
-                </span>
-            </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-4 sm:px-6">
-            <a href="/branches" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-    </div>
-
-    <!-- Divisions Card -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">
-                <i class="fas fa-sitemap mr-2"></i>ฝ่ายทั้งหมด
-            </dt>
-            <dd class="mt-1 flex items-baseline">
-                <span class="text-3xl font-semibold text-gray-900">
-                    <%= stats.divisions.total_divisions %>
-                </span>
-                <span class="ml-2 text-sm text-green-600">
-                    <%= stats.divisions.active_divisions %> ใช้งาน
-                </span>
-            </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-4 sm:px-6">
-            <a href="/divisions" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-    </div>
-
-    <!-- Departments Card -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <dt class="text-sm font-medium text-gray-500 truncate">
-                <i class="fas fa-users mr-2"></i>แผนกทั้งหมด
-            </dt>
-            <dd class="mt-1 flex items-baseline">
-                <span class="text-3xl font-semibold text-gray-900">
-                    <%= stats.departments.total_departments %>
-                </span>
-                <span class="ml-2 text-sm text-green-600">
-                    <%= stats.departments.active_departments %> ใช้งาน
-                </span>
-            </dd>
-        </div>
-        <div class="bg-gray-50 px-4 py-4 sm:px-6">
-            <a href="/departments" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                ดูทั้งหมด <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- API Statistics -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <!-- API Keys Stats -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-key mr-2"></i>API Keys
-        </h3>
-        <dl class="space-y-2">
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Total Keys:</dt>
-                <dd class="text-sm font-medium text-gray-900"><%= stats.apiKeys.total_keys %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Active Keys:</dt>
-                <dd class="text-sm font-medium text-green-600"><%= stats.apiKeys.active_keys %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Read Only:</dt>
-                <dd class="text-sm font-medium text-gray-900"><%= stats.apiKeys.read_only_keys %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Read/Write:</dt>
-                <dd class="text-sm font-medium text-gray-900"><%= stats.apiKeys.read_write_keys %></dd>
-            </div>
-        </dl>
-    </div>
-
-    <!-- API Usage Stats -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-chart-bar mr-2"></i>API Usage (24h)
-        </h3>
-        <dl class="space-y-2">
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Total Requests:</dt>
-                <dd class="text-sm font-medium text-gray-900"><%= stats.apiUsage.total_requests %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Successful:</dt>
-                <dd class="text-sm font-medium text-green-600"><%= stats.apiUsage.successful_requests %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Failed:</dt>
-                <dd class="text-sm font-medium text-red-600"><%= stats.apiUsage.failed_requests %></dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Avg Response:</dt>
-                <dd class="text-sm font-medium text-gray-900"><%= stats.apiUsage.average_response_time %>ms</dd>
-            </div>
-        </dl>
-    </div>
-
-    <!-- System Info -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-info-circle mr-2"></i>System Info
-        </h3>
-        <dl class="space-y-2">
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Version:</dt>
-                <dd class="text-sm font-medium text-gray-900">1.0.0</dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Environment:</dt>
-                <dd class="text-sm font-medium text-gray-900">Development</dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Last Update:</dt>
-                <dd class="text-sm font-medium text-gray-900">Today</dd>
-            </div>
-            <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Status:</dt>
-                <dd class="text-sm font-medium text-green-600">
-                    <i class="fas fa-check-circle"></i> Healthy
-                </dd>
-            </div>
-        </dl>
-    </div>
-</div>
-
-<!-- Recent Activities -->
-<div class="bg-white shadow rounded-lg p-6">
-    <h3 class="text-lg font-medium text-gray-900 mb-4">
-        <i class="fas fa-history mr-2"></i>Recent Activities
-    </h3>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entity</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">By</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <% recentActivities.forEach(function(activity) { %>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <%= activity.entity_type %>
-                            </span>
-                            <span class="ml-2 text-sm text-gray-900"><%= activity.entity_name %></span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-gray-900"><%= activity.action %></span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <%= activity.created_by || activity.updated_by %>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <%= new Date(activity.action_date).toLocaleString('th-TH') %>
-                        </td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    </div>
-</div>
+<!-- Chart Scripts -->
+<script>
+    // Chart data from server
+    const chartData = <%- typeof chartData !== 'undefined' ? chartData : '{}' %>;
+    
+    // Distribution Chart
+    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+    new Chart(distributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.entityDistribution ? chartData.entityDistribution.map(item => item.name) : [],
+            datasets: [{
+                data: chartData.entityDistribution ? chartData.entityDistribution.map(item => item.value) : [],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(34, 197, 94, 0.8)',
+                    'rgba(168, 85, 247, 0.8)',
+                    'rgba(251, 146, 60, 0.8)'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+    
+    // API Usage Chart
+    const apiUsageCtx = document.getElementById('apiUsageChart').getContext('2d');
+    new Chart(apiUsageCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.hourlyRequests ? chartData.hourlyRequests.map(item => item.hour + ':00') : [],
+            datasets: [{
+                label: 'API Requests',
+                data: chartData.hourlyRequests ? chartData.hourlyRequests.map(item => item.requests) : [],
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+</script>

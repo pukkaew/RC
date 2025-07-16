@@ -1,318 +1,259 @@
-// Main JavaScript file for Organization Structure Management System
+// Path: /public/js/main.js
 
-// Document ready
+// DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all components
+    // Initialize tooltips
     initializeTooltips();
-    initializeModals();
-    initializeAjaxForms();
-    initializeDynamicSelects();
-    initializeConfirmDialogs();
-    initializeFlashMessages();
-    initializeDataTables();
+    
+    // Initialize form validations
+    initializeFormValidations();
+    
+    // Initialize dynamic filters
+    initializeDynamicFilters();
+    
+    // Initialize notification system
+    initializeNotifications();
+    
+    // Auto-hide flash messages
+    autoHideFlashMessages();
 });
 
 // Initialize tooltips
 function initializeTooltips() {
-    // Add tooltip functionality if needed
-}
-
-// Initialize modals
-function initializeModals() {
-    // Close modal when clicking backdrop
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function() {
-            closeModal(this.dataset.modal);
+    const tooltips = document.querySelectorAll('[title]');
+    tooltips.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            // Add tooltip styling via Tailwind classes
+            this.classList.add('relative');
         });
     });
 }
 
-// Show modal
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const backdrop = document.querySelector(`[data-modal="${modalId}"]`);
-    if (modal && backdrop) {
-        modal.classList.remove('hidden');
-        backdrop.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-// Close modal
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const backdrop = document.querySelector(`[data-modal="${modalId}"]`);
-    if (modal && backdrop) {
-        modal.classList.add('hidden');
-        backdrop.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-}
-
-// Initialize AJAX forms
-function initializeAjaxForms() {
-    document.querySelectorAll('form[data-ajax="true"]').forEach(form => {
-        form.addEventListener('submit', handleAjaxFormSubmit);
+// Initialize form validations
+function initializeFormValidations() {
+    const forms = document.querySelectorAll('form[data-validate]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('border-red-500');
+                    field.classList.remove('border-gray-300');
+                    
+                    // Show error message
+                    let errorMsg = field.nextElementSibling;
+                    if (!errorMsg || !errorMsg.classList.contains('error-message')) {
+                        errorMsg = document.createElement('p');
+                        errorMsg.className = 'error-message text-red-500 text-xs mt-1';
+                        errorMsg.textContent = 'This field is required';
+                        field.parentNode.insertBefore(errorMsg, field.nextSibling);
+                    }
+                } else {
+                    field.classList.remove('border-red-500');
+                    field.classList.add('border-gray-300');
+                    
+                    // Remove error message
+                    const errorMsg = field.nextElementSibling;
+                    if (errorMsg && errorMsg.classList.contains('error-message')) {
+                        errorMsg.remove();
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
     });
 }
 
-// Handle AJAX form submission
-async function handleAjaxFormSubmit(e) {
-    e.preventDefault();
+// Initialize dynamic filters for dependent dropdowns
+function initializeDynamicFilters() {
+    // Company -> Branch filter dependency
+    const companyFilter = document.getElementById('company_code');
+    const branchFilter = document.getElementById('branch_code');
     
-    const form = e.target;
-    const formData = new FormData(form);
-    const method = form.method || 'POST';
-    const action = form.action;
-    
-    try {
-        showLoading();
-        
-        const response = await fetch(action, {
-            method: method,
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert('success', data.message);
-            if (data.redirect) {
-                setTimeout(() => {
-                    window.location.href = data.redirect;
-                }, 1000);
-            }
-        } else {
-            showAlert('error', data.message || 'An error occurred');
-        }
-    } catch (error) {
-        showAlert('error', 'Network error occurred');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Initialize dynamic selects (dependent dropdowns)
-function initializeDynamicSelects() {
-    // Company -> Branch select
-    const companySelect = document.getElementById('company_code');
-    const branchSelect = document.getElementById('branch_code');
-    
-    if (companySelect && branchSelect) {
-        companySelect.addEventListener('change', async function() {
+    if (companyFilter && branchFilter) {
+        companyFilter.addEventListener('change', async function() {
             const companyCode = this.value;
             
+            // Clear branch options
+            branchFilter.innerHTML = '<option value="">Loading...</option>';
+            
             if (!companyCode) {
-                branchSelect.innerHTML = '<option value="">Select a company first</option>';
-                branchSelect.disabled = true;
+                branchFilter.innerHTML = '<option value="">All Branches</option>';
                 return;
             }
             
             try {
-                showLoadingOnSelect(branchSelect);
+                // Fetch branches for selected company
+                const response = await fetch(`/api/companies/${companyCode}/branches`);
+                const branches = await response.json();
                 
-                const response = await fetch(`/divisions/ajax/company/${companyCode}/branches`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    updateSelectOptions(branchSelect, data.data, 'branch_code', 'branch_name', 'No branch (Direct to company)');
-                    branchSelect.disabled = false;
-                }
+                // Rebuild options
+                branchFilter.innerHTML = '<option value="">All Branches</option>';
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.branch_code;
+                    option.textContent = branch.branch_name;
+                    branchFilter.appendChild(option);
+                });
             } catch (error) {
                 console.error('Error loading branches:', error);
-                showAlert('error', 'Failed to load branches');
+                branchFilter.innerHTML = '<option value="">Error loading branches</option>';
             }
         });
     }
     
-    // Similar for Division -> Department select
-    const divisionSelect = document.getElementById('division_code');
+    // Division -> Department filter dependency
+    const divisionFilter = document.getElementById('division_code');
+    const departmentFilter = document.getElementById('department_code');
     
-    if (companySelect && divisionSelect) {
-        companySelect.addEventListener('change', async function() {
-            const companyCode = this.value;
+    if (divisionFilter && departmentFilter) {
+        divisionFilter.addEventListener('change', async function() {
+            const divisionCode = this.value;
             
-            if (!companyCode) {
-                divisionSelect.innerHTML = '<option value="">Select a company first</option>';
-                divisionSelect.disabled = true;
+            // Clear department options
+            departmentFilter.innerHTML = '<option value="">Loading...</option>';
+            
+            if (!divisionCode) {
+                departmentFilter.innerHTML = '<option value="">All Departments</option>';
                 return;
             }
             
             try {
-                showLoadingOnSelect(divisionSelect);
+                // Fetch departments for selected division
+                const response = await fetch(`/api/divisions/${divisionCode}/departments`);
+                const departments = await response.json();
                 
-                const response = await fetch(`/departments/ajax/company/${companyCode}/divisions`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    updateSelectOptions(divisionSelect, data.data, 'division_code', 'division_name');
-                    divisionSelect.disabled = false;
-                }
+                // Rebuild options
+                departmentFilter.innerHTML = '<option value="">All Departments</option>';
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.department_code;
+                    option.textContent = dept.department_name;
+                    departmentFilter.appendChild(option);
+                });
             } catch (error) {
-                console.error('Error loading divisions:', error);
-                showAlert('error', 'Failed to load divisions');
+                console.error('Error loading departments:', error);
+                departmentFilter.innerHTML = '<option value="">Error loading departments</option>';
             }
         });
     }
 }
 
-// Update select options
-function updateSelectOptions(selectElement, options, valueField, textField, emptyText = 'Select an option') {
-    selectElement.innerHTML = `<option value="">${emptyText}</option>`;
-    
-    options.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option[valueField];
-        optionElement.textContent = option[textField];
-        if (option.is_active === false) {
-            optionElement.textContent += ' (Inactive)';
-            optionElement.disabled = true;
+// Initialize notification system
+function initializeNotifications() {
+    // Check for new notifications every 30 seconds
+    if (window.location.pathname === '/') {
+        setInterval(checkNotifications, 30000);
+    }
+}
+
+async function checkNotifications() {
+    try {
+        const response = await fetch('/api/notifications/unread');
+        const data = await response.json();
+        
+        const notificationBell = document.querySelector('.fa-bell').parentElement;
+        const badge = notificationBell.querySelector('.absolute');
+        
+        if (data.count > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
         }
-        selectElement.appendChild(optionElement);
-    });
+    } catch (error) {
+        console.error('Error checking notifications:', error);
+    }
 }
 
-// Show loading on select
-function showLoadingOnSelect(selectElement) {
-    selectElement.innerHTML = '<option value="">Loading...</option>';
-    selectElement.disabled = true;
-}
-
-// Initialize confirm dialogs
-function initializeConfirmDialogs() {
-    document.querySelectorAll('[data-confirm]').forEach(element => {
-        element.addEventListener('click', function(e) {
-            const message = this.dataset.confirm || 'Are you sure?';
-            if (!confirm(message)) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-    });
-}
-
-// Initialize flash messages auto-hide
-function initializeFlashMessages() {
-    document.querySelectorAll('.alert').forEach(alert => {
+// Auto-hide flash messages after 5 seconds
+function autoHideFlashMessages() {
+    const flashMessages = document.querySelectorAll('.bg-green-50, .bg-red-50');
+    flashMessages.forEach(message => {
         setTimeout(() => {
-            fadeOut(alert);
+            message.style.transition = 'opacity 0.5s ease-out';
+            message.style.opacity = '0';
+            setTimeout(() => message.remove(), 500);
         }, 5000);
     });
 }
 
-// Initialize data tables with search
-function initializeDataTables() {
-    document.querySelectorAll('[data-table-search]').forEach(input => {
-        input.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const tableId = this.dataset.tableSearch;
-            const table = document.getElementById(tableId);
+// Utility function for confirming destructive actions
+window.confirmAction = function(message) {
+    return confirm(message || 'Are you sure you want to perform this action?');
+};
+
+// Search functionality with debouncing
+let searchTimeout;
+const searchInputs = document.querySelectorAll('input[name="search"]');
+searchInputs.forEach(input => {
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const form = this.closest('form');
+        
+        searchTimeout = setTimeout(() => {
+            // Add loading indicator
+            this.classList.add('opacity-50');
             
-            if (table) {
-                const rows = table.querySelectorAll('tbody tr');
-                
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? '' : 'none';
-                });
-            }
-        });
+            // Submit form
+            form.submit();
+        }, 500); // 500ms debounce
     });
-}
+});
 
-// Show loading overlay
-function showLoading() {
-    const loader = document.getElementById('loading-overlay');
-    if (loader) {
-        loader.classList.remove('hidden');
-    }
-}
+// Table row click handler
+const tableRows = document.querySelectorAll('tbody tr[data-href]');
+tableRows.forEach(row => {
+    row.classList.add('cursor-pointer');
+    row.addEventListener('click', function(e) {
+        // Don't navigate if clicking on a button or link
+        if (e.target.closest('a, button, form')) return;
+        
+        window.location.href = this.dataset.href;
+    });
+});
 
-// Hide loading overlay
-function hideLoading() {
-    const loader = document.getElementById('loading-overlay');
-    if (loader) {
-        loader.classList.add('hidden');
-    }
-}
+// Enhanced form submission with loading states
+const forms = document.querySelectorAll('form');
+forms.forEach(form => {
+    form.addEventListener('submit', function() {
+        const submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+        }
+    });
+});
 
-// Show alert message
-function showAlert(type, message) {
-    const alertContainer = document.getElementById('alert-container');
-    if (!alertContainer) return;
-    
-    const alertClass = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
-    
-    const alert = document.createElement('div');
-    alert.className = `mb-4 ${alertClass} px-4 py-3 rounded relative fade-in`;
-    alert.innerHTML = `
-        <span class="block sm:inline">${message}</span>
-        <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="this.parentElement.remove();">
-            <i class="fas fa-times"></i>
-        </span>
-    `;
-    
-    alertContainer.appendChild(alert);
-    
-    setTimeout(() => {
-        fadeOut(alert);
-    }, 5000);
-}
-
-// Fade out element
-function fadeOut(element) {
-    element.classList.add('fade-out');
-    setTimeout(() => {
-        element.remove();
-    }, 300);
-}
-
-// Copy to clipboard
-function copyToClipboard(text, buttonElement) {
+// Copy to clipboard functionality for API keys
+window.copyToClipboard = function(text, button) {
     navigator.clipboard.writeText(text).then(() => {
-        const originalText = buttonElement.innerHTML;
-        buttonElement.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        buttonElement.classList.add('bg-green-600');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.add('text-green-600');
         
         setTimeout(() => {
-            buttonElement.innerHTML = originalText;
-            buttonElement.classList.remove('bg-green-600');
+            button.innerHTML = originalText;
+            button.classList.remove('text-green-600');
         }, 2000);
     }).catch(err => {
         console.error('Failed to copy:', err);
-        showAlert('error', 'Failed to copy to clipboard');
     });
-}
+};
 
-// Format number with commas
-function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+// Export functionality
+window.exportData = function(format) {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('export', format);
+    window.location.href = currentUrl.toString();
+};
 
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Export functions for use in other scripts
-window.OrgStructure = {
-    showModal,
-    closeModal,
-    showAlert,
-    showLoading,
-    hideLoading,
-    copyToClipboard,
-    formatNumber,
-    debounce
+// Print functionality with better styling
+window.printPage = function() {
+    window.print();
 };
