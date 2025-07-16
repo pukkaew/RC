@@ -1,350 +1,381 @@
 <!-- Path: /views/dashboard/index.ejs -->
-<% 
-  const pageTitle = 'แดชบอร์ด';
-  const pageDescription = 'ภาพรวมระบบจัดการโครงสร้างองค์กร';
-  const currentPath = '/';
-%>
-
-<!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Total Companies Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-ruxchai-grey-500">บริษัททั้งหมด</p>
-                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">
-                        <%= typeof stats !== 'undefined' && stats.totalCompanies ? stats.totalCompanies : '0' %>
-                    </p>
-                    <p class="text-xs text-ruxchai-green-600 mt-2">
-                        <i class="fas fa-arrow-up mr-1"></i>
-                        +12% จากเดือนที่แล้ว
-                    </p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-ruxchai-blue-400 to-ruxchai-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fas fa-building text-white text-xl"></i>
-                </div>
-            </div>
-        </div>
-        <div class="bg-ruxchai-blue-50 px-6 py-3 border-t border-ruxchai-blue-100">
-            <a href="/companies" class="text-sm text-ruxchai-blue-600 hover:text-ruxchai-blue-700 font-medium flex items-center">
-                ดูทั้งหมด
-                <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-        </div>
-    </div>
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Organization Structure Management System">
+    <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     
-    <!-- Total Branches Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-ruxchai-grey-500">สาขาทั้งหมด</p>
-                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">
-                        <%= typeof stats !== 'undefined' && stats.totalBranches ? stats.totalBranches : '0' %>
-                    </p>
-                    <p class="text-xs text-ruxchai-grey-500 mt-2">
-                        สำนักงานใหญ่ <%= typeof stats !== 'undefined' && stats.headquarters_count ? stats.headquarters_count : '0' %> แห่ง
-                    </p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-ruxchai-green-400 to-ruxchai-green-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fas fa-code-branch text-white text-xl"></i>
-                </div>
-            </div>
-        </div>
-        <div class="bg-ruxchai-green-50 px-6 py-3 border-t border-ruxchai-green-100">
-            <a href="/branches" class="text-sm text-ruxchai-green-600 hover:text-ruxchai-green-700 font-medium flex items-center">
-                จัดการสาขา
-                <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-        </div>
-    </div>
+    <title>Dashboard - Organization Management</title>
     
-    <!-- Total Divisions Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-ruxchai-grey-500">ฝ่ายทั้งหมด</p>
-                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">
-                        <%= typeof stats !== 'undefined' && stats.totalDivisions ? stats.totalDivisions : '0' %>
-                    </p>
-                    <div class="flex items-center mt-2">
-                        <span class="w-2 h-2 bg-ruxchai-green-500 rounded-full mr-2"></span>
-                        <span class="text-xs text-ruxchai-grey-600">
-                            ใช้งาน <%= typeof stats !== 'undefined' && stats.active_divisions ? stats.active_divisions : '0' %> ฝ่าย
-                        </span>
-                    </div>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fas fa-sitemap text-white text-xl"></i>
-                </div>
-            </div>
-        </div>
-        <div class="bg-cyan-50 px-6 py-3 border-t border-cyan-100">
-            <a href="/divisions" class="text-sm text-cyan-600 hover:text-cyan-700 font-medium flex items-center">
-                ดูรายละเอียด
-                <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-        </div>
-    </div>
-    
-    <!-- API Usage Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover-scale">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-ruxchai-grey-500">API Calls วันนี้</p>
-                    <p class="text-2xl font-bold text-ruxchai-grey-800 mt-2">
-                        <%= typeof apiStats !== 'undefined' && apiStats.todayCalls ? apiStats.todayCalls.toLocaleString() : '0' %>
-                    </p>
-                    <p class="text-xs text-ruxchai-grey-500 mt-2">
-                        จาก 10,000 calls/day
-                    </p>
-                </div>
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                    <i class="fas fa-plug text-white text-xl"></i>
-                </div>
-            </div>
-        </div>
-        <div class="bg-purple-50 px-6 py-3 border-t border-purple-100">
-            <div class="w-full bg-purple-200 rounded-full h-2">
-                <div class="bg-purple-600 h-2 rounded-full" style="width: <%= typeof apiStats !== 'undefined' && apiStats.todayCalls ? (apiStats.todayCalls / 100).toFixed(0) : '0' %>%"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Organization Structure Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-ruxchai-grey-800">โครงสร้างองค์กร</h3>
-            <button class="text-sm text-ruxchai-grey-500 hover:text-ruxchai-blue-500">
-                <i class="fas fa-expand-alt mr-1"></i>
-                ขยาย
-            </button>
-        </div>
-        <canvas id="orgChart" height="300"></canvas>
-    </div>
-    
-    <!-- API Usage Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-ruxchai-grey-800">การใช้งาน API (7 วัน)</h3>
-            <select class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-ruxchai-blue-500">
-                <option>7 วันล่าสุด</option>
-                <option>30 วันล่าสุด</option>
-                <option>90 วันล่าสุด</option>
-            </select>
-        </div>
-        <canvas id="apiChart" height="300"></canvas>
-    </div>
-</div>
-
-<!-- Recent Activities & Quick Actions -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Recent Activities (2 columns) -->
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="p-6 border-b border-gray-100">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-ruxchai-grey-800">กิจกรรมล่าสุด</h3>
-                <a href="#" class="text-sm text-ruxchai-blue-600 hover:text-ruxchai-blue-700 font-medium">
-                    ดูทั้งหมด
-                </a>
-            </div>
-        </div>
-        <div class="divide-y divide-gray-100">
-            <!-- Activity Item -->
-            <div class="p-4 hover:bg-gray-50 transition-colors">
-                <div class="flex items-start space-x-3">
-                    <div class="w-10 h-10 bg-ruxchai-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-building text-ruxchai-blue-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm text-ruxchai-grey-800">
-                            เพิ่มบริษัทใหม่ <span class="font-medium">บริษัท รุ่งชัย เทคโนโลยี จำกัด</span>
-                        </p>
-                        <p class="text-xs text-ruxchai-grey-500 mt-1">
-                            โดย admin@ruxchai.com - 5 นาทีที่แล้ว
-                        </p>
-                    </div>
-                    <span class="px-2 py-1 bg-ruxchai-green-100 text-ruxchai-green-700 text-xs font-medium rounded-full">
-                        สำเร็จ
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Activity Item -->
-            <div class="p-4 hover:bg-gray-50 transition-colors">
-                <div class="flex items-start space-x-3">
-                    <div class="w-10 h-10 bg-ruxchai-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-code-branch text-ruxchai-green-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm text-ruxchai-grey-800">
-                            เปิดสาขาใหม่ <span class="font-medium">สาขาชลบุรี</span> ภายใต้ ABC Company
-                        </p>
-                        <p class="text-xs text-ruxchai-grey-500 mt-1">
-                            โดย manager@abc.com - 1 ชั่วโมงที่แล้ว
-                        </p>
-                    </div>
-                    <span class="px-2 py-1 bg-ruxchai-green-100 text-ruxchai-green-700 text-xs font-medium rounded-full">
-                        สำเร็จ
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Activity Item -->
-            <div class="p-4 hover:bg-gray-50 transition-colors">
-                <div class="flex items-start space-x-3">
-                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-key text-purple-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm text-ruxchai-grey-800">
-                            API Key <span class="font-mono bg-gray-100 px-1 rounded">prod_xxx_2024</span> ถูกสร้างขึ้น
-                        </p>
-                        <p class="text-xs text-ruxchai-grey-500 mt-1">
-                            สำหรับ Mobile App - 2 ชั่วโมงที่แล้ว
-                        </p>
-                    </div>
-                    <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                        API
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Activity Item -->
-            <div class="p-4 hover:bg-gray-50 transition-colors">
-                <div class="flex items-start space-x-3">
-                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-sitemap text-orange-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm text-ruxchai-grey-800">
-                            ปรับโครงสร้าง <span class="font-medium">ฝ่ายการตลาด</span> ย้ายไปอยู่ภายใต้สาขาใหม่
-                        </p>
-                        <p class="text-xs text-ruxchai-grey-500 mt-1">
-                            โดย hr@xyz.com - 3 ชั่วโมงที่แล้ว
-                        </p>
-                    </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                        อัพเดท
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Quick Actions (1 column) -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="p-6 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-ruxchai-grey-800">เมนูลัด</h3>
-        </div>
-        <div class="p-6 space-y-3">
-            <a href="/companies/create" class="flex items-center p-3 bg-ruxchai-blue-50 rounded-lg hover:bg-ruxchai-blue-100 transition-colors group">
-                <div class="w-10 h-10 bg-ruxchai-blue-500 rounded-lg flex items-center justify-center group-hover:bg-ruxchai-blue-600">
-                    <i class="fas fa-plus text-white"></i>
-                </div>
-                <span class="ml-3 text-sm font-medium text-ruxchai-grey-700">เพิ่มบริษัทใหม่</span>
-            </a>
-            
-            <a href="/branches/create" class="flex items-center p-3 bg-ruxchai-green-50 rounded-lg hover:bg-ruxchai-green-100 transition-colors group">
-                <div class="w-10 h-10 bg-ruxchai-green-500 rounded-lg flex items-center justify-center group-hover:bg-ruxchai-green-600">
-                    <i class="fas fa-code-branch text-white"></i>
-                </div>
-                <span class="ml-3 text-sm font-medium text-ruxchai-grey-700">เพิ่มสาขา</span>
-            </a>
-            
-            <a href="/api-keys" class="flex items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors group">
-                <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center group-hover:bg-purple-600">
-                    <i class="fas fa-key text-white"></i>
-                </div>
-                <span class="ml-3 text-sm font-medium text-ruxchai-grey-700">จัดการ API Keys</span>
-            </a>
-            
-            <a href="/reports" class="flex items-center p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors group">
-                <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center group-hover:bg-orange-600">
-                    <i class="fas fa-chart-bar text-white"></i>
-                </div>
-                <span class="ml-3 text-sm font-medium text-ruxchai-grey-700">รายงาน</span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Chart Scripts -->
-<script>
-    // Organization Structure Chart (Doughnut)
-    const orgCtx = document.getElementById('orgChart').getContext('2d');
-    new Chart(orgCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['บริษัท', 'สาขา', 'ฝ่าย', 'แผนก'],
-            datasets: [{
-                data: [
-                    <%= typeof stats !== 'undefined' && stats.totalCompanies ? stats.totalCompanies : 3 %>,
-                    <%= typeof stats !== 'undefined' && stats.totalBranches ? stats.totalBranches : 12 %>,
-                    <%= typeof stats !== 'undefined' && stats.totalDivisions ? stats.totalDivisions : 45 %>,
-                    <%= typeof stats !== 'undefined' && stats.totalDepartments ? stats.totalDepartments : 120 %>
-                ],
-                backgroundColor: [
-                    '#0090D3',
-                    '#3AAA35',
-                    '#00BCD4',
-                    '#9C27B0'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': {
+                            50: '#E6F4FB',
+                            100: '#CCE9F7',
+                            200: '#99D3EE',
+                            300: '#66BDE6',
+                            400: '#33A6DD',
+                            500: '#0090D3',
+                            600: '#0073A9',
+                            700: '#00567F',
+                            800: '#003A54',
+                            900: '#001D2A',
+                        },
+                        'success': {
+                            50: '#E8F5E7',
+                            100: '#D1EBCF',
+                            200: '#A3D79F',
+                            300: '#75C36F',
+                            400: '#47AF3F',
+                            500: '#3AAA35',
+                            600: '#2E882A',
+                            700: '#22661F',
+                            800: '#164415',
+                            900: '#0B220A',
+                        }
+                    }
                 }
             }
         }
-    });
+    </script>
     
-    // API Usage Chart (Line)
-    const apiCtx = document.getElementById('apiChart').getContext('2d');
-    new Chart(apiCtx, {
-        type: 'line',
-        data: {
-            labels: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์', 'อาทิตย์'],
-            datasets: [{
-                label: 'API Calls',
-                data: [1200, 1350, 1100, 1450, 1600, 800, 600],
-                borderColor: '#0090D3',
-                backgroundColor: 'rgba(0, 144, 211, 0.1)',
-                tension: 0.3,
-                fill: true
-            }, {
-                label: 'Errors',
-                data: [5, 8, 3, 12, 6, 2, 1],
-                borderColor: '#DC2626',
-                backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-</script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="h-full bg-gray-50 custom-scrollbar">
+    <div class="min-h-full">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold text-primary-600">
+                                <i class="fas fa-building mr-2"></i>
+                                Organization Management
+                            </h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="/" class="bg-primary-50 text-primary-700 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-chart-line mr-1"></i> Dashboard
+                                </a>
+                                <a href="/companies" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-building mr-1"></i> Companies
+                                </a>
+                                <a href="/branches" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-code-branch mr-1"></i> Branches
+                                </a>
+                                <a href="/divisions" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-sitemap mr-1"></i> Divisions
+                                </a>
+                                <a href="/departments" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-users mr-1"></i> Departments
+                                </a>
+                                <a href="/api-keys" class="text-gray-700 hover:bg-gray-50 rounded-md px-3 py-2 text-sm font-medium transition-colors">
+                                    <i class="fas fa-key mr-1"></i> API Keys
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <button type="button" class="rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                                <span class="sr-only">View notifications</span>
+                                <i class="fas fa-bell"></i>
+                            </button>
+                            <div class="ml-3 relative">
+                                <a href="/docs" class="text-gray-700 hover:text-primary-600 text-sm font-medium">
+                                    <i class="fas fa-book mr-1"></i> API Docs
+                                </a>
+                            </div>
+                            <div class="ml-3 relative">
+                                <a href="/logout" class="text-gray-700 hover:text-primary-600 text-sm font-medium">
+                                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="-mr-2 flex md:hidden">
+                        <button type="button" class="inline-flex items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" id="mobile-menu-button">
+                            <span class="sr-only">Open main menu</span>
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile menu -->
+            <div class="md:hidden hidden" id="mobile-menu">
+                <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
+                    <a href="/" class="bg-primary-50 text-primary-700 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-chart-line mr-1"></i> Dashboard
+                    </a>
+                    <a href="/companies" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-building mr-1"></i> Companies
+                    </a>
+                    <a href="/branches" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-code-branch mr-1"></i> Branches
+                    </a>
+                    <a href="/divisions" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-sitemap mr-1"></i> Divisions
+                    </a>
+                    <a href="/departments" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-users mr-1"></i> Departments
+                    </a>
+                    <a href="/api-keys" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-key mr-1"></i> API Keys
+                    </a>
+                    <hr class="my-2 border-gray-200">
+                    <a href="/logout" class="text-gray-700 hover:bg-gray-50 block rounded-md px-3 py-2 text-base font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Flash Messages -->
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-4">
+                <div class="alert alert-success animate-fade-in">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span><%= success %></span>
+                </div>
+            </div>
+        <% } %>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-4">
+                <div class="alert alert-error animate-fade-in">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span><%= error %></span>
+                </div>
+            </div>
+        <% } %>
+        
+        <!-- Main Content -->
+        <main class="py-8">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <!-- Welcome Section -->
+                <div class="bg-white overflow-hidden shadow-sm rounded-lg">
+                    <div class="p-6 bg-gradient-to-r from-primary-500 to-primary-600">
+                        <h1 class="text-3xl font-bold text-white">
+                            Welcome to Organization Management System
+                        </h1>
+                        <p class="mt-2 text-primary-100">
+                            Manage your organization structure efficiently
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Statistics Cards -->
+                <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <!-- Companies Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-building text-3xl text-primary-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Companies
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' ? stats.companies : 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/companies" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Branches Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-code-branch text-3xl text-success-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Branches
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' ? stats.branches : 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/branches" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Divisions Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-sitemap text-3xl text-yellow-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Divisions
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' ? stats.divisions : 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/divisions" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Departments Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-users text-3xl text-purple-500"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            Total Departments
+                                        </dt>
+                                        <dd class="text-lg font-semibold text-gray-900">
+                                            <%= typeof stats !== 'undefined' ? stats.departments : 0 %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-5 py-3">
+                            <div class="text-sm">
+                                <a href="/departments" class="font-medium text-primary-600 hover:text-primary-500">
+                                    View all <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity & Quick Actions -->
+                <div class="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <!-- Quick Actions -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                Quick Actions
+                            </h3>
+                            <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <a href="/companies/new" class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Company
+                                </a>
+                                <a href="/branches/new" class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-success-600 hover:bg-success-700">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Branch
+                                </a>
+                                <a href="/divisions/new" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Division
+                                </a>
+                                <a href="/departments/new" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add Department
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- API Usage -->
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                API Usage (Last 30 Days)
+                            </h3>
+                            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">
+                                        Total API Calls
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                        <%= typeof apiStats !== 'undefined' ? apiStats.totalCalls : 0 %>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">
+                                        Active API Keys
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                        <%= typeof apiStats !== 'undefined' ? apiStats.activeKeys : 0 %>
+                                    </dd>
+                                </div>
+                            </dl>
+                            <div class="mt-5">
+                                <a href="/api-keys" class="text-sm font-medium text-primary-600 hover:text-primary-500">
+                                    Manage API Keys <span aria-hidden="true">&rarr;</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 mt-auto">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="py-4 text-center text-sm text-gray-500">
+                    <p>&copy; <%= new Date().getFullYear() %> Organization Management System. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Main JavaScript -->
+    <script src="/js/main.js"></script>
+    
+    <!-- Page specific scripts -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
